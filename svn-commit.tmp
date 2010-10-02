@@ -1,0 +1,15 @@
+Support dynamic hyperlink in textfield
+--This line, and those below, will be ignored--
+
+M    index.php
+M    sample1.php
+M    sample2.php
+M    sample3.php
+AM   sample4.php
+M    sample5.php
+AM   sample6.php
+AM   sample7.php
+AM   sample8.php
+M    setting.php
+D    class/PHPJasperXML.inc
+AM   class/PHPJasperXML.inc.php
