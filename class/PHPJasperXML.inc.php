@@ -126,6 +126,15 @@ public function xml_dismantle($xml){
 		break;
 	    case "group":
 		$this->group_handler($out);
+  //              print_r($out);
+                foreach ($out as $object)
+		{
+		eval("\$this->pointer=&"."\$this->array$k".";");
+//		$this->arrayband[]=array("name"=>$k);
+//		$this->pointer[]=array("type"=>"band","height"=>$object["height"],"splitType"=>$object["splitType"],"y_axis"=>$this->y_axis);
+		$this->default_handler($object);}
+		$this->y_axis=$this->y_axis+$out->band["height"];	//after handle , then adjust y axis
+		
 		break;
 	    case "background":
 		$this->pointer=&$this->arraybackground;
@@ -197,8 +206,8 @@ public function group_handler($xml_path){
 		{	
 		switch ($tag)
 		{
-		case (groupHeader):
-//                    echo $xml_path[name] . ",";
+		case "groupHeader":
+                    
 
 		$this->pointer=&$this->arraygroup[$xml_path["name"]]["groupHeader"];
 		$this->pointer[]=array("type"=>"band","height"=>$out->band["height"]+0,"y_axis"=>"","groupExpression"=>substr($xml_path->groupExpression,3,-1));
@@ -208,7 +217,8 @@ public function group_handler($xml_path){
 			}
 		$this->y_axis=$this->y_axis+$out->band["height"];		//after handle , then adjust y axis
 		break;
-		case (groupFooter):
+		case "groupFooter":
+                                        
 		$this->pointer=&$this->arraygroup[$xml_path["name"]]["groupFooter"];
 		$this->pointer[]=array("type"=>"band","height"=>$out->band["height"]+0,"y_axis"=>"","groupExpression"=>substr($xml_path->groupExpression,3,-1));
 			foreach($out as $band)
@@ -699,6 +709,7 @@ public function group(){
 				$this->display($path,$this->arraygroup[$gname]["groupHeader"][0]["y_axis"],true);
 				break;
 				default:
+                                        
 				$this->display($path,$this->arraygroup[$gname]["groupHeader"][0]["y_axis"],false);
 				break;
 				}
