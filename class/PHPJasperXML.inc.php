@@ -9,6 +9,9 @@ public $debugsql=false;
 private $myconn;
 private $con;
 private $group_name;
+public $newPageGroup = false;
+private $curgroup=0;
+private $groupno=0;
 
 public function PHPJasperXML($lang="en",$pdflib="FPDF"){	
 $this->lang=$lang;
@@ -121,37 +124,32 @@ public function xml_dismantle($xml){
 		$this->field_handler($out);
 		break;
 	    case "variable":
-		$this->variable_handler($out);
-               
+		$this->variable_handler($out);     
 		break;
 	    case "group":
 		$this->group_handler($out);
-  //              print_r($out);
-                foreach ($out as $object)
-		{
-		eval("\$this->pointer=&"."\$this->array$k".";");
-//		$this->arrayband[]=array("name"=>$k);
-//		$this->pointer[]=array("type"=>"band","height"=>$object["height"],"splitType"=>$object["splitType"],"y_axis"=>$this->y_axis);
-		$this->default_handler($object);}
-		$this->y_axis=$this->y_axis+$out->band["height"];	//after handle , then adjust y axis
+
 		
-		break;
+    		break;
 	    case "background":
 		$this->pointer=&$this->arraybackground;
 		$this->pointer[]=array("height"=>$out->band["height"],"splitType"=>$out->band["splitType"]);
 		foreach ($out as $bg)
 		{
 		$this->default_handler($bg);
+
 		}
 		break;
 	    default:
 		foreach ($out as $object)
 		{
+                
 		eval("\$this->pointer=&"."\$this->array$k".";");
 		$this->arrayband[]=array("name"=>$k);
 		$this->pointer[]=array("type"=>"band","height"=>$object["height"],"splitType"=>$object["splitType"],"y_axis"=>$this->y_axis);
 		$this->default_handler($object);}
 		$this->y_axis=$this->y_axis+$out->band["height"];	//after handle , then adjust y axis
+
 		break;
 	     
 	 }
@@ -200,33 +198,51 @@ public function variable_handler($xml_path){
 }
 
 public function group_handler($xml_path){
-	$this->arrayband[]=array("gname"=>$xml_path["name"],"isStartNewPage"=>$xml_path["isStartNewPage"],"groupExpression"=>substr($xml_path->groupExpression,3,-1),"name"=>"group");
-       
+
+//        $this->arraygroup=$xml_path;
+
+
+        if($xml_path["isStartNewPage"]=="true")
+            $this->newPageGroup=true;
+        else
+            $this->newPageGroup="";
+       // print_r($xml_path->groupHeader);die;
 		foreach($xml_path as $tag=>$out)
 		{	
 		switch ($tag)
 		{
 		case "groupHeader":
                     
-
+              
 		$this->pointer=&$this->arraygroup[$xml_path["name"]]["groupHeader"];
+                $this->pointer=&$this->arraygrouphead;
+                $this->arrayband[]=array("name"=>"group", "gname"=>$xml_path["name"],"isStartNewPage"=>$xml_path["isStartNewPage"],"groupExpression"=>substr($xml_path->groupExpression,3,-1));
 		$this->pointer[]=array("type"=>"band","height"=>$out->band["height"]+0,"y_axis"=>"","groupExpression"=>substr($xml_path->groupExpression,3,-1));
+               // print_r($this->arraygrouphead);
+               // echo "<br/><br/><br/>";
 			foreach($out as $band)
-			{
+			{    
 			$this->default_handler($band);
+                        
 			}
+               // print_r($this->arraygrouphead);
+               //         die;
 		$this->y_axis=$this->y_axis+$out->band["height"];		//after handle , then adjust y axis
 		break;
 		case "groupFooter":
                                         
 		$this->pointer=&$this->arraygroup[$xml_path["name"]]["groupFooter"];
+                    $this->pointer=&$this->arraygroupfoot;
 		$this->pointer[]=array("type"=>"band","height"=>$out->band["height"]+0,"y_axis"=>"","groupExpression"=>substr($xml_path->groupExpression,3,-1));
-			foreach($out as $band)
+			foreach($out as $b=>$band)
 			{
 			$this->default_handler($band);
+                       
+                        
 			}
 		break;
 		default:
+                    
 		break;
 		}
 	
@@ -411,7 +427,6 @@ public function element_textField($data){
 	}
 }
 
-
 public function element_subReport($data){
 
  
@@ -424,7 +439,6 @@ public function element_subReport($data){
         
         
 }
-
 
 public function transferDBtoArray($host,$user,$password,$db_or_dsn_name,$cndriver="mysql"){ $this->m=0;
    
@@ -586,7 +600,6 @@ public function variable_calculation($m=0){
 		}
 	}
 }
-/////////////////////////////////////////////////////display to pdf part/////////////////////////////////////////////////////////////
 
 public function outpage($out_method="I",$filename=""){
     if($this->lang=="cn"){
@@ -624,18 +637,30 @@ public function outpage($out_method="I",$filename=""){
 	$this->global_pointer=0;
 	$this->background();
 	foreach ($this->arrayband as $band)
-	{
+	{   
 		switch($band["name"])
 		{
 		case "pageHeader":
-		$this->pageHeader();
+			if(!$this->newPageGroup){
+				$headerY = $this->arrayPageSetting[topMargin]+$this->arraypageHeader[0][height];
+				$this->pageHeader($headerY);
+			}else{
+				$this->pageHeaderNewPage();
+			}
 		break;
 		case "detail":
-		$this->detail();
+			if(!$this->newPageGroup){
+				$this->detail();
+			}else{
+				$this->detailNewPage();
+                                //$this->groupNewPage();
+			}
 		break;
 		case "group":
+                
 		$this->group_pointer=$band["groupExpression"];
 		$this->group_name=$band["gname"];
+                
 		break;
 		default:
 		break;
@@ -643,6 +668,7 @@ public function outpage($out_method="I",$filename=""){
 		}
 
 	}
+        
         if($filename=="")
         $filename=$this->arrayPageSetting["name"].".pdf";
 	return $this->pdf->Output($filename,$out_method);	//send out the complete page
@@ -661,10 +687,11 @@ public function background(){
 	$this->display($out,$this->arrayPageSetting["topMargin"],false);
 	break;
 	}
+        
 	}
 }
 
-public function pageHeader(){
+public function pageHeader($headerY){
 	if(isset($this->arraypageHeader))
 	{$this->arraypageHeader[0]["y_axis"]=$this->arrayPageSetting["topMargin"];}
 	foreach ($this->arraypageHeader as $out)
@@ -680,19 +707,40 @@ public function pageHeader(){
 	}
 	}
 	if(isset($this->arraygroup))
-	{$this->group();}
+	{$this->group($headerY);}
 }
 
-public function group(){
+public function pageHeaderNewPage()
+{//print_r($this->arraypageHeader);
+	if(isset($this->arraypageHeader))
+	{$this->arraypageHeader[0]["y_axis"]=$this->arrayPageSetting["topMargin"];}
+	foreach ($this->arraypageHeader as $out)
+	{
+	switch($out["hidden_type"])
+	{
+	case "textfield":
+	$this->display($out,$this->arraypageHeader[0]["y_axis"],true);
+	break;
+	default:
+	$this->display($out,$this->arraypageHeader[0]["y_axis"],false);
+	break;
+	}
+	}
+}
+
+public function group($headerY){
+    //echo "??? $headerY ???";
+    
         $gname=$this->arrayband[0]["gname"]."";
 	if(isset($this->arraypageHeader))
-	{$this->arraygroup[$gname]["groupHeader"][0]["y_axis"]=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];}
+	{$this->arraygroup[$gname]["groupHeader"][0]["y_axis"]=$headerY;}
 	if(isset($this->arraypageFooter))
 	{$this->arraygroup[$gname]["groupFooter"][0]["y_axis"]=$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"]-$this->arraygroup[$gname]["groupFooter"][0]["height"];}
 	else{$this->arraygroup[$gname]["groupFooter"][0]["y_axis"]=$this->arrayPageSetting["pageHeight"]-$this->arrayPageSetting["bottomMargin"]-$this->arraygroup[$gname]["groupFooter"][0]["height"];}
 
 	if(isset($this->arraygroup))
 	{
+
 	foreach($this->arraygroup[$gname] as $name=>$out)
 	{
               
@@ -702,14 +750,68 @@ public function group(){
 		case "groupHeader":
                     $this->group_count=0;
 			foreach($out as $path)
-			{ 
+			{ //print_r($out);
                             switch($path["hidden_type"])
+				{
+				case "field":
+                                    
+				$this->display($path,$this->arraygroup[$gname]["groupHeader"][0]["y_axis"],true);
+				break;
+				default:
+                                
+				$this->display($path,$this->arraygroup[$gname]["groupHeader"][0]["y_axis"],false);
+				break;
+				}
+			}
+		break;
+		case "groupFooter":
+			foreach($out as $path)
+			{	switch($path["hidden_type"])
+				{
+				case "field":
+				$this->display($path,$this->arraygroup[$gname]["groupFooter"][0]["y_axis"],true);
+				break;
+				default:
+				$this->display($path,$this->arraygroup[$gname]["groupFooter"][0]["y_axis"],false);
+				break;
+				}
+			}
+		break;
+		default:
+		break;
+		}
+	}
+	}
+}
+
+
+public function groupNewPage()
+{	$gname=$this->arrayband[0]["gname"]."";
+    //print_r($this->arrayband);echo "<br/><br/>";
+    //  foreach($this->arraygroup as $a)
+              //{print_r($a["name"]);echo "<br/>";}
+      //        {print_r($a);echo "<br/>";}
+	if(isset($this->arraypageHeader))
+	{$this->arraygroup[$gname]["groupHeader"][0]["y_axis"]=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];}
+	if(isset($this->arraypageFooter))
+	{$this->arraygroup[$gname]["groupFooter"][0]["y_axis"]=$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"]-$this->arraygroup[$gname]["groupFooter"][0]["height"];}
+	else{$this->arraygroup[$gname]["groupFooter"][0]["y_axis"]=$this->arrayPageSetting["pageHeight"]-$this->arrayPageSetting["bottomMargin"]-$this->arraygroup[$gname]["groupFooter"][0]["height"];}
+        
+	if(isset($this->arraygroup))
+	{
+	foreach($this->arraygroup[$gname] as $name=>$out)
+	{
+		switch($name)
+		{
+		case "groupHeader":
+			foreach($out as $path)
+			{	switch($path["hidden_type"])
 				{
 				case "field":
 				$this->display($path,$this->arraygroup[$gname]["groupHeader"][0]["y_axis"],true);
 				break;
 				default:
-                                        
+                                  
 				$this->display($path,$this->arraygroup[$gname]["groupHeader"][0]["y_axis"],false);
 				break;
 				}
@@ -823,18 +925,27 @@ public function NbLines($w,$txt){
 }
 
 public function detail(){$field_pos_y=$this->arraydetail[0]["y_axis"];	$biggestY=0;	$checkpoint=$this->arraydetail[0]["y_axis"];	$tempY=$this->arraydetail[0]["y_axis"];
-
+if($this->arraysqltable){
 foreach($this->arraysqltable as $row)
 {	
 	
-	if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer]))	//check the group's groupExpression existed and same or not
+	if(isset($this->arraygroup)&&($this->global_pointer>0)&&
+                ($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer]))	//check the group's groupExpression existed and same or not
 	{
-	$this->pageFooter();
-	$this->pdf->AddPage();
+            
+            //isStartNewPage
+            //print_r($this->arraygroup[$this->group_name]);
+	//$this->pageFooter();
+	//$this->pdf->AddPage();
+        //$this->pageHeaderNewPage();
+
 	$this->background();
-	$this->pageHeader();
-	$checkpoint=$this->arraydetail[0]["y_axis"];
-	$biggestY=0;	$tempY=$this->arraydetail[0]["y_axis"];
+        $headerY = $biggestY+40;
+	$this->pageHeader($headerY);
+	$checkpoint=$headerY+40;
+	$biggestY = $headerY+40;
+        $tempY=$this->arraydetail[0]["y_axis"];
+
 	}	
 
 	foreach($this->arraydetail as $compare)	//this loop is to count possible biggest Y of the coming row
@@ -848,19 +959,23 @@ foreach($this->arraysqltable as $row)
 		$this->pageFooter();
 		$this->pdf->AddPage();
 		$this->background();
-		$this->pageHeader();
+
+		$this->pageHeader(0);
 		$checkpoint=$this->arraydetail[0]["y_axis"];
-		$biggestY=0;	$tempY=$this->arraydetail[0]["y_axis"];
+		$biggestY=0;
+                $tempY=$this->arraydetail[0]["y_axis"];
 		}
 		elseif(isset($this->arraypageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"])))//check pagefooter existed or not
 		{
 		$this->pageFooter();
 		$this->pdf->AddPage();
 		$this->background();
-		$this->pageHeader();
-		$checkpoint=$this->arraydetail[0]["y_axis"];
-		$biggestY=0;	$tempY=$this->arraydetail[0]["y_axis"];
-		}
+		$headerY = $this->arrayPageSetting[topMargin]+$this->arraypageHeader[0][height];
+		$this->pageHeader($headerY);
+		$checkpoint=$this->arraydetail[0][y_axis];
+		$biggestY=0;
+		$tempY=$this->arraydetail[0][y_axis];
+	}
 		elseif(isset($this->arraylastPageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->arrayPageSetting["pageHeight"]-$this->arraylastPageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"])))//check lastpagefooter existed or not
 		{
 		$this->lastPageFooter();
@@ -896,9 +1011,10 @@ foreach($this->arraysqltable as $row)
 	{$this->pageFooter();
 	$this->pdf->AddPage();
 	$this->background();
-	$this->pageHeader();
-	$checkpoint=$this->arraydetail[0]["y_axis"];
-	$biggestY=0; $tempY=$this->arraydetail[0]["y_axis"];}
+	$headerY = $this->arrayPageSetting[topMargin]+$this->arraypageHeader[0][height];
+	$this->pageHeader($headerY);
+	$checkpoint=$this->arraydetail[0][y_axis];
+	$biggestY=0; $tempY=$this->arraydetail[0][y_axis];}
 
 	foreach ($this->arraydetail as $out)
 	{
@@ -933,12 +1049,192 @@ foreach($this->arraysqltable as $row)
 
 	//if(isset($this->arraygroup)){$this->global_pointer++;}
 	$this->global_pointer++;
-}	
+}
+}else{
+	echo "No data found";
+	exit(0);
+}
 $this->global_pointer--;
 if(isset($this->arraylastPageFooter))
 {$this->lastPageFooter();}
 else{$this->pageFooter();}
 }
+
+public function detailNewPage(){
+    
+    $field_pos_y=$this->arraydetail[0]["y_axis"];
+    $biggestY=0;
+    $checkpoint=$this->arraydetail[0]["y_axis"];
+    $tempY=$this->arraydetail[0]["y_axis"];
+
+
+if($this->arraysqltable){
+foreach($this->arraysqltable as $row)
+{
+        //check the group's groupExpression existed and same or not
+   
+	if(isset($this->arraygroup)&&($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer]))	
+	{
+        
+        if($this->global_pointer>0){
+            $this->showGroupFooter();
+            $this->pageFooter();
+        }
+	$this->pdf->AddPage();
+	$this->background();
+        $this->pageHeaderNewPage();
+        if(isset($this->arraygroup))
+	{$this->showGroupHeader();}
+        $checkpoint=$this->arraydetail[0]["y_axis"];
+	$biggestY = 0;
+	$tempY=$this->arraydetail[0]["y_axis"];
+	}
+
+	foreach($this->arraydetail as $compare)	//this loop is to count possible biggest Y of the coming row
+	{
+		switch($compare["hidden_type"])
+		{
+		case "field":
+		$txt=$this->analyse_expression($row["$compare[txt]"]);
+                //check group footer existed or not
+                
+		if(isset($this->arraygroup[$this->group_name]["groupFooter"])&&(($checkpoint+($compare["height"]*$txt))>($this->arrayPageSetting[pageHeight]-$this->arraygroup["$this->group_name"][groupFooter][0]["height"]-$this->arrayPageSetting["bottomMargin"])))
+		{
+                 
+                    $this->showGroupFooter();
+                    $this->pageFooter();
+                    $this->pdf->AddPage();
+                    $this->background();
+                    $this->pageHeaderNewPage();
+                    $this->showGroupHeader();
+                    $checkpoint=$this->arraydetail[0]["y_axis"];
+                    $biggestY=0;
+                    $tempY=$this->arraydetail[0]["y_axis"];
+		}
+                //check pagefooter existed or not
+		elseif(isset($this->arraypageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"])))
+		{
+                       $this->showGroupFooter();
+                    $this->pageFooter();
+                    $this->pdf->AddPage();
+                    $this->pageHeaderNewPage();
+                    $this->showGroupHeader();
+                    $this->background();
+                    $headerY = $this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
+                    
+                    $checkpoint=$this->arraydetail[0]["y_axis"];
+                    $biggestY=0;
+                    $tempY=$this->arraydetail[0]["y_axis"];
+		}
+                //check lastpagefooter existed or not
+		elseif(isset($this->arraylastPageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->arrayPageSetting["pageHeight"]-$this->arraylastPageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"])))
+		{
+
+                $this->showGroupFooter();
+		$this->lastPageFooter();
+		$this->pdf->AddPage();
+		$this->background();
+		$this->pageHeaderNewPage();
+                $this->showGroupHeader();
+		$checkpoint=$this->arraydetail[0]["y_axis"];
+		$biggestY=0;	$tempY=$this->arraydetail[0]["y_axis"];
+		}
+
+		if(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>$tempY)
+		{$tempY=$checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt)));}
+		break;
+		case "relativebottomline":
+		break;
+		case "report_count":
+			$this->report_count++;
+		break;
+		default:
+    		$this->display($compare,$checkpoint);
+                
+		break;
+		}
+	}
+
+
+
+	if($checkpoint+$this->arraydetail[0]["height"]>($this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"]))	//check the upcoming band is greater than footer position or not
+	{$this->pageFooter();
+	$this->pdf->AddPage();
+	$this->background();
+	$headerY = $this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
+	$this->pageHeaderNewPage();
+	$checkpoint=$this->arraydetail[0]["y_axis"];
+	$biggestY=0; $tempY=$this->arraydetail[0]["y_axis"];}
+
+	foreach ($this->arraydetail as $out)
+	{
+            
+		switch ($out["hidden_type"])
+		{
+		case "field":
+
+                    $this->prepare_print_array=array("type"=>"MultiCell","width"=>$out["width"],"height"=>$out["height"],"txt"=>$out["txt"],"border"=>$out["border"],"align"=>$out["align"],"fill"=>$out["fill"],"hidden_type"=>$out["hidden_type"],"printWhenExpression"=>$out["printWhenExpression"],"soverflow"=>$out["soverflow"],"poverflow"=>$out["poverflow"],"link"=>$out["link"],"pattern"=>$out["pattern"]);
+                    $this->display($this->prepare_print_array,0,true);
+
+                    if($this->pdf->GetY() > $biggestY)
+                    {$biggestY = $this->pdf->GetY();}
+		break;
+		case "relativebottomline":
+                    //$this->relativebottomline($out,$tempY);
+                    $this->relativebottomline($out,$biggestY);
+		break;
+		default:
+
+                    $this->display($out,$checkpoint);
+
+		//$checkpoint=$this->pdf->GetY();
+		break;
+		}
+	}
+	$this->pdf->SetY($biggestY);
+	if($biggestY>$checkpoint+$this->arraydetail[0]["height"])
+	{$checkpoint=$biggestY;}
+	elseif($biggestY<$checkpoint+$this->arraydetail[0]["height"])
+	{$checkpoint=$checkpoint+$this->arraydetail[0]["height"];}
+	else{$checkpoint=$biggestY;}
+
+	//if(isset($this->arraygroup)){$this->global_pointer++;}
+	$this->global_pointer++;
+}
+}else{
+	echo utf8_decode("Sorry cause there is not result from this query.");
+	exit(0);
+}
+$this->global_pointer--;
+if(isset($this->arraylastPageFooter))
+{$this->lastPageFooter();}
+else{$this->pageFooter();}
+
+
+}
+
+public function showGroupHeader(){
+//print_r($this->groupheader);
+//   print_r($this->groupheader);
+  // echo "<br/>";echo "<br/>";echo "<br/>";
+  //print_r($this->arraygroup);
+
+
+//print_r($this->arraygrouphead);
+foreach ($this->arraygrouphead as $out){
+$this->display($out,0,true);
+}
+//     $this->display($this->arraygrouphead,0,true);
+//echo "<br/>";
+//echo "<br/>";
+
+}
+public function showGroupFooter(){
+    foreach ($this->arraygroupfoot as $out){
+$this->display($out,0,true);
+}
+}
+
 
 public function display($arraydata,$y_axis=0,$fielddata=false){   
 
@@ -972,7 +1268,11 @@ public function display($arraydata,$y_axis=0,$fielddata=false){
 	elseif($arraydata["type"]=="SetXY")
 	{$this->pdf->SetXY($arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis);}
 	elseif($arraydata["type"]=="Cell")
-	{$this->pdf->Cell($arraydata["width"],$arraydata["height"],$this->updatePageNo($arraydata["txt"]),$arraydata["border"],$arraydata[ln],$arraydata["align"],$arraydata["fill"],$arraydata["link"]);}
+	{$this->pdf->Cell($arraydata["width"],$arraydata["height"],$this->updatePageNo($arraydata["txt"]),$arraydata["border"],$arraydata["ln"],$arraydata["align"],$arraydata["fill"],$arraydata["link"]);
+                if($this->debuggroup==1)
+                $this->pdf->MultiCell(100,10, "SampleText");
+
+        }
 	elseif($arraydata["type"]=="Rect")
 	{$this->pdf->Rect($arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis,$arraydata["width"],$arraydata["height"]);}
 	elseif($arraydata["type"]=="Image")
@@ -1024,21 +1324,36 @@ public function checkoverflow($arraydata,$txt=""){
         }
 	elseif($arraydata["poverflow"]=="true"&&$arraydata["soverflow"]=="false")
 	{$this->pdf->Cell($arraydata["width"], $arraydata["height"], $this->formatText($txt, $arraydata["pattern"]),$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"]);
-	//$this->pdf->MultiCell($arraydata["width"], $arraydata["height"], $txt,$arraydata["border"],$arraydata["align"],$arraydata["fill"]);
+        if($this->debuggroup==1)
+                $this->pdf->MultiCell(100,10, "SampleText");
+
 	}
 	elseif($arraydata["poverflow"]=="false"&&$arraydata["soverflow"]=="false")
 	{
 	while($this->pdf->GetStringWidth($txt) > $arraydata["width"])
 	{$txt=substr_replace($txt,"",-1);}
 	$this->pdf->Cell($arraydata["width"], $arraydata["height"],$this->formatText($txt, $arraydata["pattern"]),$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"]);
+                if($this->debuggroup==1)
+                $this->pdf->MultiCell(100,10, "SampleText");
+
 	}
 	elseif($arraydata["poverflow"]=="false"&&$arraydata["soverflow"]=="true")
-	{$this->pdf->MultiCell($arraydata["width"], $arraydata["height"], $this->formatText($txt, $arraydata["pattern"]), $arraydata["border"], $arraydata["align"], $arraydata["fill"]);}
+	{$this->pdf->MultiCell($arraydata["width"], $arraydata["height"], $this->formatText($txt, $arraydata["pattern"]), $arraydata["border"], $arraydata["align"], $arraydata["fill"]);
+                if($this->debuggroup==1)
+                $this->pdf->MultiCell(100,10, "SampleText");
+
+        }
 	else
 	{$this->pdf->MultiCell($arraydata["width"], $arraydata["height"], $this->formatText($txt, $arraydata["pattern"]), $arraydata["border"], $arraydata["align"], $arraydata["fill"]);
+                if($this->debuggroup==1)
+                $this->pdf->MultiCell(100,10, "SampleText");
+
 	}
 	}
 	$this->print_expression_result=false;
+        if($this->debuggroup==1)
+                $this->pdf->MultiCell(100,10, "SampleText");
+
 }
 
 public function hex_code_color($value){	$r=hexdec(substr($value,1,2));
@@ -1184,5 +1499,45 @@ public function runSubReport($d){
     }
 
 }
+public function transferXMLtoArray($fileName)
+{
+if(!file_exists($fileName))
+echo "File - $fileName does not exist";
+else
+{
+$this->m=0;
+$xmlAry = $this->xmlobj2arr(simplexml_load_file($fileName));
+
+
+foreach($xmlAry[header] as $key => $value)
+$this->arraysqltable["$this->m"]["$key"]=$value;
+
+foreach($xmlAry[detail][record]["$this->m"] as $key2 => $value2)
+$this->arraysqltable["$this->m"]["$key2"]=$value2;
 }
-?>
+
+if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
+$this->variable_calculation($m);
+
+}
+//wrote by huzursuz at mailinator dot com on 02-Feb-2009 04:44
+//http://hk.php.net/manual/en/function.get-object-vars.php
+public function xmlobj2arr($Data)
+{
+if (is_object($Data))
+{
+foreach (get_object_vars($Data) as $key => $val)
+$ret[$key] = $this->xmlobj2arr($val);
+return $ret;
+}
+elseif (is_array($Data))
+{
+foreach ($Data as $key => $val)
+$ret[$key] = $this->xmlobj2arr($val);
+return $ret;
+}
+else
+return $Data;
+}
+
+}
