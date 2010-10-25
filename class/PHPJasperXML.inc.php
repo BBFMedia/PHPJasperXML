@@ -1067,29 +1067,26 @@ public function detailNewPage(){
     $checkpoint=$this->arraydetail[0]["y_axis"];
     $tempY=$this->arraydetail[0]["y_axis"];
 
-
+$this->pdf->Cell(10,10,$tempY);
 if($this->arraysqltable){
 foreach($this->arraysqltable as $row)
 {
         //check the group's groupExpression existed and same or not
    
-	if(isset($this->arraygroup)&&($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer]))	
+if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer]))
 	{
-        
-        if($this->global_pointer>0){
-            $this->showGroupFooter();
-            $this->pageFooter();
-        }
+    
+        $this->showGroupFooter($tempY);
+        $this->pageFooter();
 	$this->pdf->AddPage();
 	$this->background();
         $this->pageHeaderNewPage();
-        if(isset($this->arraygroup))
-	{$this->showGroupHeader();}
+
+	$this->showGroupHeader();
         $checkpoint=$this->arraydetail[0]["y_axis"];
 	$biggestY = 0;
 	$tempY=$this->arraydetail[0]["y_axis"];
 	}
-
 	foreach($this->arraydetail as $compare)	//this loop is to count possible biggest Y of the coming row
 	{
 		switch($compare["hidden_type"])
@@ -1213,25 +1210,20 @@ else{$this->pageFooter();}
 
 }
 
-public function showGroupHeader(){
-//print_r($this->groupheader);
-//   print_r($this->groupheader);
-  // echo "<br/>";echo "<br/>";echo "<br/>";
-  //print_r($this->arraygroup);
-
-
-//print_r($this->arraygrouphead);
+public function showGroupHeader($y){
 foreach ($this->arraygrouphead as $out){
-$this->display($out,0,true);
+$this->display($out,$y,true);
 }
 //     $this->display($this->arraygrouphead,0,true);
 //echo "<br/>";
 //echo "<br/>";
 
 }
-public function showGroupFooter(){
-    foreach ($this->arraygroupfoot as $out){
-$this->display($out,0,true);
+public function showGroupFooter($y){
+foreach ($this->arraygroupfoot as $out){
+$this->display($out,$y,true);
+
+//$this->pdf->Cell(10,10,"--".$this->pdf->getY());
 }
 }
 
