@@ -1,5 +1,5 @@
 <?php
-//version 0.7c
+//version 0.7d
 class PHPJasperXML {
     private $adjust=1.2;
     private $pdflib;
@@ -12,7 +12,8 @@ class PHPJasperXML {
     public $newPageGroup = false;
     private $curgroup=0;
     private $groupno=0;
-
+    private $footershowed=true;
+    private $titleheight=0;
     public function PHPJasperXML($lang="en",$pdflib="FPDF") {
         $this->lang=$lang;
         $this->pdflib=$pdflib;
@@ -177,7 +178,7 @@ class PHPJasperXML {
 
     public function variable_handler($xml_path) {
 
-        $this->arrayVariable["$xml_path[name]"]=array("calculation"=>$xml_path["calculation"],"target"=>substr($xml_path->variableExpression,3,-1),"class"=>$xml_path["class"]);
+        $this->arrayVariable["$xml_path[name]"]=array("calculation"=>$xml_path["calculation"],"target"=>substr($xml_path->variableExpression,3,-1),"class"=>$xml_path["class"] , "resetType"=>$xml_path["resetType"]);
 
     }
 
@@ -547,10 +548,7 @@ class PHPJasperXML {
         }
 
         $this->disconnect($cndriver);	//close connection to db
-        if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
-        {
-            $this->variable_calculation($m);
-        }
+      
     }
 
     public function time_to_sec($time) {
@@ -569,9 +567,10 @@ class PHPJasperXML {
         return sprintf("%d:%02d:%02d", $hours, $minutes, $seconds);
     }
 
-    public function variable_calculation($m=0) {
+    public function orivariable_calculation() {
 
         foreach($this->arrayVariable as $k=>$out) {
+         //   echo $out['resetType']. "<br/><br/>";
             switch($out["calculation"]) {
                 case "Sum":
                     $sum=0;
@@ -653,6 +652,116 @@ class PHPJasperXML {
         }
     }
 
+
+      public function variable_calculation($rowno) {
+//   $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
+     //   print_r($this->arraysqltable);
+       
+            
+        foreach($this->arrayVariable as $k=>$out) {
+         //   echo $out['resetType']. "<br/><br/>";
+            switch($out["calculation"]) {
+                case "Sum":
+                
+                         $value=$this->arrayVariable[$k]["ans"];
+                    if($out['resetType']==''){
+                            if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
+                            //    foreach($this->arraysqltable as $table) {
+                                    $value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
+                                    //$sum=$sum+substr($table["$out[target]"],0,2)*3600+substr($table["$out[target]"],3,2)*60+substr($table["$out[target]"],6,2);
+                               // }
+                                //$sum= floor($sum / 3600).":".floor($sum%3600 / 60);
+                                //if($sum=="0:0"){$sum="00:00";}
+                                $value=$this->sec_to_time($value);
+                            }
+                            else {
+                               // foreach($this->arraysqltable as $table) {
+                                         $value+=$this->arraysqltable[$rowno]["$out[target]"];
+                  
+                              //      $table[$out["target"]];
+                             //   }
+                            }
+                    }// finisish resettype=''
+                    else //reset type='group'
+                    {if( $this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])
+                             $value=0;
+                      //    echo $this->global_pointer.",".$this->group_pointer.",".$this->arraysqltable[$this->global_pointer][$this->group_pointer].",".$this->arraysqltable[$this->global_pointer-1][$this->group_pointer].",".$this->arraysqltable[$rowno]["$out[target]"];
+                                 if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
+                                      $value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
+                                //$sum= floor($sum / 3600).":".floor($sum%3600 / 60);
+                                //if($sum=="0:0"){$sum="00:00";}
+                                $value=$this->sec_to_time($value);
+                            }
+                            else {
+                                      $value+=$this->arraysqltable[$rowno]["$out[target]"];
+                            }
+                    }
+          
+
+                    $this->arrayVariable[$k]["ans"]=$value;
+              //      echo ",$value<br/>";
+                    break;
+                case "Average":
+
+                    $sum=0;
+
+                    if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
+                        $m=0;
+                        foreach($this->arraysqltable as $table) {
+                            $m++;
+
+                            $sum=$sum+$this->time_to_sec($table["$out[target]"]);
+
+
+                        }
+
+                        $sum=$this->sec_to_time($sum/$m);
+                        $this->arrayVariable[$k]["ans"]=$sum;
+
+                    }
+                    else {
+                        $this->arrayVariable[$k]["ans"]=$sum;
+                        $m=0;
+                        foreach($this->arraysqltable as $table) {
+                            $m++;
+                            $sum=$sum+$table["$out[target]"];
+                        }
+                        $this->arrayVariable[$k]["ans"]=$sum/$m;
+
+
+                    }
+
+
+                    break;
+                case "DistinctCount":
+                    break;
+                case "Lowest":
+
+                    foreach($this->arraysqltable as $table) {
+                        $lowest=$table[$out["target"]];
+                        if($table[$out["target"]]<$lowest) {
+                            $lowest=$table[$out["target"]];
+                        }
+                        $this->arrayVariable[$k]["ans"]=$lowest;
+                    }
+                    break;
+                case "Highest":
+                    $out["ans"]=0;
+                    foreach($this->arraysqltable as $table) {
+                        if($table[$out["target"]]>$out["ans"]) {
+                            $this->arrayVariable[$k]["ans"]=$table[$out["target"]];
+                        }
+                    }
+                    break;
+                default:
+                    $out["target"]=0;		//other cases needed, temporary leave 0 if not suitable case
+                    break;
+
+            }
+        }
+    }
+
+
     public function outpage($out_method="I",$filename="") {
         if($this->lang=="cn") {
             if($this->arrayPageSetting["orientation"]=="P") {
@@ -690,6 +799,10 @@ class PHPJasperXML {
 
         foreach ($this->arrayband as $band) {
             switch($band["name"]) {
+                case "title":
+                  if($this->arraytitle[0]["height"]>0)
+                    $this->title();
+                    break;
                 case "pageHeader":
                     if(!$this->newPageGroup) {
                         $headerY = $this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
@@ -706,13 +819,19 @@ class PHPJasperXML {
                         //$this->groupNewPage();
                     }
                     break;
+
+
                 case "group":
 
                     $this->group_pointer=$band["groupExpression"];
                     $this->group_name=$band["gname"];
 
                     break;
-                default:
+
+               
+
+
+                    default:
                     break;
 
             }
@@ -777,6 +896,56 @@ class PHPJasperXML {
         $this->showGroupHeader($this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]);
     }
 
+
+    public function title() {
+        $this->pdf->AddPage();
+        $this->background();
+            
+            $this->titleheight=$this->arraytitle[0]["height"];
+            
+            //print_r($this->arraytitle);die;
+        if(isset($this->arraytitle)) {
+            $this->arraytitle[0]["y_axis"]=$this->arrayPageSetting["topMargin"];
+        }
+
+        foreach ($this->arraytitle as $out) {
+
+            switch($out["hidden_type"]) {
+                case "field":
+                    $this->display($out,$this->arraytitle[0]["y_axis"],true);
+                    break;
+                default:
+                    $this->display($out,$this->arraytitle[0]["y_axis"],false);
+                    break;
+            }
+        }
+    
+
+    }
+
+      public function summary($y) {
+        //$this->pdf->AddPage();
+        //$this->background();
+
+            $this->titlesummary=$this->arraysummary[0]["height"];
+
+            //print_r($this->arraytitle);die;
+     
+        foreach ($this->arraysummary as $out) {
+
+            switch($out["hidden_type"]) {
+                case "field":
+                    $this->display($out,$y,true);
+                    break;
+                default:
+                    $this->display($out,$y,false);
+                    break;
+            }
+        }
+
+
+    }
+    
     public function group($headerY) {
         
 
@@ -960,44 +1129,51 @@ class PHPJasperXML {
     }
 
     public function detail() {
+        $this->arraydetail[0]["y_axis"]=$this->arraydetail[0]["y_axis"]- $this->titleheight;
         $field_pos_y=$this->arraydetail[0]["y_axis"];
+        
         $biggestY=0;
         $checkpoint=$this->arraydetail[0]["y_axis"];
         $tempY=$this->arraydetail[0]["y_axis"];
         $this->showGroupHeader($this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]);
-                 
+        $rownum=0;
         if($this->arraysqltable) {
-
+     
 
 
             foreach($this->arraysqltable as $row) {
-
-                if(isset($this->arraygroup)&&($this->global_pointer>0)&&
+if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
+                {
+                    $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
+                }
+             if(isset($this->arraygroup)&&($this->global_pointer>0)&&
                         ($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer]))	//check the group's groupExpression existed and same or not
                 {
+                    if($this->footershowed==false)
+                    $ghfoot= $this->showGroupFooter($compare["height"]+$this->pdf->getY());
+                    $this->footershowed=true;
+                    $this->pdf->SetY($newY+$checkpoint+$ghfoot);
                     $headerY = $biggestY;//+40;
                     $checkpoint=$headerY;//+40;
                     $biggestY = $headerY;//+40;
                     $tempY=$this->arraydetail[0]["y_axis"];
-                  //  $this->pdf->Cell(10,10,"??".$this->arrayPageSetting["pageHeight"].",". $this->pdf->getY() .",". $this->arraygroupfootheight.",".$this->arrayPageSetting["bottomMargin"].",".$this->arraypageFooter[0]["height"]."??");
-                    if($this->arrayPageSetting["pageHeight"]< $this->pdf->getY() + $this->arraygroupfootheight+$this->arrayPageSetting["bottomMargin"]+$this->arraypageFooter[0]["height"]){
-                           $this->pageFooter();
-                          $this->pageHeader();
-                          $checkpoint=$headerY;
-                          $biggestY=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
-                          $tempY=$headerY;
-                    }
-                
-                     if($this->arrayPageSetting["pageHeight"]< $this->pdf->getY()+ $this->arraygroupheaderheight+$this->arrayPageSetting["bottomMargin"]+$compare["height"]){
+                     $this->group_count=0;
+
+                    if($this->arrayPageSetting["pageHeight"]< (($this->pdf->getY()) + ($this->arraygroupfootheight)+($this->arrayPageSetting["bottomMargin"])+($this->arraypageFooter[0]["height"])+($ghfoot)+($ghhead))){
+                      //echo "aaa";
                        
+                          $this->pageFooter();
                           $this->pageHeader();
+                      
                           $checkpoint=$headerY;
                           $biggestY=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
                           $tempY=$headerY;
+                          $this->group_count=0;
                     }
-                    $this->showGroupHeader($this->pdf->getY());
-                    
-                    $checkpoint=$this->pdf->getY();
+
+                    $ghheight=$this->showGroupHeader($this->pdf->getY()+$ghfoot);
+                    $checkpoint=$this->pdf->getY()+$ghfoot+$ghhead; //after group header add height band, so detail no crash with group header.
+
                 }
 
                 foreach($this->arraydetail as $compare)	//this loop is to count possible biggest Y of the coming row
@@ -1005,15 +1181,19 @@ class PHPJasperXML {
                     switch($compare["hidden_type"]) {
                         case "field":
                             $txt=$this->analyse_expression($row[$compare["txt"]]);
+
                             if(isset($this->arraygroup[$this->group_name]["groupFooter"])&&(($checkpoint+($compare["height"]*$txt))>($this->arrayPageSetting["pageHeight"]-$this->arraygroupfootheight-$this->arrayPageSetting["bottomMargin"])))//check group footer existed or not
                             {
-                                $this->pageFooter();
+                                 $this->pageFooter();
                                 $checkpoint=$this->arraydetail[0]["y_axis"];
                                 $biggestY=0;
                                 $tempY=$this->arraydetail[0]["y_axis"];
                             }
+                            
                             elseif(isset($this->arraypageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"])))//check pagefooter existed or not
                             { //  $this->showGroupFooter($compare["height"]+$biggestY);
+                                //echo "arraypagefooter";
+                                 
                                 $this->pageFooter();
                                 $headerY = $this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
                                 $this->pageHeader();
@@ -1053,10 +1233,10 @@ class PHPJasperXML {
                 }
 
 
-
-                if($checkpoint+$this->arraydetail[0]["height"]>($this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"]))	//check the upcoming band is greater than footer position or not
+                
+                if($checkpoint+$this->arraydetail[0]["height"]>($this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"] - $ghheight -$ghfoot))	//check the upcoming band is greater than footer position or not
                 {
-                    //$this->pageFooter();
+                    $this->pageFooter(); // open for every page got page footer.
                     //$this->pdf->AddPage();
                     $this->background();
                     $headerY = $this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
@@ -1099,34 +1279,46 @@ class PHPJasperXML {
                 else {
                     $checkpoint=$biggestY;
                 }
-        if(isset($this->arraygroup)&&($this->global_pointer>0)&&
+                //Remove $this->global_pointer>0 , becouse when only one row data will cause group footer no show.
+        if(isset($this->arraygroup)&&
                         ($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer+1][$this->group_pointer])){
-                               $this->showGroupFooter($compare["height"]+$biggestY);
-                                $checkpoint=$this->pdf->getY();
+                         $a= $this->showGroupFooter($compare["height"]+$biggestY);
+                                $checkpoint=$this->pdf->getY()+$a;
+                                //$ghfoot
                                 $biggestY=0;
 //                                  $tempY=$checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt)));
                                 //$tempY=$this->arraydetail[0]["y_axis"];
                         }
                 //if(isset($this->arraygroup)){$this->global_pointer++;}
-                $this->global_pointer++;
-            }
+                
 
+          
+                $this->global_pointer++;
+                   $rownum++;
+          
+
+            } 
+//  $ghfoot= $this->showGroupFooter($compare["height"]+$this->pdf->getY());
         }else {
             echo "No data found";
             exit(0);
         }
         $this->global_pointer--;
+           if($this->arraysummary[0]["height"]>0)
+                    $this->summary($checkpoint);
         if(isset($this->arraylastPageFooter)) {
          //  $this->showGroupFooter($compare["height"]+$biggestY);
             $this->lastPageFooter();
         }
         else {
          //    $this->showGroupFooter($compare["height"]+$biggestY);
+             
             $this->pageFooter();
         }
     }
 
     public function detailNewPage() {
+        $this->arraydetail[0]["y_axis"]=$this->arraydetail[0]["y_axis"]- $this->titleheight;
 
         $field_pos_y=$this->arraydetail[0]["y_axis"];
         $biggestY=0;
@@ -1144,7 +1336,10 @@ class PHPJasperXML {
                 //check the group's groupExpression existed and same or not
 
                 if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])) {
-              
+                if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
+                {
+                    $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
+                }
                     $this->pageFooter();
                     $this->pageHeaderNewPage();
                     $checkpoint=$this->arraydetail[0]["y_axis"];
@@ -1282,6 +1477,9 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
             exit(0);
         }
         $this->global_pointer--;
+                    $rownum++;
+                       if($this->arraysummary[0]["height"]>0)
+                    $this->summary();
         if(isset($this->arraylastPageFooter)) {
         //     $this->showGroupFooter();
             $this->lastPageFooter();
@@ -1296,22 +1494,30 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
     public function showGroupHeader($y) {
 
-
+        $bandheight=$this->arraygrouphead[0]['height'];
         foreach ($this->arraygrouphead as $out) {
             $this->display($out,$y,true);
         }
-
+        return $bandheight;
     }
     public function showGroupFooter($y) {
+
+        //$this->pdf->MultiCell(100,10,"???1-$y,XY=". $this->pdf->GetX().",". $this->pdf->GetY());
+        $bandheight=$this->arraygroupfoot[0]['height'];
         foreach ($this->arraygroupfoot as $out) {
             $this->display($out,$y,true);
 
         }
+        $this->footershowed=true;
+        return $bandheight;
+        //$this->pdf->MultiCell(100,10,"???1-$y,XY=". $this->pdf->GetX().",". $this->pdf->GetY());
+
     }
 
 
     public function display($arraydata,$y_axis=0,$fielddata=false) {
   //print_r($arraydata);echo "<br/>";
+    //    $this->pdf->Cell(10,10,"SSSS");
     $this->Rotate($arraydata["rotation"]);
     if($arraydata["rotation"]!=""){
        
@@ -1625,7 +1831,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
         if(!file_exists($fileName))
             echo "File - $fileName does not exist";
         else {
-            $this->m=0;
+
             $xmlAry = $this->xmlobj2arr(simplexml_load_file($fileName));
 
 
@@ -1636,8 +1842,8 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
                 $this->arraysqltable["$this->m"]["$key2"]=$value2;
         }
 
-        if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
-            $this->variable_calculation($m);
+      //  if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
+       //     $this->variable_calculation();
 
     }
 //wrote by huzursuz at mailinator dot com on 02-Feb-2009 04:44
