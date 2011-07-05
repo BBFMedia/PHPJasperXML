@@ -1,7 +1,8 @@
 <?php
-//version 0.7d
+//version 0.8
 class PHPJasperXML {
     private $adjust=1.2;
+    public $version=0.8;
     private $pdflib;
     private $lang;
     private $previousarraydata;
@@ -16,11 +17,16 @@ class PHPJasperXML {
     private $titleheight=0;
     public function PHPJasperXML($lang="en",$pdflib="FPDF") {
         $this->lang=$lang;
+
         $this->pdflib=$pdflib;
     }
 
     public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
-
+    $this->db_host=$db_host;
+            $this->db_user=$db_user;
+       $this->db_pass=$db_pass;
+    $this->db_or_dsn_name=$db_or_dsn_name;
+    $this->cndriver=$cndriver;
         if($cndriver=="mysql") {
 
             if(!$this->con) {
@@ -114,8 +120,9 @@ class PHPJasperXML {
                     break;
                 case "group":
                     $this->group_handler($out);
-
-
+                    break;
+                case "subDataset":
+                       $this->subDataset_handler($out);
                     break;
                 case "background":
                     $this->pointer=&$this->arraybackground;
@@ -141,6 +148,11 @@ class PHPJasperXML {
 
         }
     }
+
+    public function subDataset_handler($data){
+    $this->subdataset[$data['name'].'']= $data->queryString;
+
+    }
 //read level 0,Jasperreport page setting
     public function page_setting($xml_path) {
         $this->arrayPageSetting["orientation"]="P";
@@ -161,6 +173,7 @@ class PHPJasperXML {
 
     public function parameter_handler($xml_path) {
         $this->arrayParameter[$xml_path["name"]];
+
     }
 
     public function queryString_handler($xml_path) {
@@ -191,7 +204,7 @@ class PHPJasperXML {
             $this->newPageGroup=true;
         else
             $this->newPageGroup="";
-        
+
         foreach($xml_path as $tag=>$out) {
             switch ($tag) {
                 case "groupHeader":
@@ -202,13 +215,13 @@ class PHPJasperXML {
                     $this->arraygroupheadheight=$out->band["height"];
                     $this->arrayband[]=array("name"=>"group", "gname"=>$xml_path["name"],"isStartNewPage"=>$xml_path["isStartNewPage"],"groupExpression"=>substr($xml_path->groupExpression,3,-1));
                     $this->pointer[]=array("type"=>"band","height"=>$out->band["height"]+0,"y_axis"=>"","groupExpression"=>substr($xml_path->groupExpression,3,-1));
-                    
-                    
+
+
                     foreach($out as $band) {
                         $this->default_handler($band);
 
                     }
-                    
+
                     $this->y_axis=$this->y_axis+$out->band["height"];		//after handle , then adjust y axis
                     break;
                 case "groupFooter":
@@ -231,7 +244,7 @@ class PHPJasperXML {
         }
     }
 
-    public function default_handler($xml_path) {
+  public function default_handler($xml_path) {
         foreach($xml_path as $k=>$out) {
 
             switch($k) {
@@ -249,6 +262,42 @@ class PHPJasperXML {
                     break;
                 case "textField":
                     $this->element_textField($out);
+                    break;
+//                case "stackedBarChart":
+//                    $this->element_barChart($out,'StackedBarChart');
+//                    break;
+//                case "barChart":
+//                    $this->element_barChart($out,'BarChart');
+//                    break;
+//                case "pieChart":
+//                    $this->element_pieChart($out);
+//                    break;
+//                case "pie3DChart":
+//                    $this->element_pie3DChart($out);
+//                    break;
+//                case "lineChart":
+//                    $this->element_lineChart($out);
+//                    break;
+//                case "stackedAreaChart":
+//                    $this->element_areaChart($out,'stackedAreaChart');
+//                    break;
+                    case "stackedBarChart":
+                    $this->element_Chart($out,'stackedBarChart');
+                    break;
+                case "barChart":
+                    $this->element_Chart($out,'barChart');
+                    break;
+                case "pieChart":
+                    $this->element_Chart($out,'pieChart');
+                    break;
+                case "pie3DChart":
+                    $this->element_pie3DChart($out,'pie3DChart');
+                    break;
+                case "lineChart":
+                    $this->element_Chart($out,'lineChart');
+                    break;
+                case "stackedAreaChart":
+                    $this->element_Chart($out,'stackedAreaChart');
                     break;
                 case "subreport":
                     $this->element_subReport($out);
@@ -367,7 +416,7 @@ class PHPJasperXML {
     }
 
     public function element_rectangle($data) {
-          
+
         $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
         if(isset($data->reportElement["forecolor"])) {
             $drawcolor=array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
@@ -443,7 +492,8 @@ class PHPJasperXML {
         $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
 
         $this->pointer[]=array("type"=>"SetFont","font"=>$font,"fontstyle"=>$fontstyle,"fontsize"=>$fontsize,"hidden_type"=>"font");
-        //$data->hyperlinkReferenceExpression=$this->analyse_expression($data->hyperlinkReferenceExpression);
+         //$data->hyperlinkReferenceExpression=$this->analyse_expression($data->hyperlinkReferenceExpression);
+        //if( $data->hyperlinkReferenceExpression!=''){echo "$data->hyperlinkReferenceExpression";die;}
         switch ($data->textFieldExpression) {
             case 'new java.util.Date()':
 
@@ -547,8 +597,8 @@ class PHPJasperXML {
             }
         }
 
-        $this->disconnect($cndriver);	//close connection to db
-      
+       	//close connection to db
+
     }
 
     public function time_to_sec($time) {
@@ -595,14 +645,14 @@ class PHPJasperXML {
                 case "Average":
 
                     $sum=0;
-                    
+
                     if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
                         $m=0;
                         foreach($this->arraysqltable as $table) {
                             $m++;
-                            
+
                             $sum=$sum+$this->time_to_sec($table["$out[target]"]);
-                            
+
 
                         }
 
@@ -656,17 +706,19 @@ class PHPJasperXML {
       public function variable_calculation($rowno) {
 //   $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
      //   print_r($this->arraysqltable);
-       
-            
+
+
         foreach($this->arrayVariable as $k=>$out) {
          //   echo $out['resetType']. "<br/><br/>";
             switch($out["calculation"]) {
                 case "Sum":
-                
+
                          $value=$this->arrayVariable[$k]["ans"];
                     if($out['resetType']==''){
                             if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
                             //    foreach($this->arraysqltable as $table) {
+                                    $value=$this->time_to_sec($value);
+
                                     $value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
                                     //$sum=$sum+substr($table["$out[target]"],0,2)*3600+substr($table["$out[target]"],3,2)*60+substr($table["$out[target]"],6,2);
                                // }
@@ -677,7 +729,7 @@ class PHPJasperXML {
                             else {
                                // foreach($this->arraysqltable as $table) {
                                          $value+=$this->arraysqltable[$rowno]["$out[target]"];
-                  
+
                               //      $table[$out["target"]];
                              //   }
                             }
@@ -696,7 +748,7 @@ class PHPJasperXML {
                                       $value+=$this->arraysqltable[$rowno]["$out[target]"];
                             }
                     }
-          
+
 
                     $this->arrayVariable[$k]["ans"]=$value;
               //      echo ",$value<br/>";
@@ -707,16 +759,23 @@ class PHPJasperXML {
 
                     if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
                         $m=0;
+                        //$value=$this->arrayVariable[$k]["ans"];
+                        //$value=$this->time_to_sec($value);
+                        //$value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
+
                         foreach($this->arraysqltable as $table) {
                             $m++;
 
-                            $sum=$sum+$this->time_to_sec($table["$out[target]"]);
-
+                             $sum=$sum+$this->time_to_sec($table["$out[target]"]);
+                           // echo ",".$table["$out[target]"]."<br/>";
 
                         }
 
+
                         $sum=$this->sec_to_time($sum/$m);
-                        $this->arrayVariable[$k]["ans"]=$sum;
+                     // echo "Total:".$sum."<br/>";
+                         $this->arrayVariable[$k]["ans"]=$sum;
+
 
                     }
                     else {
@@ -780,6 +839,8 @@ class PHPJasperXML {
                     $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageWidth"],$this->arrayPageSetting["pageHeight"]));
                 else
                     $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageHeight"],$this->arrayPageSetting["pageWidth"]));
+                $this->pdf->setPrintHeader(false);
+                $this->pdf->setPrintFooter(false);
             }else {
                 if($this->arrayPageSetting["orientation"]=="P")
                     $this->pdf=new FPDF($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageWidth"],$this->arrayPageSetting["pageHeight"]));
@@ -828,7 +889,7 @@ class PHPJasperXML {
 
                     break;
 
-               
+
 
 
                     default:
@@ -840,10 +901,1255 @@ class PHPJasperXML {
 
         if($filename=="")
             $filename=$this->arrayPageSetting["name"].".pdf";
+
+         $this->disconnect($this->cndriver);
         return $this->pdf->Output($filename,$out_method);	//send out the complete page
 
     }
+public function element_pieChart($data){
 
+          $height=$data->chart->reportElement["height"];
+          $width=$data->chart->reportElement["width"];
+         $x=$data->chart->reportElement["x"];
+         $y=$data->chart->reportElement["y"];
+          $charttitle['position']=$data->chart->chartTitle['position'];
+
+           $charttitle['text']=$data->chart->chartTitle->titleExpression;
+          $chartsubtitle['text']=$data->chart->chartSubTitle->subtitleExpression;
+          $chartLegendPos=$data->chart->chartLegend['position'];
+
+          $dataset=$data->pieDataset->dataset->datasetRun['subDataset'];
+
+          $seriesexp=$data->pieDataset->keyExpression;
+          $valueexp=$data->pieDataset->valueExpression;
+          $bb=$data->pieDataset->dataset->datasetRun['subDataset'];
+          $sql=$this->arraysubdataset["$bb"]['sql'];
+
+         // $ylabel=$data->linePlot->valueAxisLabelExpression;
+
+
+          $param=array();
+          foreach($data->categoryDataset->dataset->datasetRun->datasetParameter as $tag=>$value){
+              $param[]=  array("$value[name]"=>$value->datasetParameterExpression);
+          }
+//          print_r($param);
+
+         $this->pointer[]=array('type'=>'PieChart','x'=>$x,'y'=>$y,'height'=>$height,'width'=>$width,'charttitle'=>$charttitle,
+            'chartsubtitle'=> $chartsubtitle,
+               'chartLegendPos'=> $chartLegendPos,'dataset'=>$dataset,'seriesexp'=>$seriesexp,
+            'valueexp'=>$valueexp,'param'=>$param,'sql'=>$sql,'ylabel'=>$ylabel);
+
+    }
+    public function element_pie3DChart($data){
+
+
+    }
+
+    public function element_Chart($data,$type){
+   $seriesexp=array();
+          $catexp=array();
+          $valueexp=array();
+          $labelexp=array();
+          $height=$data->chart->reportElement["height"];
+          $width=$data->chart->reportElement["width"];
+         $x=$data->chart->reportElement["x"];
+         $y=$data->chart->reportElement["y"];
+          $charttitle['position']=$data->chart->chartTitle['position'];
+                    $titlefontname=$data->chart->chartTitle->font['pdfFontName'];
+          $titlefontsize=$data->chart->chartTitle->font['size'];
+           $charttitle['text']=$data->chart->chartTitle->titleExpression;
+          $chartsubtitle['text']=$data->chart->chartSubTitle->subtitleExpression;
+          $chartLegendPos=$data->chart->chartLegend['position'];
+          $dataset=$data->categoryDataset->dataset->datasetRun['subDataset'];
+          $subcatdataset=$data->categoryDataset;
+          //echo $subcatdataset;
+          $i=0;
+          foreach($subcatdataset as $cat => $catseries){
+            foreach($catseries as $a => $series){
+               if("$series->categoryExpression"!=''){
+                array_push( $seriesexp,"$series->seriesExpression");
+                array_push( $catexp,"$series->categoryExpression");
+                array_push( $valueexp,"$series->valueExpression");
+                array_push( $labelexp,"$series->labelExpression");
+               }
+
+            }
+
+          }
+
+
+          $bb=$data->categoryDataset->dataset->datasetRun['subDataset'];
+          $sql=$this->arraysubdataset[$bb]['sql'];
+          switch($type){
+            case "barChart":
+                $ylabel=$data->barPlot->valueAxisLabelExpression;
+                $xlabel=$data->barPlot->categoryAxisLabelExpression;
+                $maxy=$data->barPlot->rangeAxisMaxValueExpression;
+                $miny=$data->barPlot->rangeAxisMinValueExpression;
+                break;
+            case "lineChart":
+                $ylabel=$data->linePlot->valueAxisLabelExpression;
+                $xlabel=$data->linePlot->categoryAxisLabelExpression;
+                $maxy=$data->linePlot->rangeAxisMaxValueExpression;
+                $miny=$data->linePlot->rangeAxisMinValueExpression;
+                $showshape=$data->linePlot["isShowShapes"];
+                break;
+             case "stackedAreaChart":
+                      $ylabel=$data->areaPlot->valueAxisLabelExpression;
+                        $xlabel=$data->areaPlot->categoryAxisLabelExpression;
+                        $maxy=$data->areaPlot->rangeAxisMaxValueExpression;
+                        $miny=$data->areaPlot->rangeAxisMinValueExpression;
+                        
+                
+                 break;
+          }
+          
+
+
+          $param=array();
+          foreach($data->categoryDataset->dataset->datasetRun->datasetParameter as $tag=>$value){
+              $param[]=  array("$value[name]"=>$value->datasetParameterExpression);
+          }
+          if($maxy!='' && $miny!=''){
+              $scalesetting=array(0=>array("Min"=>$miny,"Max"=>$maxy));
+          }
+          else
+              $scalesetting="";
+
+         $this->pointer[]=array('type'=>$type,'x'=>$x,'y'=>$y,'height'=>$height,'width'=>$width,'charttitle'=>$charttitle,
+            'chartsubtitle'=> $chartsubtitle,
+               'chartLegendPos'=> $chartLegendPos,'dataset'=>$dataset,'seriesexp'=>$seriesexp,
+             'catexp'=>$catexp,'valueexp'=>$valueexp,'labelexp'=>$labelexp,'param'=>$param,'sql'=>$sql,'xlabel'=>$xlabel,'showshape'=>$showshape,
+             'titlefontsize'=>$titlefontname,'titlefontsize'=>$titlefontsize,'scalesetting'=>$scalesetting);
+
+
+    }
+//    public function element_lineChart($data){
+//
+//           $seriesexp=array();
+//          $catexp=array();
+//          $valueexp=array();
+//          $labelexp=array();
+//          $height=$data->chart->reportElement["height"];
+//          $width=$data->chart->reportElement["width"];
+//         $x=$data->chart->reportElement["x"];
+//         $y=$data->chart->reportElement["y"];
+//          $charttitle['position']=$data->chart->chartTitle['position'];
+//                    $titlefontname=$data->chart->chartTitle->font['pdfFontName'];
+//          $titlefontsize=$data->chart->chartTitle->font['size'];
+//           $charttitle['text']=$data->chart->chartTitle->titleExpression;
+//          $chartsubtitle['text']=$data->chart->chartSubTitle->subtitleExpression;
+//          $chartLegendPos=$data->chart->chartLegend['position'];
+//          $dataset=$data->categoryDataset->dataset->datasetRun['subDataset'];
+//          $subcatdataset=$data->categoryDataset;
+//          //echo $subcatdataset;
+//          $i=0;
+//          foreach($subcatdataset as $cat => $catseries){
+//            foreach($catseries as $a => $series){
+//               if("$series->categoryExpression"!=''){
+//                array_push( $seriesexp,"$series->seriesExpression");
+//                array_push( $catexp,"$series->categoryExpression");
+//                array_push( $valueexp,"$series->valueExpression");
+//                array_push( $labelexp,"$series->labelExpression");
+//               }
+//
+//            }
+//
+//          }
+//
+//
+//          $bb=$data->categoryDataset->dataset->datasetRun['subDataset'];
+//          $sql=$this->arraysubdataset[$bb]['sql'];
+//          $ylabel=$data->linePlot->valueAxisLabelExpression;
+//          $xlabel=$data->linePlot->categoryAxisLabelExpression;
+//        $showshape=$data->linePlot["isShowShapes"];
+//
+//
+//          $param=array();
+//          foreach($data->categoryDataset->dataset->datasetRun->datasetParameter as $tag=>$value){
+//              $param[]=  array("$value[name]"=>$value->datasetParameterExpression);
+//          }
+//          $maxy=$data->barPlot->rangeAxisMaxValueExpression;
+//          $miny=$data->barPlot->rangeAxisMinValueExpression;
+//          if($maxy!='' && $miny!=''){
+//              $scalesetting=array(0=>array("Min"=>$miny,"Max"=>$maxy));
+//          }
+//          else
+//              $scalesetting="";
+//
+//         $this->pointer[]=array('type'=>'LineChart','x'=>$x,'y'=>$y,'height'=>$height,'width'=>$width,'charttitle'=>$charttitle,
+//            'chartsubtitle'=> $chartsubtitle,
+//               'chartLegendPos'=> $chartLegendPos,'dataset'=>$dataset,'seriesexp'=>$seriesexp,
+//             'catexp'=>$catexp,'valueexp'=>$valueexp,'labelexp'=>$labelexp,'param'=>$param,'sql'=>$sql,'xlabel'=>$xlabel,'showshape'=>$showshape,
+//             'titlefontsize'=>$titlefontname,'titlefontsize'=>$titlefontsize,'scalesetting'=>$scalesetting);
+//
+//    }
+
+//
+//
+//    public function element_barChart($data,$type='BarChart'){
+//
+//           $seriesexp=array();
+//          $catexp=array();
+//          $valueexp=array();
+//          $labelexp=array();
+//          $height=$data->chart->reportElement["height"];
+//          $width=$data->chart->reportElement["width"];
+//          $x=$data->chart->reportElement["x"];
+//          $y=$data->chart->reportElement["y"];
+//          $charttitle['position']=$data->chart->chartTitle['position'];
+//          $titlefontname=$data->chart->chartTitle->font['pdfFontName'];
+//          $titlefontsize=$data->chart->chartTitle->font['size'];
+//          $charttitle['text']=$data->chart->chartTitle->titleExpression;
+//          $chartsubtitle['text']=$data->chart->chartSubTitle->subtitleExpression;
+//
+//
+//          $chartLegendPos=$data->chart->chartLegend['position'];
+//          $dataset=$data->categoryDataset->dataset->datasetRun['subDataset'];
+//          $subcatdataset=$data->categoryDataset;
+//
+//          //echo $subcatdataset;
+//          foreach($subcatdataset as $cat => $catseries){
+//            foreach($catseries as $a => $series){
+//               if("$series->categoryExpression"!=''){
+//                array_push( $seriesexp,"$series->seriesExpression");
+//                array_push( $catexp,"$series->categoryExpression");
+//                array_push( $valueexp,"$series->valueExpression");
+//                array_push( $labelexp,"$series->labelExpression");
+//               }
+//            }
+//
+//          }
+//
+//          $bb=$data->categoryDataset->dataset->datasetRun['subDataset'];
+//          $sql=$this->arraysubdataset[$bb]['sql'];
+//         $ylabel=$data->barPlot->valueAxisLabelExpression;
+//          $xlabel=$data->barPlot->categoryAxisLabelExpression;
+//          $maxy=$data->barPlot->rangeAxisMaxValueExpression;
+//          $miny=$data->barPlot->rangeAxisMinValueExpression;
+//          if($maxy!='' && $miny!=''){
+//              $scalesetting=array(0=>array("Min"=>$miny,"Max"=>$maxy));
+//          }
+//          else
+//              $scalesetting="";
+//
+//          $param=array();
+//          foreach($data->categoryDataset->dataset->datasetRun->datasetParameter as $tag=>$value){
+//              $param[]=  array("$value[name]"=>$value->datasetParameterExpression);
+//          }
+////          print_r($param);
+//
+//         $this->pointer[]=array('type'=>$type,'x'=>$x,'y'=>$y,'height'=>$height,'width'=>$width,'charttitle'=>$charttitle,
+//            'chartsubtitle'=> $chartsubtitle,
+//               'chartLegendPos'=> $chartLegendPos,'dataset'=>$dataset,'seriesexp'=>$seriesexp,
+//             'catexp'=>$catexp,'valueexp'=>$valueexp,'labelexp'=>$labelexp,'param'=>$param,'sql'=>$sql,'ylabel'=>$ylabel,'xlabel'=>$xlabel,
+//             'titlefontsize'=>$titlefontname,'titlefontsize'=>$titlefontsize,'scalesetting'=>$scalesetting);
+//
+//    }
+
+
+public function setChartColor(){
+
+    $k=0;
+$this->chart->setColorPalette($k,0,255,88);$k++;
+$this->chart->setColorPalette($k,121,88,255);$k++;
+$this->chart->setColorPalette($k,255,91,99);$k++;
+$this->chart->setColorPalette($k,255,0,0);$k++;
+$this->chart->setColorPalette($k,0,0,100);$k++;
+$this->chart->setColorPalette($k,200,0,100);$k++;
+$this->chart->setColorPalette($k,0,100,0);$k++;
+$this->chart->setColorPalette($k,100,0,0);$k++;
+$this->chart->setColorPalette($k,200,0,0);$k++;
+$this->chart->setColorPalette($k,0,0,200);$k++;
+$this->chart->setColorPalette($k,50,0,0);$k++;
+$this->chart->setColorPalette($k,100,0,50);$k++;
+$this->chart->setColorPalette($k,0,50,0);$k++;
+$this->chart->setColorPalette($k,100,50,0);$k++;
+$this->chart->setColorPalette($k,50,100,50);$k++;
+$this->chart->setColorPalette($k,0,255,0);$k++;
+$this->chart->setColorPalette($k,100,50,0);$k++;
+$this->chart->setColorPalette($k,200,100,50);$k++;
+$this->chart->setColorPalette($k,100,50,200);$k++;
+$this->chart->setColorPalette($k,0,200,0);$k++;
+$this->chart->setColorPalette($k,200,100,0);$k++;
+$this->chart->setColorPalette($k,200,50,50);$k++;
+$this->chart->setColorPalette($k,50,50,50);$k++;
+$this->chart->setColorPalette($k,200,100,100);$k++;
+$this->chart->setColorPalette($k,50,50,100);$k++;
+$this->chart->setColorPalette($k,100,0,200);$k++;
+$this->chart->setColorPalette($k,200,50,100);$k++;
+$this->chart->setColorPalette($k,100,100,200);$k++;
+$this->chart->setColorPalette($k,0,0,50);$k++;
+$this->chart->setColorPalette($k,50,250,200);$k++;
+$this->chart->setColorPalette($k,100,250,200);$k++;
+$this->chart->setColorPalette($k,10,10,10);$k++;
+$this->chart->setColorPalette($k,20,30,50);$k++;
+$this->chart->setColorPalette($k,80,150,200);$k++;
+$this->chart->setColorPalette($k,30,70,20);$k++;
+$this->chart->setColorPalette($k,33,60,0);$k++;
+$this->chart->setColorPalette($k,150,0,200);$k++;
+$this->chart->setColorPalette($k,20,60,50);$k++;
+$this->chart->setColorPalette($k,50,250,250);$k++;
+$this->chart->setColorPalette($k,33,250,70);$k++;
+
+}
+
+
+public function showLineChart($data,$y_axis){
+    global $tmpchartfolder,$pchartfolder;
+
+
+    if($pchartfolder=="")
+        $pchartfolder="./pchart2";
+//echo "$pchartfolder/class/pData.class.php";die;
+
+        include_once("$pchartfolder/class/pData.class.php");
+        include_once("$pchartfolder/class/pDraw.class.php");
+        include_once("$pchartfolder/class/pImage.class.php");
+
+    if($tmpchartfolder=="")
+         $tmpchartfolder=$pchartfolder."/cache";
+
+     $w=$data['width']+0;
+     $h=$data['height']+0;
+
+
+
+     $legendpos=$data['chartLegendPos'];
+     //$legendpos="Right";
+     $seriesexp=$data['seriesexp'];
+     $catexp=$data['catexp'];
+     $valueexp=$data['valueexp'];
+     $labelexp=$data['labelexp'];
+     $ylabel=$data['ylabel'].'';
+     $xlabel=$data['xlabel'].'';
+     $ylabel = str_replace(array('"',"'"),'',$ylabel);
+     $xlabel = str_replace(array('"',"'"),'',$xlabel);
+     $scalesetting=$data['scalesetting'];
+
+
+     $x=$data['x'];
+     $y1=$data['y'];
+     $legendx=0;
+     $legendy=0;
+
+    $titlefontname=$data['titlefontname'].'';
+    $titlefontsize=$data['titlefontsize']+0;
+
+
+    $DataSet = new pData();
+
+    foreach($catexp as $a=>$b)
+       $catexp1[]=  str_replace(array('"',"'"), '',$b);
+
+    $n=0;
+
+    $DataSet->addPoints($catexp1,'S00');
+    $DataSet->setSerieDescription('S00','asdasd');
+
+    //$DataSet->AddSerie('S0');
+    //$DataSet->SetSerieName('S0',"Cat");
+    $DataSet->setAbscissa('S00');
+    $n=$n+1;
+
+    $ds=trim($data['dataset']);
+
+
+    if($ds!=""){
+              $sql=$this->subdataset[$ds];
+        $param=$data['param'];
+        foreach($param as $p)
+            foreach($p as $tag =>$value)
+                $sql=str_replace('$P{'.$tag.'}',$value, $sql);
+            $sql=$this->changeSubDataSetSql($sql);
+
+        }
+    else
+        $sql=$this->sql;
+
+    $result = @mysql_query($sql); //query from db
+    $chartdata=array();
+    $i=0;
+//echo $sql."<br/><br/>";
+    $seriesname=array();
+    while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+
+                $j=0;
+                foreach($row as $key => $value){
+                    //$chartdata[$j][$i]=$value;
+                    if($value=='')
+                        $value=0;
+                    if($key==str_replace(array('$F{','}'),'',$seriesexp[0]))
+                    array_push($seriesname,$value);
+                    else
+                    foreach($valueexp as $v => $y){
+                     if($key==str_replace(array('$F{','}'),'',$y)){
+                         $chartdata[$i][$j]=(int)$value;
+
+                           $j++;
+                     }
+                    }
+
+
+
+
+
+                }
+            $i++;
+
+            }
+            if($i==0)
+                return 0;
+            foreach($seriesname as $s=>$v){
+
+                    $DataSet->addPoints($chartdata[$s],"$v");
+              //  $DataSet->AddSerie("$v");
+            }
+            $DataSet->setAxisName(0,$ylabel);
+
+
+
+
+    $this->chart = new pImage($w,$h,$DataSet);
+    //$c = new pChart($w,$h);
+    //$this->setChartColor();
+    $this->chart->drawRectangle(1,1,$w-2,$h-2);
+    $legendfontsize=8;
+    $this->chart->setFontProperties(array('FontName'=>"$pchartfolder/fonts/calibri.ttf",'FontSize'=>$legendfontsize));
+
+
+$Title=$data['charttitle']['text'];
+
+
+      switch($legendpos){
+             case "Top":
+                 $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $diffx=$w-$lgsize['Width'];
+                 if($diffx>0)
+                 $legendx=$diffx/2;
+                 else
+                 $legendx=0;
+
+                 //$legendy=$h-$lgsize['Height']+$legendfontsize;
+
+                 if($legendy<0)$legendy=0;
+
+                 if($Title==''){
+
+                     $graphareay1=5;
+                     $legendy=$graphareay1+5;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$h-$legendfontsize-15;
+                }
+                else{
+                    $graphareay1=30;
+                    $legendy=$graphareay1+5;
+                    $graphareax1=40;
+
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$h-$legendfontsize-15;
+
+                }
+                 break;
+             case "Left":
+                 $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_VERTICAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $legendx=$lgsize['Width'];
+                 if($Title==''){
+                    $legendy=10;
+                     $graphareay1=5;
+                    $graphareax1=$legendx+5;
+                     $graphareax2=$w-5;
+                     $graphareay2=$h-20;
+                }
+                else{
+                     $legendy=30;
+                     $graphareay1=40;
+                    $graphareax1=$legendx+5;
+                     $graphareax2=$w-5 ;
+                     $graphareay2=$h-20;
+                }
+                 break;
+             case "Right":
+             $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_VERTICAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $legendx=$w-$lgsize['Width'];
+                 if($Title==''){
+                    $legendy=10;
+                     $graphareay1=5;
+                    $graphareax1=40;
+                     $graphareax2=$legendx-5 ;
+                     $graphareay2=$h-20;
+                }
+                else{
+                     $legendy=30;
+                     $graphareay1=30;
+                    $graphareax1=40;
+                     $graphareax2=$legendx-5 ;
+                     $graphareay2=$h-20;
+                }
+                 break;
+             case "Bottom":
+                 $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $diffx=$w-$lgsize['Width'];
+                 if($diffx>0)
+                 $legendx=$diffx/2;
+                 else
+                 $legendx=0;
+
+                 $legendy=$h-$lgsize['Height']+$legendfontsize;
+
+                 if($legendy<0)$legendy=0;
+
+                 if($Title==''){
+
+                     $graphareay1=5;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                else{
+                    $graphareay1=30;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                 break;
+             default:
+               $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $diffx=$w-$lgsize['Width'];
+                 if($diffx>0)
+                 $legendx=$diffx/2;
+                 else
+                 $legendx=0;
+
+                 $legendy=$h-$lgsize['Height']+$legendfontsize;
+
+                 if($legendy<0)$legendy=0;
+
+                 if($Title==''){
+
+                     $graphareay1=5;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                else{
+                    $graphareay1=30;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                 break;
+
+         }
+
+
+         //echo "$graphareax1,$graphareay1,$graphareax2,$graphareay2";die;
+    //print_r($lgsize);die;
+
+    $this->chart->setGraphArea($graphareax1,$graphareay1,$graphareax2,$graphareay2);
+    $this->chart->setFontProperties(array('FontName'=>"$pchartfolder/fonts/calibri.ttf",'FontSize'=>8));
+
+
+
+    //if($type=='StackedBarChart')
+      //  $scalesetting=array("Floating"=>TRUE,"GridR"=>200, "GridG"=>200,"GridB"=>200,"DrawSubTicks"=>TRUE, "CycleBackground"=>TRUE,
+        //    "DrawSubTicks"=>TRUE,"Mode"=>SCALE_MODE_ADDALL_START0,"DrawArrows"=>TRUE,"ArrowSize"=>6);
+    //else
+    $ScaleSpacing=5;
+        $scalesetting= $scaleSettings = array("XMargin"=>10,"YMargin"=>10,"Floating"=>TRUE,"GridR"=>200,"GridG"=>200,
+            "GridB"=>200,"DrawSubTicks"=>TRUE,"CycleBackground"=>TRUE,"Mode"=>SCALE_MODE_START0,'ScaleSpacing'=>$ScaleSpacing);
+
+    $this->chart->drawScale($scalesetting);
+
+    $this->chart->drawLegend($legendx,$legendy,$legendmode);
+
+
+    $Title = str_replace(array('"',"'"),'',$data['charttitle']['text']);
+
+    if($Title!=''){
+        $titlefontsize+0;
+    if($titlefontsize==0)
+        $titlefontsize=8;
+     if($titlefontname=='')
+        $titlefontname='calibri';
+$titlefontname=strtolower($titlefontname);
+
+
+    $textsetting=array('DrawBox'=>FALSE,'FontSize'=>$titlefontsize,'FontName'=>"$pchartfolder/fonts/".$titlefontname.".ttf",'align'=>TEXT_ALIGN_TOPMIDDLE);
+
+    $this->chart->drawText($w/3,($titlefontsize+10),$Title,$textsetting);
+    }
+
+      $this->chart->setFontProperties(array('FontName'=>"$pchartfolder/fonts/calibri.ttf",'FontSize'=>7));
+
+         $this->chart->drawLineChart();
+
+
+   $randomchartno=rand();
+	  $photofile="$tmpchartfolder/chart$randomchartno.png";
+
+             $this->chart->Render($photofile);
+
+             if(file_exists($photofile)){
+                $this->pdf->Image($photofile,$x+$this->arrayPageSetting["leftMargin"],$y_axis+$y1,$w,$h,"PNG");
+                unlink($photofile);
+             }
+
+}
+
+
+
+public function showBarChart($data,$y_axis,$type='barChart'){
+      global $tmpchartfolder,$pchartfolder;
+
+
+    if($pchartfolder=="")
+        $pchartfolder="./pchart2";
+//echo "$pchartfolder/class/pData.class.php";die;
+
+        include_once("$pchartfolder/class/pData.class.php");
+        include_once("$pchartfolder/class/pDraw.class.php");
+        include_once("$pchartfolder/class/pImage.class.php");
+
+    if($tmpchartfolder=="")
+         $tmpchartfolder=$pchartfolder."/cache";
+
+     $w=$data['width']+0;
+     $h=$data['height']+0;
+
+
+
+     $legendpos=$data['chartLegendPos'];
+     //$legendpos="Right";
+     $seriesexp=$data['seriesexp'];
+     $catexp=$data['catexp'];
+     $valueexp=$data['valueexp'];
+     $labelexp=$data['labelexp'];
+     $ylabel=$data['ylabel'].'';
+     $xlabel=$data['xlabel'].'';
+     $ylabel = str_replace(array('"',"'"),'',$ylabel);
+     $xlabel = str_replace(array('"',"'"),'',$xlabel);
+     $scalesetting=$data['scalesetting'];
+
+
+     $x=$data['x'];
+     $y1=$data['y'];
+     $legendx=0;
+     $legendy=0;
+    $titlefontname=$data['titlefontname'].'';
+    $titlefontsize=$data['titlefontsize']+0;
+
+
+    $DataSet = new pData();
+
+    foreach($catexp as $a=>$b)
+       $catexp1[]=  str_replace(array('"',"'"), '',$b);
+
+    $n=0;
+
+    $DataSet->addPoints($catexp1,'S00');
+    $DataSet->setSerieDescription('S00','asdasd');
+
+    //$DataSet->AddSerie('S0');
+    //$DataSet->SetSerieName('S0',"Cat");
+    $DataSet->setAbscissa('S00');
+    $n=$n+1;
+
+    $ds=trim($data['dataset']);
+
+
+    if($ds!=""){
+              $sql=$this->subdataset[$ds];
+        $param=$data['param'];
+        foreach($param as $p)
+            foreach($p as $tag =>$value)
+                $sql=str_replace('$P{'.$tag.'}',$value, $sql);
+            $sql=$this->changeSubDataSetSql($sql);
+
+        }
+    else
+        $sql=$this->sql;
+
+    $result = @mysql_query($sql); //query from db
+    $chartdata=array();
+    $i=0;
+//echo $sql."<br/><br/>";
+    $seriesname=array();
+    while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+
+                $j=0;
+                foreach($row as $key => $value){
+                    //$chartdata[$j][$i]=$value;
+                    if($value=='')
+                        $value=0;
+                    if($key==str_replace(array('$F{','}'),'',$seriesexp[0]))
+                    array_push($seriesname,$value);
+                    else
+                    foreach($valueexp as $v => $y){
+                     if($key==str_replace(array('$F{','}'),'',$y)){
+                         $chartdata[$i][$j]=(int)$value;
+
+                           $j++;
+                     }
+                    }
+
+
+
+
+
+                }
+            $i++;
+
+            }
+            if($i==0)
+                return 0;
+            foreach($seriesname as $s=>$v){
+
+                    $DataSet->addPoints($chartdata[$s],"$v");
+              //  $DataSet->AddSerie("$v");
+            }
+            $DataSet->setAxisName(0,$ylabel);
+
+
+
+
+    $this->chart = new pImage($w,$h,$DataSet);
+    //$c = new pChart($w,$h);
+    //$this->setChartColor();
+    $this->chart->drawRectangle(1,1,$w-2,$h-2);
+    $legendfontsize=8;
+    $this->chart->setFontProperties(array('FontName'=>"$pchartfolder/fonts/calibri.ttf",'FontSize'=>$legendfontsize));
+
+
+ $Title=$data['charttitle']['text'];
+
+
+      switch($legendpos){
+             case "Top":
+                 $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $diffx=$w-$lgsize['Width'];
+                 if($diffx>0)
+                 $legendx=$diffx/2;
+                 else
+                 $legendx=0;
+
+                 //$legendy=$h-$lgsize['Height']+$legendfontsize;
+
+                 if($legendy<0)$legendy=0;
+
+                 if($Title==''){
+
+                     $graphareay1=15;
+                     $legendy=$graphareay1+5;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$h-$legendfontsize-15;
+                }
+                else{
+                    $graphareay1=30;
+                    $legendy=$graphareay1+5;
+                    $graphareax1=40;
+
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$h-$legendfontsize-15;
+
+                }
+                 break;
+             case "Left":
+                 $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_VERTICAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $legendx=$lgsize['Width'];
+                 if($Title==''){
+                    $legendy=10;
+                     $graphareay1=10;
+                    $graphareax1=$legendx+5;
+                     $graphareax2=$w-5;
+                     $graphareay2=$h-20;
+                }
+                else{
+                     $legendy=30;
+                     $graphareay1=40;
+                    $graphareax1=$legendx+5;
+                     $graphareax2=$w-5 ;
+                     $graphareay2=$h-20;
+                }
+                 break;
+             case "Right":
+             $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_VERTICAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $legendx=$w-$lgsize['Width'];
+                 if($Title==''){
+                    $legendy=10;
+                     $graphareay1=5;
+                    $graphareax1=40;
+                     $graphareax2=$legendx-5 ;
+                     $graphareay2=$h-20;
+                }
+                else{
+                     $legendy=30;
+                     $graphareay1=30;
+                    $graphareax1=40;
+                     $graphareax2=$legendx-5 ;
+                     $graphareay2=$h-20;
+                }
+                 break;
+             case "Bottom":
+                 $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $diffx=$w-$lgsize['Width'];
+                 if($diffx>0)
+                 $legendx=$diffx/2;
+                 else
+                 $legendx=0;
+
+                 $legendy=$h-$lgsize['Height']+$legendfontsize;
+
+                 if($legendy<0)$legendy=0;
+
+                 if($Title==''){
+
+                     $graphareay1=15;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                else{
+                    $graphareay1=30;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                 break;
+             default:
+               $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $diffx=$w-$lgsize['Width'];
+                 if($diffx>0)
+                 $legendx=$diffx/2;
+                 else
+                 $legendx=0;
+
+                 $legendy=$h-$lgsize['Height']+$legendfontsize;
+
+                 if($legendy<0)$legendy=0;
+
+                 if($Title==''){
+
+                     $graphareay1=15;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                else{
+                    $graphareay1=30;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                 break;
+
+         }
+
+
+         //echo "$graphareax1,$graphareay1,$graphareax2,$graphareay2";die;
+    //print_r($lgsize);die;
+
+    $this->chart->setGraphArea($graphareax1,$graphareay1,$graphareax2,$graphareay2);
+    $this->chart->setFontProperties(array('FontName'=>"$pchartfolder/fonts/calibri.ttf",'FontSize'=>8));
+
+
+if($type=='stackedBarChart')
+        $scalesetting=array("Floating"=>TRUE,"GridR"=>200, "GridG"=>200,"GridB"=>200,"DrawSubTicks"=>TRUE, "CycleBackground"=>TRUE,
+            "DrawSubTicks"=>TRUE,"Mode"=>SCALE_MODE_ADDALL_START0,"ArrowSize"=>6);
+    else
+            $scalesetting=array("Floating"=>TRUE,"GridR"=>200, "GridG"=>200,"GridB"=>200,"DrawSubTicks"=>TRUE, "CycleBackground"=>TRUE,
+            "DrawSubTicks"=>TRUE,"Mode"=>SCALE_MODE_START0,"ArrowSize"=>6);
+    $this->chart->drawScale($scalesetting);
+
+    $this->chart->drawLegend($legendx,$legendy,$legendmode);
+
+
+    $Title = str_replace(array('"',"'"),'',$data['charttitle']['text']);
+
+    if($Title!=''){
+        $titlefontsize+0;
+    if($titlefontsize==0)
+        $titlefontsize=8;
+     if($titlefontname=='')
+        $titlefontname='calibri';
+$titlefontname=strtolower($titlefontname);
+
+    $textsetting=array('DrawBox'=>FALSE,'FontSize'=>$titlefontsize,'FontName'=>"$pchartfolder/fonts/".$titlefontname.".ttf",'align'=>TEXT_ALIGN_TOPMIDDLE);
+//print_r($textsetting);die;
+    $this->chart->drawText($w/3,($titlefontsize+10),$Title,$textsetting);
+    }
+
+      $this->chart->setFontProperties(array('FontName'=>"$pchartfolder/fonts/calibri.ttf",'FontSize'=>7));
+
+
+    if($type=='stackedBarChart')
+        $this->chart->drawStackedBarChart();
+    else
+        $this->chart->drawBarChart();
+
+
+   $randomchartno=rand();
+	  $photofile="$tmpchartfolder/chart$randomchartno.png";
+
+             $this->chart->Render($photofile);
+
+             if(file_exists($photofile)){
+                $this->pdf->Image($photofile,$x+$this->arrayPageSetting["leftMargin"],$y_axis+$y1,$w,$h,"PNG");
+                unlink($photofile);
+             }
+
+
+}
+
+
+
+
+public function showAreaChart($data,$y_axis,$type){
+    global $tmpchartfolder,$pchartfolder;
+
+
+    if($pchartfolder=="")
+        $pchartfolder="./pchart2";
+//echo "$pchartfolder/class/pData.class.php";die;
+
+        include_once("$pchartfolder/class/pData.class.php");
+        include_once("$pchartfolder/class/pDraw.class.php");
+        include_once("$pchartfolder/class/pImage.class.php");
+
+    if($tmpchartfolder=="")
+         $tmpchartfolder=$pchartfolder."/cache";
+
+     $w=$data['width']+0;
+     $h=$data['height']+0;
+
+
+
+     $legendpos=$data['chartLegendPos'];
+     //$legendpos="Right";
+     $seriesexp=$data['seriesexp'];
+     $catexp=$data['catexp'];
+     $valueexp=$data['valueexp'];
+     $labelexp=$data['labelexp'];
+     $ylabel=$data['ylabel'].'';
+     $xlabel=$data['xlabel'].'';
+     $ylabel = str_replace(array('"',"'"),'',$ylabel);
+     $xlabel = str_replace(array('"',"'"),'',$xlabel);
+     $scalesetting=$data['scalesetting'];
+
+
+     $x=$data['x'];
+     $y1=$data['y'];
+     $legendx=0;
+     $legendy=0;
+
+    $titlefontname=$data['titlefontname'].'';
+    $titlefontsize=$data['titlefontsize']+0;
+
+
+    $DataSet = new pData();
+
+    foreach($catexp as $a=>$b)
+       $catexp1[]=  str_replace(array('"',"'"), '',$b);
+
+    $n=0;
+
+    $DataSet->addPoints($catexp1,'S00');
+    $DataSet->setSerieDescription('S00','asdasd');
+
+    //$DataSet->AddSerie('S0');
+    //$DataSet->SetSerieName('S0',"Cat");
+    $DataSet->setAbscissa('S00');
+    $n=$n+1;
+
+    $ds=trim($data['dataset']);
+
+
+    if($ds!=""){
+              $sql=$this->subdataset[$ds];
+        $param=$data['param'];
+        foreach($param as $p)
+            foreach($p as $tag =>$value)
+                $sql=str_replace('$P{'.$tag.'}',$value, $sql);
+            $sql=$this->changeSubDataSetSql($sql);
+
+        }
+    else
+        $sql=$this->sql;
+
+    $result = @mysql_query($sql); //query from db
+    $chartdata=array();
+    $i=0;
+//echo $sql."<br/><br/>";
+    $seriesname=array();
+    while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+
+                $j=0;
+                foreach($row as $key => $value){
+                    //$chartdata[$j][$i]=$value;
+                    if($value=='')
+                        $value=0;
+                    if($key==str_replace(array('$F{','}'),'',$seriesexp[0]))
+                    array_push($seriesname,$value);
+                    else
+                    foreach($valueexp as $v => $y){
+                     if($key==str_replace(array('$F{','}'),'',$y)){
+                         $chartdata[$i][$j]=(int)$value;
+
+                           $j++;
+                     }
+                    }
+
+
+
+
+
+                }
+            $i++;
+
+            }
+            if($i==0)
+                return 0;
+            foreach($seriesname as $s=>$v){
+
+                    $DataSet->addPoints($chartdata[$s],"$v");
+              //  $DataSet->AddSerie("$v");
+            }
+            $DataSet->setAxisName(0,$ylabel);
+
+
+
+
+    $this->chart = new pImage($w,$h,$DataSet);
+    //$c = new pChart($w,$h);
+    //$this->setChartColor();
+    $this->chart->drawRectangle(1,1,$w-2,$h-2);
+    $legendfontsize=8;
+    $this->chart->setFontProperties(array('FontName'=>"$pchartfolder/fonts/calibri.ttf",'FontSize'=>$legendfontsize));
+
+
+$Title=$data['charttitle']['text'];
+
+
+      switch($legendpos){
+             case "Top":
+                 $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $diffx=$w-$lgsize['Width'];
+                 if($diffx>0)
+                 $legendx=$diffx/2;
+                 else
+                 $legendx=0;
+
+                 //$legendy=$h-$lgsize['Height']+$legendfontsize;
+
+                 if($legendy<0)$legendy=0;
+
+                 if($Title==''){
+
+                     $graphareay1=5;
+                     $legendy=$graphareay1+5;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$h-$legendfontsize-15;
+                }
+                else{
+                    $graphareay1=30;
+                    $legendy=$graphareay1+5;
+                    $graphareax1=40;
+
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$h-$legendfontsize-15;
+
+                }
+                 break;
+             case "Left":
+                 $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_VERTICAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $legendx=$lgsize['Width'];
+                 if($Title==''){
+                    $legendy=10;
+                     $graphareay1=5;
+                    $graphareax1=$legendx+5;
+                     $graphareax2=$w-5;
+                     $graphareay2=$h-20;
+                }
+                else{
+                     $legendy=30;
+                     $graphareay1=40;
+                    $graphareax1=$legendx+5;
+                     $graphareax2=$w-5 ;
+                     $graphareay2=$h-20;
+                }
+                 break;
+             case "Right":
+             $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_VERTICAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $legendx=$w-$lgsize['Width'];
+                 if($Title==''){
+                    $legendy=10;
+                     $graphareay1=5;
+                    $graphareax1=40;
+                     $graphareax2=$legendx-5 ;
+                     $graphareay2=$h-20;
+                }
+                else{
+                     $legendy=30;
+                     $graphareay1=30;
+                    $graphareax1=40;
+                     $graphareax2=$legendx-5 ;
+                     $graphareay2=$h-20;
+                }
+                 break;
+             case "Bottom":
+                 $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $diffx=$w-$lgsize['Width'];
+                 if($diffx>0)
+                 $legendx=$diffx/2;
+                 else
+                 $legendx=0;
+
+                 $legendy=$h-$lgsize['Height']+$legendfontsize;
+
+                 if($legendy<0)$legendy=0;
+
+                 if($Title==''){
+
+                     $graphareay1=5;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                else{
+                    $graphareay1=30;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                 break;
+             default:
+               $legendmode=array("Style"=>LEGEND_NOBORDER,"Mode"=>LEGEND_HORIZONTAL);
+                 $lgsize=$this->chart->getLegendSize($legendmode);
+                 $diffx=$w-$lgsize['Width'];
+                 if($diffx>0)
+                 $legendx=$diffx/2;
+                 else
+                 $legendx=0;
+
+                 $legendy=$h-$lgsize['Height']+$legendfontsize;
+
+                 if($legendy<0)$legendy=0;
+
+                 if($Title==''){
+
+                     $graphareay1=5;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                else{
+                    $graphareay1=30;
+                    $graphareax1=40;
+                     $graphareax2=$w-10 ;
+                     $graphareay2=$legendy-$legendfontsize-15;
+                }
+                 break;
+
+         }
+
+
+         //echo "$graphareax1,$graphareay1,$graphareax2,$graphareay2";die;
+    //print_r($lgsize);die;
+
+    $this->chart->setGraphArea($graphareax1,$graphareay1,$graphareax2,$graphareay2);
+    $this->chart->setFontProperties(array('FontName'=>"$pchartfolder/fonts/calibri.ttf",'FontSize'=>8));
+
+
+
+    //if($type=='StackedBarChart')
+      //  $scalesetting=array("Floating"=>TRUE,"GridR"=>200, "GridG"=>200,"GridB"=>200,"DrawSubTicks"=>TRUE, "CycleBackground"=>TRUE,
+        //    "DrawSubTicks"=>TRUE,"Mode"=>SCALE_MODE_ADDALL_START0,"DrawArrows"=>TRUE,"ArrowSize"=>6);
+    //else
+    $ScaleSpacing=5;
+        $scalesetting= $scaleSettings = array("XMargin"=>10,"YMargin"=>10,"Floating"=>TRUE,"GridR"=>200,"GridG"=>200,
+            "GridB"=>200,"DrawSubTicks"=>TRUE,"CycleBackground"=>TRUE,"Mode"=>SCALE_MODE_ADDALL_START0,'ScaleSpacing'=>$ScaleSpacing);
+
+    $this->chart->drawScale($scalesetting);
+
+    $this->chart->drawLegend($legendx,$legendy,$legendmode);
+
+
+    $Title = str_replace(array('"',"'"),'',$data['charttitle']['text']);
+
+    if($Title!=''){
+        $titlefontsize+0;
+    if($titlefontsize==0)
+        $titlefontsize=8;
+     if($titlefontname=='')
+        $titlefontname='calibri';
+$titlefontname=strtolower($titlefontname);
+
+
+    $textsetting=array('DrawBox'=>FALSE,'FontSize'=>$titlefontsize,'FontName'=>"$pchartfolder/fonts/".$titlefontname.".ttf",'align'=>TEXT_ALIGN_TOPMIDDLE);
+
+    $this->chart->drawText($w/3,($titlefontsize+10),$Title,$textsetting);
+    }
+
+      $this->chart->setFontProperties(array('FontName'=>"$pchartfolder/fonts/calibri.ttf",'FontSize'=>7));
+
+$this->chart->drawStackedAreaChart(array("Surrounding"=>60));
+
+
+   $randomchartno=rand();
+	  $photofile="$tmpchartfolder/chart$randomchartno.png";
+
+             $this->chart->Render($photofile);
+
+             if(file_exists($photofile)){
+                $this->pdf->Image($photofile,$x+$this->arrayPageSetting["leftMargin"],$y_axis+$y1,$w,$h,"PNG");
+                unlink($photofile);
+             }
+
+}
+
+
+
+
+private function changeSubDataSetSql($sql){
+
+foreach($this->currentrow as $name =>$value)
+        $sql=str_replace('$F{'.$name.'}',$value,$sql);
+
+foreach($this->arrayParameter as $name=>$value)
+    $sql=str_replace('$P{'.$name.'}',$value,$sql);
+
+foreach($this->arrayVariable as $name=>$value){
+    $sql=str_replace('$V{'.$value['target'].'}',$value['ans'],$sql);
+
+
+}
+
+
+//print_r($this->arrayparameter);
+
+
+//variable not yet implemented
+     return $sql;
+
+
+}
     public function background() {
         foreach ($this->arraybackground as $out) {
             switch($out["hidden_type"]) {
@@ -874,7 +2180,7 @@ class PHPJasperXML {
                     break;
             }
         }
- 
+
     }
 
     public function pageHeaderNewPage() {
@@ -900,9 +2206,9 @@ class PHPJasperXML {
     public function title() {
         $this->pdf->AddPage();
         $this->background();
-            
+
             $this->titleheight=$this->arraytitle[0]["height"];
-            
+
             //print_r($this->arraytitle);die;
         if(isset($this->arraytitle)) {
             $this->arraytitle[0]["y_axis"]=$this->arrayPageSetting["topMargin"];
@@ -919,7 +2225,7 @@ class PHPJasperXML {
                     break;
             }
         }
-    
+
 
     }
 
@@ -930,7 +2236,7 @@ class PHPJasperXML {
             $this->titlesummary=$this->arraysummary[0]["height"];
 
             //print_r($this->arraytitle);die;
-     
+
         foreach ($this->arraysummary as $out) {
 
             switch($out["hidden_type"]) {
@@ -945,9 +2251,9 @@ class PHPJasperXML {
 
 
     }
-    
+
     public function group($headerY) {
-        
+
 
         $gname=$this->arrayband[0]["gname"]."";
         if(isset($this->arraypageHeader)) {
@@ -1003,7 +2309,7 @@ class PHPJasperXML {
 
     public function groupNewPage() {
         $gname=$this->arrayband[0]["gname"]."";
-        
+
         if(isset($this->arraypageHeader)) {
             $this->arraygroup[$gname]["groupHeader"][0]["y_axis"]=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
         }
@@ -1131,17 +2437,19 @@ class PHPJasperXML {
     public function detail() {
         $this->arraydetail[0]["y_axis"]=$this->arraydetail[0]["y_axis"]- $this->titleheight;
         $field_pos_y=$this->arraydetail[0]["y_axis"];
-        
+
         $biggestY=0;
         $checkpoint=$this->arraydetail[0]["y_axis"];
         $tempY=$this->arraydetail[0]["y_axis"];
         $this->showGroupHeader($this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]);
         $rownum=0;
         if($this->arraysqltable) {
-     
+
 
 
             foreach($this->arraysqltable as $row) {
+
+
 if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
                 {
                     $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
@@ -1161,10 +2469,10 @@ if(isset($this->arrayVariable))	//if self define variable existing, go to do the
 
                     if($this->arrayPageSetting["pageHeight"]< (($this->pdf->getY()) + ($this->arraygroupfootheight)+($this->arrayPageSetting["bottomMargin"])+($this->arraypageFooter[0]["height"])+($ghfoot)+($ghhead))){
                       //echo "aaa";
-                       
+
                           $this->pageFooter();
                           $this->pageHeader();
-                      
+
                           $checkpoint=$headerY;
                           $biggestY=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
                           $tempY=$headerY;
@@ -1177,7 +2485,7 @@ if(isset($this->arrayVariable))	//if self define variable existing, go to do the
                 }
 
                 foreach($this->arraydetail as $compare)	//this loop is to count possible biggest Y of the coming row
-                {
+                {$this->currentrow=$this->arraysqltable[$this->global_pointer];
                     switch($compare["hidden_type"]) {
                         case "field":
                             $txt=$this->analyse_expression($row[$compare["txt"]]);
@@ -1189,11 +2497,11 @@ if(isset($this->arrayVariable))	//if self define variable existing, go to do the
                                 $biggestY=0;
                                 $tempY=$this->arraydetail[0]["y_axis"];
                             }
-                            
+
                             elseif(isset($this->arraypageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"])))//check pagefooter existed or not
                             { //  $this->showGroupFooter($compare["height"]+$biggestY);
                                 //echo "arraypagefooter";
-                                 
+
                                 $this->pageFooter();
                                 $headerY = $this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
                                 $this->pageHeader();
@@ -1205,7 +2513,7 @@ if(isset($this->arrayVariable))	//if self define variable existing, go to do the
                             elseif(isset($this->arraylastPageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->arrayPageSetting["pageHeight"]-$this->arraylastPageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"])))//check lastpagefooter existed or not
                             {   //$this->showGroupFooter($compare["height"]+$biggestY);
                                 $this->lastPageFooter();
-                         
+
                                 $checkpoint=$this->arraydetail[0]["y_axis"];
                                 $biggestY=0;
                                 $tempY=$this->arraydetail[0]["y_axis"];
@@ -1229,11 +2537,11 @@ if(isset($this->arrayVariable))	//if self define variable existing, go to do the
                             $this->display($compare,$checkpoint);
                             break;
                     }
-                
+
                 }
 
 
-                
+
                 if($checkpoint+$this->arraydetail[0]["height"]>($this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"] - $ghheight -$ghfoot))	//check the upcoming band is greater than footer position or not
                 {
                     $this->pageFooter(); // open for every page got page footer.
@@ -1247,6 +2555,7 @@ if(isset($this->arrayVariable))	//if self define variable existing, go to do the
                 }
 
                 foreach ($this->arraydetail as $out) {
+
                     switch ($out["hidden_type"]) {
                         case "field":
 
@@ -1290,14 +2599,14 @@ if(isset($this->arrayVariable))	//if self define variable existing, go to do the
                                 //$tempY=$this->arraydetail[0]["y_axis"];
                         }
                 //if(isset($this->arraygroup)){$this->global_pointer++;}
-                
 
-          
+
+
                 $this->global_pointer++;
                    $rownum++;
-          
 
-            } 
+
+            }
 //  $ghfoot= $this->showGroupFooter($compare["height"]+$this->pdf->getY());
         }else {
             echo "No data found";
@@ -1312,7 +2621,7 @@ if(isset($this->arrayVariable))	//if self define variable existing, go to do the
         }
         else {
          //    $this->showGroupFooter($compare["height"]+$biggestY);
-             
+
             $this->pageFooter();
         }
     }
@@ -1349,7 +2658,7 @@ if(isset($this->arrayVariable))	//if self define variable existing, go to do the
                 }
 
                 foreach($this->arraydetail as $compare)	//this loop is to count possible biggest Y of the coming row
-                {
+                {$this->currentrow=$this->arraysqltable[$this->global_pointer];
                     switch($compare["hidden_type"]) {
                         case "field":
                             $txt=$this->analyse_expression($row["$compare[txt]"]);
@@ -1434,7 +2743,7 @@ if(isset($this->arrayVariable))	//if self define variable existing, go to do the
                 }
 
                 foreach ($this->arraydetail as $out) {
-
+                  $this->currentrow=$this->arraysqltable[$this->global_pointer];
                     switch ($out["hidden_type"]) {
                         case "field":
 
@@ -1520,7 +2829,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
     //    $this->pdf->Cell(10,10,"SSSS");
     $this->Rotate($arraydata["rotation"]);
     if($arraydata["rotation"]!=""){
-       
+
 
 
     if($arraydata["rotation"]=="Left"){
@@ -1557,22 +2866,22 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
         }
         elseif($arraydata["type"]=="subreport") {
-            
+
             $this->runSubReport($arraydata);
         }
         elseif($arraydata["type"]=="MultiCell") {
-            
+           
             if($fielddata==false) {
                 $this->checkoverflow($arraydata,$this->updatePageNo($arraydata["txt"]));
             }
             elseif($fielddata==true) {
 
-                
+
                 $this->checkoverflow($arraydata,$this->updatePageNo($this->analyse_expression($arraydata["txt"],$arraydata["isPrintRepeatedValues"] )));
             }
         }
         elseif($arraydata["type"]=="SetXY") {
-            
+
 
             $this->pdf->SetXY($arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis);
         }
@@ -1580,8 +2889,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
 
             $this->pdf->Cell($arraydata["width"],$arraydata["height"],$this->updatePageNo($arraydata["txt"]),$arraydata["border"],$arraydata["ln"],$arraydata["align"],$arraydata["fill"],$arraydata["link"]);
-            if($this->debuggroup==1)
-                $this->pdf->MultiCell(100,10, "SampleText");
+
 
         }
         elseif($arraydata["type"]=="Rect") {
@@ -1590,7 +2898,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
         elseif($arraydata["type"]=="Image") {
             $path=$this->analyse_expression($arraydata["path"]);
             $imgtype=substr($path,-3);
-
+        if(file_exists($path))
             $this->pdf->Image($path,$arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis,$arraydata["width"],$arraydata["height"],$imgtype,$arraydata["link"]);
         }
 
@@ -1609,7 +2917,22 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
         elseif($arraydata["type"]=="SetFillColor") {
             $this->pdf->SetFillColor($arraydata["r"],$arraydata["g"],$arraydata["b"]);
         }
+      elseif($arraydata["type"]=="lineChart") {
 
+            $this->showLineChart($arraydata, $y_axis);
+        }
+      elseif($arraydata["type"]=="barChart") {
+
+            $this->showBarChart($arraydata, $y_axis,'barChart');
+        }
+      elseif($arraydata["type"]=="stackedBarChart") {
+
+            $this->showBarChart($arraydata, $y_axis,'stackedBarChart');
+        }
+      elseif($arraydata["type"]=="stackedAreaChart") {
+
+            $this->showAreaChart($arraydata, $y_axis,$arraydata["type"]);
+        }
 
     }
 
@@ -1627,8 +2950,10 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
     public function checkoverflow($arraydata,$txt="") {
 
-                
+
         $this->print_expression($arraydata);
+
+      
         if($this->print_expression_result==true) {
 
             if($arraydata["link"]) {
@@ -1641,9 +2966,9 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
             }
             elseif($arraydata["poverflow"]=="true"&&$arraydata["soverflow"]=="false") {
+                
                 $this->pdf->Cell($arraydata["width"], $arraydata["height"], $this->formatText($txt, $arraydata["pattern"]),$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"]);
-                if($this->debuggroup==1)
-                    $this->pdf->MultiCell(100,10, "SampleText");
+                
 
             }
             elseif($arraydata["poverflow"]=="false"&&$arraydata["soverflow"]=="false") {
@@ -1651,28 +2976,24 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
                     $txt=substr_replace($txt,"",-1);
                 }
                 $this->pdf->Cell($arraydata["width"], $arraydata["height"],$this->formatText($txt, $arraydata["pattern"]),$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"]);
-                if($this->debuggroup==1)
-                    $this->pdf->MultiCell(100,10, "SampleText");
+    
 
             }
             elseif($arraydata["poverflow"]=="false"&&$arraydata["soverflow"]=="true") {
                 $this->pdf->MultiCell($arraydata["width"], $arraydata["height"], $this->formatText($txt, $arraydata["pattern"]), $arraydata["border"], $arraydata["align"], $arraydata["fill"]);
-                if($this->debuggroup==1)
-                    $this->pdf->MultiCell(100,10, "SampleText");
+         
 
             }
             else {
                 $this->pdf->MultiCell($arraydata["width"], $arraydata["height"], $this->formatText($txt, $arraydata["pattern"]), $arraydata["border"], $arraydata["align"], $arraydata["fill"]);
-                if($this->debuggroup==1)
-                    $this->pdf->MultiCell(100,10, "SampleText");
+
 
             }
         }
         $this->print_expression_result=false;
-        if($this->debuggroup==1)
-            $this->pdf->MultiCell(100,10, "SampleText");
-
         
+
+
     }
 
     public function hex_code_color($value) {
@@ -1700,17 +3021,22 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
         $arrdata=explode("+",$data);
 
         $i=0;
+        
         foreach($arrdata as $num=>$out) {
             $i++;
             $arrdata[$num]=str_replace('"',"",$out);
+            $this->arraysqltable[$this->global_pointer][substr($out,3,-1)];
+
             if(substr($out,0,3)=='$F{') {
+                
                 if($isPrintRepeatedValue=="true" ||$isPrintRepeatedValue=="") {
                     $arrdata[$num]=$this->arraysqltable[$this->global_pointer][substr($out,3,-1)];
+                    
                 }
                 else {
-                    
+
                     if($this->previousarraydata[$arrdata[$num]]==$this->arraysqltable[$this->global_pointer][substr($out,3,-1)]) {
-                    
+
                         $arrdata[$num]="";
                     }
                     else {
@@ -1718,6 +3044,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
                         $this->previousarraydata[$out]=$this->arraysqltable[$this->global_pointer][substr($out,3,-1)];
                     }
                 }
+              //  echo $arrdata[$num]."==";
             }
             elseif(substr($out,0,3)=='$V{') {
                 $arrdata[$num]=&$this->arrayVariable[substr($out,3,-1)]["ans"];
@@ -1725,6 +3052,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
             elseif(substr($out,0,3)=='$P{') {
                 $arrdata[$num]=$this->arrayParameter[substr($out,3,-1)];
             }
+          //  echo "<br/>";
         }
 
         if($this->left($data,3)=='"("' && $this->right($data,3)=='")"') {
@@ -1798,11 +3126,11 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
         elseif($expression=="") {
             $this->print_expression_result=true;
         }
-        
+
     }
 
     public function runSubReport($d) {
-        
+
         foreach($d["subreportparameterarray"] as $b) {
 
             $t = $b->subreportParameterExpression;
@@ -1874,7 +3202,7 @@ private function Rotate($type, $x=-1, $y=-1)
     $angle=270;
     elseif($type=="UpsideDown")
     $angle=180;
-   
+
     if($x==-1)
         $x=$this->pdf->getX();
     if($y==-1)
