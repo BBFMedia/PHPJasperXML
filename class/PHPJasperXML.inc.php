@@ -17,7 +17,7 @@ class PHPJasperXML {
     private $titleheight=0;
     public function PHPJasperXML($lang="en",$pdflib="FPDF") {
         $this->lang=$lang;
-
+        error_reporting(0);
         $this->pdflib=$pdflib;
     }
 
