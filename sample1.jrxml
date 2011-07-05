@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report name" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="164"/>
 	<parameter name="parameter1" class="java.lang.Integer">
 		<defaultValueExpression><![CDATA[new java.lang.Integer(0)]]></defaultValueExpression>
 	</parameter>
@@ -137,7 +140,7 @@ FROM
 		<band splitType="Stretch"/>
 	</columnFooter>
 	<pageFooter>
-		<band height="54" splitType="Stretch">
+		<band height="45" splitType="Stretch">
 			<line>
 				<reportElement x="5" y="7" width="550" height="1"/>
 			</line>
@@ -149,6 +152,113 @@ FROM
 		</band>
 	</pageFooter>
 	<summary>
-		<band splitType="Stretch"/>
+		<band height="277" splitType="Stretch">
+			<barChart>
+				<chart>
+					<reportElement x="5" y="0" width="259" height="126"/>
+					<chartTitle/>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<categoryDataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{sample1_itemname}]]></seriesExpression>
+						<categoryExpression><![CDATA["CAT"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{sample1_qty}]]></valueExpression>
+						<labelExpression><![CDATA[$F{sample1_itemname}]]></labelExpression>
+					</categorySeries>
+				</categoryDataset>
+				<barPlot>
+					<plot/>
+					<itemLabel color="#000000" backgroundColor="#FFFFFF"/>
+					<categoryAxisFormat>
+						<axisFormat>
+							<labelFont/>
+							<tickLabelFont/>
+						</axisFormat>
+					</categoryAxisFormat>
+					<valueAxisFormat>
+						<axisFormat>
+							<labelFont/>
+							<tickLabelFont/>
+						</axisFormat>
+					</valueAxisFormat>
+				</barPlot>
+			</barChart>
+			<lineChart>
+				<chart>
+					<reportElement x="264" y="0" width="291" height="126"/>
+					<chartTitle/>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<categoryDataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{sample1_itemname}]]></seriesExpression>
+						<categoryExpression><![CDATA["Line 1"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{sample1_qty}]]></valueExpression>
+						<labelExpression><![CDATA[$F{sample1_itemname}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{sample1_qty}]]></seriesExpression>
+						<categoryExpression><![CDATA["Line 2"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{sample1_no}]]></valueExpression>
+						<labelExpression><![CDATA[$F{sample1_qty}]]></labelExpression>
+					</categorySeries>
+				</categoryDataset>
+				<linePlot>
+					<plot/>
+					<categoryAxisFormat>
+						<axisFormat>
+							<labelFont/>
+							<tickLabelFont/>
+						</axisFormat>
+					</categoryAxisFormat>
+					<valueAxisFormat>
+						<axisFormat>
+							<labelFont/>
+							<tickLabelFont/>
+						</axisFormat>
+					</valueAxisFormat>
+				</linePlot>
+			</lineChart>
+			<stackedAreaChart>
+				<chart>
+					<reportElement x="7" y="126" width="548" height="151"/>
+					<chartTitle/>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<categoryDataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{sample1_itemname}]]></seriesExpression>
+						<categoryExpression><![CDATA["CAT1"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{sample1_qty}]]></valueExpression>
+						<labelExpression><![CDATA[$F{sample1_itemname}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{sample1_itemname}]]></seriesExpression>
+						<categoryExpression><![CDATA["CAT 2"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{sample1_qty}]]></valueExpression>
+						<labelExpression><![CDATA[$F{sample1_itemname}]]></labelExpression>
+					</categorySeries>
+				</categoryDataset>
+				<areaPlot>
+					<plot/>
+					<categoryAxisFormat>
+						<axisFormat>
+							<labelFont/>
+							<tickLabelFont/>
+						</axisFormat>
+					</categoryAxisFormat>
+					<valueAxisFormat>
+						<axisFormat>
+							<labelFont/>
+							<tickLabelFont/>
+						</axisFormat>
+					</valueAxisFormat>
+				</areaPlot>
+			</stackedAreaChart>
+		</band>
 	</summary>
 </jasperReport>

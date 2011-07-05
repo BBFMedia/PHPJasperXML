@@ -13,7 +13,7 @@ $xml =  simplexml_load_file("sample1.jrxml");
 
 
 $PHPJasperXML = new PHPJasperXML();
-$PHPJasperXML->debugsql=false;
+//$PHPJasperXML->debugsql=true;
 $PHPJasperXML->arrayParameter=array("parameter1"=>1);
 $PHPJasperXML->xml_dismantle($xml);
 
