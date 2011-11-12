@@ -262,10 +262,13 @@ class PHPJasperXMLSubReport{
                 case "line":
                     $this->element_line($out);
                     break;
-                case "rectangle":
+   case "rectangle":
                     $this->element_rectangle($out);
                     break;
-                case "textField":
+            case "ellipse":
+                    $this->element_ellipse($out);
+                    break;
+                                    case "textField":
                     $this->element_textField($out);
                     break;
 //                case "stackedBarChart":
@@ -424,18 +427,47 @@ class PHPJasperXMLSubReport{
         $this->pointer[]=array("type"=>"SetDrawColor","r"=>0,"g"=>0,"b"=>0,"hidden_type"=>"drawcolor");
     }
 
-    public function element_rectangle($data) {
-
+   public function element_rectangle($data) {
+		$radius=$data['radius'];
         $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
+        $fillcolor=array("r"=>0,"g"=>0,"b"=>0);
+
         if(isset($data->reportElement["forecolor"])) {
-            $drawcolor=array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
+            $drawcolor=array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));			
+        }
+        if(isset($data->reportElement["backcolor"])) {
+            $fillcolor=array("r"=>hexdec(substr($data->reportElement["backcolor"],1,2)),"g"=>hexdec(substr($data->reportElement["backcolor"],3,2)),"b"=>hexdec(substr($data->reportElement["backcolor"],5,2)));			
         }
 
         $this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
-        $this->pointer[]=array("type"=>"Rect","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"rect");
+        $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
+
+        if($radius=='')
+        $this->pointer[]=array("type"=>"Rect","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"rect","drawcolor"=>$drawcolor,"fillcolor"=>$fillcolor);
+        else
+        $this->pointer[]=array("type"=>"RoundedRect","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"roundedrect","radius"=>$radius,"drawcolor"=>$drawcolor,"fillcolor"=>$fillcolor);
         $this->pointer[]=array("type"=>"SetDrawColor","r"=>0,"g"=>0,"b"=>0,"hidden_type"=>"drawcolor");
+        $this->pointer[]=array("type"=>"SetFillColor","r"=>255,"g"=>255,"b"=>255,"hidden_type"=>"fillcolor");
     }
 
+  public function element_ellipse($data) {
+        $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
+        $fillcolor=array("r"=>0,"g"=>0,"b"=>0);
+        if(isset($data->reportElement["forecolor"])) {
+            $drawcolor=array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));			
+        }
+        if(isset($data->reportElement["backcolor"])) {
+            $fillcolor=array("r"=>hexdec(substr($data->reportElement["backcolor"],1,2)),"g"=>hexdec(substr($data->reportElement["backcolor"],3,2)),"b"=>hexdec(substr($data->reportElement["backcolor"],5,2)));			
+        }
+        
+		//$color=array("r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"]);
+        $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
+        $this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
+        $this->pointer[]=array("type"=>"Ellipse","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"ellipse","drawcolor"=>$drawcolor,"fillcolor"=>$fillcolor);
+        $this->pointer[]=array("type"=>"SetDrawColor","r"=>0,"g"=>0,"b"=>0,"hidden_type"=>"drawcolor");
+        $this->pointer[]=array("type"=>"SetFillColor","r"=>255,"g"=>255,"b"=>255,"hidden_type"=>"fillcolor");
+    }
+ 
     public function element_textField($data) {
         $align="L";
         $fill=0;
@@ -2949,10 +2981,19 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
             $this->pdf->Cell($arraydata["width"],$arraydata["height"],$this->updatePageNo($arraydata["txt"]),$arraydata["border"],$arraydata["ln"],$arraydata["align"],$arraydata["fill"],$arraydata["link"]);
 
         }
-        elseif($arraydata["type"]=="Rect") {
-            $this->pdf->Rect($arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis,$arraydata["width"],$arraydata["height"]);
-        }
-        elseif($arraydata["type"]=="Image") {
+       elseif($arraydata["type"]=="Rect"){
+			$this->pdf->Rect($arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis,$arraydata["width"],$arraydata["height"],
+			'FD');
+                }
+        elseif($arraydata["type"]=="RoundedRect"){
+			 $this->pdf->RoundedRect($arraydata["x"]+$this->arrayPageSetting["leftMargin"], $arraydata["y"]+$y_axis, $arraydata["width"],$arraydata["height"], $arraydata["radius"], '1111', 
+			 'FD',array('color'=>$arraydata['drawcolor']),$arraydata['fillcolor']);
+			}
+        elseif($arraydata["type"]=="Ellipse"){
+			 $this->pdf->Ellipse($arraydata["x"]+$arraydata["width"]/2+$this->arrayPageSetting["leftMargin"], $arraydata["y"]+$y_axis+$arraydata["height"]/2, $arraydata["width"]/2,$arraydata["height"]/2,
+				0,0,360,'FD',array('color'=>$arraydata['drawcolor']),$arraydata['fillcolor']);
+			}
+         elseif($arraydata["type"]=="Image") {
             $path=$this->analyse_expression($arraydata["path"]);
             $imgtype=substr($path,-3);
         if(file_exists($path))
