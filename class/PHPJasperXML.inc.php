@@ -2758,7 +2758,7 @@ foreach($this->arrayVariable as $name=>$value){
 
 
 
-        $this->global_pointer--;
+//        $this->global_pointer--;
            if($this->arraysummary[0]["height"]>0)
                     $this->summary($checkpoint);
  
