@@ -622,7 +622,7 @@ class PHPJasperXML {
                 $this->pointer[]=array("type"=>"subreport", "x"=>$data->reportElement["x"], "y"=>$data->reportElement["y"],
                         "width"=>$data->reportElement["width"], "height"=>$data->reportElement["height"],
                         "subreportparameterarray"=>$b,"connectionExpression"=>$data->connectionExpression,
-                        "subreportExpression"=>$subreportExpression);
+                        "subreportExpression"=>$subreportExpression,"hidden_type"=>"subreport");
     }
 
     public function transferDBtoArray($host,$user,$password,$db_or_dsn_name,$cndriver="mysql") {
@@ -2590,7 +2590,8 @@ foreach($this->arrayVariable as $name=>$value){
         
         if(isset($this->SubReportCheckPoint))
 			$checkpoint=$this->SubReportCheckPoint;
-        else
+      //  else
+		//	$checkpoint=$this->arraydetail[0]["y_axis"];
 			$checkpoint=$this->arraydetail[0]["y_axis"];
 
 //		$this->pdf->SetY($checkpoint);
@@ -2679,9 +2680,9 @@ foreach($this->arrayVariable as $name=>$value){
                         //$this->relativebottomline($out,$tempY);
                             $this->relativebottomline($out,$biggestY);
                             break;
-                          case "":
-                          ;
-                          break;
+            //              case "subreport":
+              //            die;
+                //          break;
                         default:
 							//echo $out["hidden_type"]."=".print_r($out,true)."<br/><br/>";
                             $this->display($out,$checkpoint);
@@ -2784,7 +2785,8 @@ foreach($this->arrayVariable as $name=>$value){
         
         if(isset($this->SubReportCheckPoint))
 			$checkpoint=$this->SubReportCheckPoint;
-        else
+//        else
+	//		$checkpoint=$this->arraydetail[0]["y_axis"];
 			$checkpoint=$this->arraydetail[0]["y_axis"];
 
 //		$this->pdf->SetY($checkpoint);
@@ -3216,6 +3218,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
         }
         elseif($arraydata["type"]=="subreport") {
+			
             $this->runSubReport($arraydata,$y_axis);
 //            $y_axis=$this->SubReportCheckPoint;
         }
@@ -3624,7 +3627,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
             }
             $t=implode($arrdata);
         }
-            if($this->currentband=='pageHeader'){
+   /*         if($this->currentband=='pageHeader'){
                 $this->includeSubReport($d,$arrdata2,$current_y);
             }
             if($this->currentband=='pageFooter'){
@@ -3636,11 +3639,20 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
             if($this->currentband=='groupHeader'){
                 $this->includeSubReport($d,$arrdata2,$current_y);
             }
+            if($this->currentband=='groupFooter'){
+                $this->includeSubReport($d,$arrdata2,$current_y);
+            }
+            if($this->currentband=='summary'){
+                $this->includeSubReport($d,$arrdata2,$current_y);
+            }
             if($this->currentband=='detail'){
                 $this->includeSubReport($d,$arrdata2,$current_y);
             }
+       */
+              $this->includeSubReport($d,$arrdata2,$current_y);
         $this->insubReport=0;
     }
+    
     public function transferXMLtoArray($fileName) {
         if(!file_exists($fileName))
             echo "File - $fileName does not exist";
@@ -3660,10 +3672,10 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
     }
 
-    public function includeSubReport($d,$arrdata,$current_y){ 
+    public function includeSubReport($d,$arrdata,$current_y,$xoffset){ 
                include_once ("PHPJasperXMLSubReport.inc.php");
                $srxml=  simplexml_load_file($d['subreportExpression']);
-               $PHPJasperXMLSubReport= new PHPJasperXMLSubReport();
+               $PHPJasperXMLSubReport= new PHPJasperXMLSubReport($this->lang,$this->pdflib,$d['x']);
                $PHPJasperXMLSubReport->arrayParameter=$arrdata;
 //               $PHPJasperXMLSubReport->debugsql=1;
                $PHPJasperXMLSubReport->xml_dismantle($srxml);
