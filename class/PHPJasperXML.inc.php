@@ -2680,12 +2680,13 @@ foreach($this->arrayVariable as $name=>$value){
                         //$this->relativebottomline($out,$tempY);
                             $this->relativebottomline($out,$biggestY);
                             break;
-            //              case "subreport":
-              //            die;
-                //          break;
+                          case "subreport":
+                            $this->display($out,$checkpoint);
+						 break;
                         default:
 							//echo $out["hidden_type"]."=".print_r($out,true)."<br/><br/>";
                             $this->display($out,$checkpoint);
+							$maxheight=$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->pdf->GetY()-15;
 				//				$checkpoint=$this->arraydetail[0]["y_axis"];
 
                             //$checkpoint=$this->pdf->GetY();
@@ -2698,8 +2699,9 @@ foreach($this->arrayVariable as $name=>$value){
 
 				$this->pdf->lastPage();
 								
-                if($this->SubReportCheckPoint>0)
-					$biggestY=$this->SubReportCheckPoint; $this->SubReportCheckPoint=0; //if subreport return position
+//                if($this->SubReportCheckPoint>0)
+	//				$biggestY=$this->SubReportCheckPoint;
+		//			$this->SubReportCheckPoint=0; //if subreport return position
 
         if(isset($this->arraygroup)&&
            ($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer+1][$this->group_pointer])){
@@ -3346,19 +3348,39 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
             if($arraydata["writeHTML"]==1 && $this->pdflib=="TCPDF") {
                 $this->pdf->writeHTML($txt);
-			
+			$this->pdf->Ln();
+					if($this->currentband=='detail'){
+					if($this->maxpagey['page_'.($this->pdf->getPage()-1)]=='')
+						$this->maxpagey['page_'.($this->pdf->getPage()-1)]=$this->pdf->GetY();
+					else{
+						if($this->maxpagey['page_'.($this->pdf->getPage()-1)]<$this->pdf->GetY())
+							$this->maxpagey['page_'.($this->pdf->getPage()-1)]=$this->pdf->GetY();
+					}
+				}
+            
             }
             elseif($arraydata["poverflow"]=="true"&&$arraydata["soverflow"]=="false") {
                 
                 $this->pdf->Cell($arraydata["width"], $arraydata["height"], $this->formatText($txt, $arraydata["pattern"]),$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"]);
+				$this->pdf->Ln();
+					if($this->currentband=='detail'){
+					if($this->maxpagey['page_'.($this->pdf->getPage()-1)]=='')
+						$this->maxpagey['page_'.($this->pdf->getPage()-1)]=$this->pdf->GetY();
+					else{
+						if($this->maxpagey['page_'.($this->pdf->getPage()-1)]<$this->pdf->GetY())
+							$this->maxpagey['page_'.($this->pdf->getPage()-1)]=$this->pdf->GetY();
+					}
+				}
             
             }
             elseif($arraydata["poverflow"]=="false"&&$arraydata["soverflow"]=="false") {
                 while($this->pdf->GetStringWidth($txt) > $arraydata["width"]) {
                     $txt=substr_replace($txt,"",-1);
                 }
-                $this->pdf->Cell($arraydata["width"], $arraydata["height"],$this->formatText($txt, $arraydata["pattern"]),$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"]);
-    		if($this->currentband=='detail'){
+                $this->pdf->Cell($arraydata["width"], $arraydata["height"],$this->formatText($txt, $arraydata["pattern"]),
+						$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"]);
+				$this->pdf->Ln();
+					if($this->currentband=='detail'){
 					if($this->maxpagey['page_'.($this->pdf->getPage()-1)]=='')
 						$this->maxpagey['page_'.($this->pdf->getPage()-1)]=$this->pdf->GetY();
 					else{
@@ -3672,7 +3694,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
     }
 
-    public function includeSubReport($d,$arrdata,$current_y,$xoffset){ 
+    public function includeSubReport($d,$arrdata,$current_y){ 
                include_once ("PHPJasperXMLSubReport.inc.php");
                $srxml=  simplexml_load_file($d['subreportExpression']);
                $PHPJasperXMLSubReport= new PHPJasperXMLSubReport($this->lang,$this->pdflib,$d['x']);
