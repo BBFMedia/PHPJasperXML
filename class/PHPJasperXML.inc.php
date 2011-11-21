@@ -17,7 +17,7 @@ class PHPJasperXML {
     private $titleheight=0;
 	private $report_count=1;		//### New declaration (variable exists in original too)
 	private $group_count = array(); //### New declaration
-    public function PHPJasperXML($lang="en",$pdflib="FPDF") {
+    public function PHPJasperXML($lang="en",$pdflib="TCPDF") {
         $this->lang=$lang;
 //        error_reporting(0);
         $this->pdflib=$pdflib;
@@ -1586,7 +1586,7 @@ $titlefontname=strtolower($titlefontname);
 	  $photofile="$tmpchartfolder/chart$randomchartno.png";
 
              $this->chart->Render($photofile);
-
+			
              if(file_exists($photofile)){
                 $this->pdf->Image($photofile,$x+$this->arrayPageSetting["leftMargin"],$y_axis+$y1,$w,$h,"PNG");
                 unlink($photofile);
@@ -3268,6 +3268,9 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
         elseif($arraydata["type"]=="Image") {
             $path=$this->analyse_expression($arraydata["path"]);
             $imgtype=substr($path,-3);
+            if($imgtype=='jpg')
+				$imgtype="JPEG";
+         
         if(file_exists($path))
             $this->pdf->Image($path,$arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis,$arraydata["width"],$arraydata["height"],$imgtype,$arraydata["link"]);
         }
@@ -3699,7 +3702,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
                $srxml=  simplexml_load_file($d['subreportExpression']);
                $PHPJasperXMLSubReport= new PHPJasperXMLSubReport($this->lang,$this->pdflib,$d['x']);
                $PHPJasperXMLSubReport->arrayParameter=$arrdata;
-//               $PHPJasperXMLSubReport->debugsql=1;
+               $PHPJasperXMLSubReport->debugsql=1;
                $PHPJasperXMLSubReport->xml_dismantle($srxml);
                $this->passAllArrayDatatoSubReport($PHPJasperXMLSubReport,$d,$current_y);
                $PHPJasperXMLSubReport->transferDBtoArray($this->db_host,$this->db_user,$this->db_pass,$this->db_or_dsn_name);
