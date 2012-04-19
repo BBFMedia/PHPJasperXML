@@ -1,5 +1,6 @@
 <?php
-//version 0.8b
+
+//version 0.8c
 class PHPJasperXML {
     private $adjust=1.2;
     public $version=0.8;
@@ -9,7 +10,7 @@ class PHPJasperXML {
     public $debugsql=false;
     private $myconn;
     private $con;
-    private $group_name;
+    public $group_name;
     public $newPageGroup = false;
     private $curgroup=0;
     private $groupno=0;
@@ -19,7 +20,7 @@ class PHPJasperXML {
 	private $group_count = array(); //### New declaration
     public function PHPJasperXML($lang="en",$pdflib="TCPDF") {
         $this->lang=$lang;
-//        error_reporting(0);
+      error_reporting(0);
         $this->pdflib=$pdflib;
     }
 
@@ -344,10 +345,11 @@ class PHPJasperXML {
         $stretchoverflow="true";
         $printoverflow="false";
         if(isset($data->reportElement["forecolor"])) {
-            $textcolor = array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
+            
+            $textcolor = array('forecolor'=>$data->reportElement["forecolor"],"r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
         }
         if(isset($data->reportElement["backcolor"])) {
-            $fillcolor = array("r"=>hexdec(substr($data->reportElement["backcolor"],1,2)),"g"=>hexdec(substr($data->reportElement["backcolor"],3,2)),"b"=>hexdec(substr($data->reportElement["backcolor"],5,2)));
+            $fillcolor = array('backcolor'=>$data->reportElement["backcolor"],"r"=>hexdec(substr($data->reportElement["backcolor"],1,2)),"g"=>hexdec(substr($data->reportElement["backcolor"],3,2)),"b"=>hexdec(substr($data->reportElement["backcolor"],5,2)));
         }
         if($data->reportElement["mode"]=="Opaque") {
             $fill=1;
@@ -390,9 +392,9 @@ class PHPJasperXML {
             $height=$fontsize*$this->adjust;
         }
         $this->pointer[]=array("type"=>"SetXY","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"hidden_type"=>"SetXY");
-        $this->pointer[]=array("type"=>"SetTextColor","r"=>$textcolor["r"],"g"=>$textcolor["g"],"b"=>$textcolor["b"],"hidden_type"=>"textcolor");
+        $this->pointer[]=array("type"=>"SetTextColor",'forecolor'=>$data->reportElement["forecolor"].'',"r"=>$textcolor["r"],"g"=>$textcolor["g"],"b"=>$textcolor["b"],"hidden_type"=>"textcolor");
         $this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
-        $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
+        $this->pointer[]=array("type"=>"SetFillColor",'backcolor'=>$data->reportElement["backcolor"].'',"r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
         $this->pointer[]=array("type"=>"SetFont","font"=>$font,"fontstyle"=>$fontstyle,"fontsize"=>$fontsize,"hidden_type"=>"font");
         //"height"=>$data->reportElement["height"]
 //### UTF-8 characters, a must for me.	
@@ -546,9 +548,9 @@ class PHPJasperXML {
             $fontstyle=$fontstyle."U";
         }
         $this->pointer[]=array("type"=>"SetXY","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"hidden_type"=>"SetXY");
-        $this->pointer[]=array("type"=>"SetTextColor","r"=>$textcolor["r"],"g"=>$textcolor["g"],"b"=>$textcolor["b"],"hidden_type"=>"textcolor");
+        $this->pointer[]=array("type"=>"SetTextColor","forecolor"=>$data->reportElement["forecolor"],"r"=>$textcolor["r"],"g"=>$textcolor["g"],"b"=>$textcolor["b"],"hidden_type"=>"textcolor");
         $this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
-        $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
+        $this->pointer[]=array("type"=>"SetFillColor","backcolor"=>$data->reportElement["backcolor"],"r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
         $this->pointer[]=array("type"=>"SetFont","font"=>$font,"fontstyle"=>$fontstyle,"fontsize"=>$fontsize,"hidden_type"=>"font");
          //$data->hyperlinkReferenceExpression=$this->analyse_expression($data->hyperlinkReferenceExpression);
         //if( $data->hyperlinkReferenceExpression!=''){echo "$data->hyperlinkReferenceExpression";die;}
@@ -933,11 +935,21 @@ class PHPJasperXML {
                     $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageHeight"],$this->arrayPageSetting["pageWidth"]));
                 $this->pdf->setPrintHeader(false);
                 $this->pdf->setPrintFooter(false);
-            }else {
+            }elseif($this->pdflib=="FPDF") {
                 if($this->arrayPageSetting["orientation"]=="P")
                     $this->pdf=new FPDF($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageWidth"],$this->arrayPageSetting["pageHeight"]));
                 else
                     $this->pdf=new FPDF($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageHeight"],$this->arrayPageSetting["pageWidth"]));
+            }
+            elseif($this->pdflib=="XLS"){
+                
+
+            
+                 include dirname(__FILE__)."/ExportXLS.inc.php";
+                $xls= new ExportXLS($this,$filename);
+                die;
+
+
             }
         }
         //$this->arrayPageSetting["language"]=$xml_path["language"];
@@ -2638,7 +2650,7 @@ foreach($this->arrayVariable as $name=>$value){
 				if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
                     $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
                 
-				if(isset($this->arraygroup)&&($this->global_pointer>0)&&
+		if(isset($this->arraygroup)&&($this->global_pointer>0)&&
                         ($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])){	//check the group's groupExpression existed and same or not
 
 					if($isgroupfooterprinted==true){
@@ -3702,7 +3714,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
                $srxml=  simplexml_load_file($d['subreportExpression']);
                $PHPJasperXMLSubReport= new PHPJasperXMLSubReport($this->lang,$this->pdflib,$d['x']);
                $PHPJasperXMLSubReport->arrayParameter=$arrdata;
-               $PHPJasperXMLSubReport->debugsql=1;
+               $PHPJasperXMLSubReport->debugsql=$this->debugsql;
                $PHPJasperXMLSubReport->xml_dismantle($srxml);
                $this->passAllArrayDatatoSubReport($PHPJasperXMLSubReport,$d,$current_y);
                $PHPJasperXMLSubReport->transferDBtoArray($this->db_host,$this->db_user,$this->db_pass,$this->db_or_dsn_name);
