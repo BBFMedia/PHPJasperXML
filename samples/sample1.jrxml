@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report name" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="parameter1" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[new java.lang.Integer(0)]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+     sample1.`no` AS sample1_no,
+     sample1.`date` AS sample1_date,
+     sample1.`itemname` AS sample1_itemname,
+     sample1.`qty` AS sample1_qty,
+     sample1.`uom` AS sample1_uom
+FROM
+     `sample1` sample1 where sample1.`no` > $P{parameter1}]]>
+	</queryString>
+	<field name="sample1_no" class="java.lang.Integer">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="sample1_date" class="java.sql.Date">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="sample1_itemname" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="sample1_qty" class="java.lang.Integer">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="sample1_uom" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<variable name="total" class="java.lang.Integer" calculation="Sum"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="128" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="105" width="24" height="20"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="33" y="105" width="69" height="20"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="93" y="105" width="354" height="20"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Item]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="447" y="105" width="108" height="20"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="125" width="555" height="1"/>
+			</line>
+			<staticText>
+				<reportElement x="93" y="0" width="414" height="41"/>
+				<textElement>
+					<font size="26" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[This is sample report header]]></text>
+			</staticText>
+			<image>
+				<reportElement x="7" y="4" width="76" height="67"/>
+				<imageExpression><![CDATA["./simitlogo.jpg"]]></imageExpression>
+			</image>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement x="447" y="51" width="100" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="434" y="87" width="80" height="20"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="514" y="87" width="40" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="170" y="50" width="215" height="37"/>
+				<textElement/>
+				<text><![CDATA[Não ha resultados 我喜欢]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="27" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="24" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{sample1_no}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="24" y="0" width="69" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{sample1_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="93" y="0" width="354" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{sample1_itemname}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00">
+				<reportElement x="447" y="0" width="60" height="20"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{sample1_qty}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="507" y="0" width="48" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{sample1_uom}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="45" splitType="Stretch">
+			<line>
+				<reportElement x="5" y="7" width="550" height="1"/>
+			</line>
+			<staticText>
+				<reportElement x="5" y="16" width="429" height="20"/>
+				<textElement/>
+				<text><![CDATA[This is sample report footer]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="277" splitType="Stretch">
+			<barChart>
+				<chart>
+					<reportElement x="5" y="0" width="259" height="126"/>
+					<chartTitle/>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<categoryDataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{sample1_itemname}]]></seriesExpression>
+						<categoryExpression><![CDATA["CAT"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{sample1_qty}]]></valueExpression>
+						<labelExpression><![CDATA[$F{sample1_itemname}]]></labelExpression>
+					</categorySeries>
+				</categoryDataset>
+				<barPlot>
+					<plot/>
+					<itemLabel color="#000000" backgroundColor="#FFFFFF"/>
+				</barPlot>
+			</barChart>
+			<lineChart>
+				<chart>
+					<reportElement x="264" y="0" width="291" height="126"/>
+					<chartTitle/>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<categoryDataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{sample1_itemname}]]></seriesExpression>
+						<categoryExpression><![CDATA["Line 1"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{sample1_qty}]]></valueExpression>
+						<labelExpression><![CDATA[$F{sample1_itemname}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{sample1_qty}]]></seriesExpression>
+						<categoryExpression><![CDATA["Line 2"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{sample1_no}]]></valueExpression>
+						<labelExpression><![CDATA[$F{sample1_qty}]]></labelExpression>
+					</categorySeries>
+				</categoryDataset>
+				<linePlot>
+					<plot/>
+				</linePlot>
+			</lineChart>
+			<stackedAreaChart>
+				<chart>
+					<reportElement x="7" y="126" width="548" height="151"/>
+					<chartTitle/>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<categoryDataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{sample1_itemname}]]></seriesExpression>
+						<categoryExpression><![CDATA["CAT1"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{sample1_qty}]]></valueExpression>
+						<labelExpression><![CDATA[$F{sample1_itemname}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{sample1_itemname}]]></seriesExpression>
+						<categoryExpression><![CDATA["CAT 2"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{sample1_qty}]]></valueExpression>
+						<labelExpression><![CDATA[$F{sample1_itemname}]]></labelExpression>
+					</categorySeries>
+				</categoryDataset>
+				<areaPlot>
+					<plot/>
+				</areaPlot>
+			</stackedAreaChart>
+		</band>
+	</summary>
+</jasperReport>
