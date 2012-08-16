@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 PHPJasperXML
 ============
 
@@ -46,3 +47,16 @@ Join Development
 Finally
 ------------------
 This project is contribute by Sim IT Sdn Bhd, currently there is no commercial support yet. However for those company feel interest to establish long term relationship with SIm IT Sdn Bhd can visit our company website (Sim IT Sdn Bhd) and call our representative.
+=======
+PHPJasperXML ============ 
+We initialize this project (Actually it is a
+class) because of we want to develop web report in php easily (The
+output of report is PDF/XLS because it platform indepent and printer
+friendly). This project allow php programmer or report designer design
+php web report easily. Even very junior PHP programmer able to design
+the PDF/EXCEL report with iReport (java based WYSIWYG report designer),
+but run natively in PHP. This project is completely difference from
+php-java bridge, a wrapper class will convered report element from jrxml
+and pass to tcpdf/PHPExcel class.
+
+>>>>>>> Put read me msg
