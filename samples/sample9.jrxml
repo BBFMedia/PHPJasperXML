@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report7" language="javascript" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="12" bottomMargin="20">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50" isBold="false" pdfFontName="Times-Bold"/>
+	<style name="SubTitle" forecolor="#CCCCCC" fontName="Times New Roman" fontSize="18" isBold="false" pdfFontName="Times-Roman"/>
+	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="14" isBold="true" pdfFontName="Times-Roman"/>
+	<style name="Detail" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman"/>
+	<style name="Row" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
+			<style mode="Opaque" backcolor="#F0EFEF"/>
+		</conditionalStyle>
+	</style>
+	<parameter name="printType" class="java.lang.String">
+		<defaultValueExpression><![CDATA[quote]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<field name="Article" class="java.lang.String"/>
+	<field name="Category" class="java.lang.String"/>
+	<field name="Description" class="java.lang.String"/>
+	<field name="Quantity" class="java.lang.String"/>
+	<field name="Value" class="java.lang.String"/>
+	<filterExpression><![CDATA[$F{Article}.toString().length > 0 ]]></filterExpression>
+	<group name="Category" isReprintHeaderOnEachPage="true" minHeightToStartNewPage="60">
+		<groupExpression><![CDATA[$F{Category}]]></groupExpression>
+		<groupHeader>
+			<band height="43">
+				<textField isStretchWithOverflow="true">
+					<reportElement style="SubTitle" x="1" y="13" width="431" height="15" forecolor="#000000"/>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Palatino Linotype" size="11" isBold="false" isItalic="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{Category}]]></textFieldExpression>
+				</textField>
+				<line>
+					<reportElement x="0" y="41" width="555" height="2" forecolor="#000000"/>
+				</line>
+				<staticText>
+					<reportElement style="Column header" x="0" y="28" width="99" height="13" forecolor="#000000"/>
+					<textElement verticalAlignment="Bottom">
+						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Article No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="Column header" x="125" y="14" width="307" height="26" forecolor="#000000"/>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Product Description]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="Column header" x="492" y="14" width="66" height="26" forecolor="#000000">
+						<printWhenExpression><![CDATA[$P{printType} == ( "quote" )]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Quotation Per Unit (US$)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="Column header" x="443" y="14" width="47" height="26" forecolor="#000000"/>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Quantity Per Unit]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="Column header" x="502" y="15" width="50" height="26" forecolor="#000000">
+						<printWhenExpression><![CDATA[$P{printType} == ( "pricelist" )]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Price Per Pack(US$)]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band/>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="70">
+			<image>
+				<reportElement x="0" y="-1" width="206" height="66"/>
+				<imageExpression><![CDATA["D:\\temp\\Station2_r1_c2.gif"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="440" y="11" width="115" height="27">
+					<printWhenExpression><![CDATA[$P{printType} == "quote"]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Palatino Linotype" size="16" isBold="true" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[Quotation]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="440" y="12" width="115" height="27">
+					<printWhenExpression><![CDATA[$P{printType} == "pricelist"]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Palatino Linotype" size="16" isBold="true" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[Price List]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="26" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement style="Detail" positionType="Float" x="0" y="0" width="65" height="24"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Palatino Linotype" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Article}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement style="Detail" positionType="Float" x="123" y="0" width="307" height="24"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Palatino Linotype" size="8" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Description}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="true">
+				<reportElement style="Detail" positionType="Float" x="500" y="0" width="37" height="24"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Palatino Linotype" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Value}]]></textFieldExpression>
+			</textField>
+			<image hAlign="Center" vAlign="Middle" isUsingCache="false" onErrorType="Blank">
+				<reportElement stretchType="RelativeToBandHeight" x="65" y="1" width="53" height="22" forecolor="#FFFFFF"/>
+				<imageExpression><![CDATA["d://temp//images//tif2//"+ $F{Article} +".jpg"]]></imageExpression>
+			</image>
+			<textField isStretchWithOverflow="true">
+				<reportElement style="Detail" positionType="Float" x="430" y="0" width="65" height="24"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Palatino Linotype" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Quantity}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="FixRelativeToBottom" x="0" y="25" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#999999"/>
+				</graphicElement>
+			</line>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="49" splitType="Stretch">
+			<image onErrorType="Blank">
+				<reportElement x="0" y="17" width="557" height="32">
+					<printWhenExpression><![CDATA[$P{printType}.equals( "none" )]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA["D:\\temp\\Station2_r3_c2.gif"]]></imageExpression>
+			</image>
+			<line>
+				<reportElement x="1" y="12" width="555" height="1" forecolor="#D92127"/>
+			</line>
+			<image onErrorType="Blank">
+				<reportElement x="0" y="17" width="557" height="32"/>
+				<imageExpression><![CDATA["D:\\temp\\Station2_r3_c22.gif"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="475" y="0" width="132" height="20"/>
+				<textElement>
+					<font fontName="Palatino Linotype" size="8" isItalic="true" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[*All prices are ex-works]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="547" y="38" width="9" height="11"/>
+				<textElement textAlignment="Right">
+					<font fontName="Palatino Linotype" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>
