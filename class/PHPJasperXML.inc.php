@@ -15,11 +15,17 @@ class PHPJasperXML {
     private $groupno=0;
     private $footershowed=true;
     private $titleheight=0;
+    /**  defines the actual class for TCPDF
+    *    $pdflib only defines that it is pdf
+       */
 	private $pdflibClass = 'TCPDF';
+    /** jasperReport/filterExpression string *?
 	private $filterExpression;
+    /** the root path so that we can find images */
 	public $report_path = '';
 	private $report_count=1;		//### New declaration (variable exists in original too)
 	private $group_count = array(); //### New declaration
+    /** add  pdflibClass see above */
     public function PHPJasperXML($lang="en",$pdflib="TCPDF",$pdflibClass = "TCPDF") {
         $this->lang=$lang;
        // error_reporting(0);
@@ -114,7 +120,7 @@ class PHPJasperXML {
         foreach ($xml as $k=>$out) {
             switch($k) {
 			    
-			   
+			   /**  mirrors  filterExpression from the jrxml files */
 				case "filterExpression" :
 			        $this->filterExpression_handler($out);
                     break;
@@ -183,7 +189,7 @@ class PHPJasperXML {
         $this->arrayPageSetting["name"]=$xml_path["name"];
         $this->arrayPageSetting["language"]=$xml_path["language"] ;
         
-        // *1 to force force cast to int or float
+        // *1 to force cast to int or float 
         $this->arrayPageSetting["pageWidth"]=$xml_path["pageWidth"] * 1;
         $this->arrayPageSetting["pageHeight"]=$xml_path["pageHeight"]* 1;
         if(isset($xml_path["orientation"])) {
@@ -363,6 +369,8 @@ class PHPJasperXML {
         $height=$data->reportElement["height"];
         $stretchoverflow="true";
         $printoverflow="false";
+
+/** allow forground color "forecolor" */ 
         if(isset($data->reportElement["forecolor"])) {
             $textcolor = array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
         }
@@ -417,6 +425,7 @@ class PHPJasperXML {
         //"height"=>$data->reportElement["height"]
 //### UTF-8 characters, a must for me.	
 		$txtEnc=utf8_decode($data->text); 
+/** add printWhenExpression */
 		$this->pointer[]=array("type"=>"MultiCell",
 		                "printWhenExpression"=>$data->reportElement->printWhenExpression,
 						"width"=>$data->reportElement["width"],"height"=>$height,"txt"=>$txtEnc,"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"statictext","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"rotation"=>$rotation);
@@ -434,6 +443,7 @@ class PHPJasperXML {
      
         switch($data[scaleImage]) {
             case "FillFrame":
+/** add hAlign */
                 $this->pointer[]=array("type"=>"Image","path"=>$imagepath,"x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0,"width"=>$data->reportElement["width"]+0,"height"=>$data->reportElement["height"]+0,"imgtype"=>$imagetype,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"hidden_type"=>"image",'hAlign'=>$data['hAlign'] );
                 break;
             default:
@@ -448,6 +458,7 @@ class PHPJasperXML {
         if(isset($data->reportElement["forecolor"])) {
             $drawcolor=array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
         }
+    /** add drawing of lines */
 	 if ((isset($data->graphicElement) ) and (isset($data->graphicElement->pen)))
          {
 		  if(isset($data->graphicElement->pen["lineColor"])) 
@@ -563,6 +574,7 @@ class PHPJasperXML {
         if(isset($data->textElement["textAlignment"])) {
             $align=$this->get_first_value($data->textElement["textAlignment"]);
         }
+             /** get verital align */
         if(isset($data->textElement["textAlignment"])) {
             $valign=$this->get_first_value($data->textElement["verticalAlignment"]);
         }
@@ -585,9 +597,10 @@ class PHPJasperXML {
             $fontstyle=$fontstyle."U";
         }
         $this->pointer[]=array("type"=>"SetXY","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"hidden_type"=>"SetXY");
-        $this->pointer[]=array("type"=>"SetTextColor","r"=>$textcolor["r"],"g"=>$textcolor["g"],"b"=>$textcolor["b"],"hidden_type"=>"textcolor");
+ /** todo: need to check that forecolor and backcolor work. I add it from older code without checking it */
+        $this->pointer[]=array("type"=>"SetTextColor","forecolor"=>$data->reportElement["forecolor"],"r"=>$textcolor["r"],"g"=>$textcolor["g"],"b"=>$textcolor["b"],"hidden_type"=>"textcolor");
         $this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
-        $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
+        $this->pointer[]=array("type"=>"SetFillColor","backcolor"=>$data->reportElement["backcolor"],"r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
         $this->pointer[]=array("type"=>"SetFont","font"=>$font,"fontstyle"=>$fontstyle,"fontsize"=>$fontsize,"hidden_type"=>"font");
          //$data->hyperlinkReferenceExpression=$this->analyse_expression($data->hyperlinkReferenceExpression);
         //if( $data->hyperlinkReferenceExpression!=''){echo "$data->hyperlinkReferenceExpression";die;}
@@ -596,10 +609,12 @@ class PHPJasperXML {
         switch ($data->textFieldExpression) {
             case 'new java.util.Date()':
 //### New: =>date("Y.m.d.",....
+/** added valign  for the next 35 lines */
                 $this->pointer[]=array ("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>date("Y-m-d H:i:s"),"border"=>$border,"align"=>$align,'valign'=>$valign,"fill"=>$fill,"hidden_type"=>"date","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1));
 //### End of modification				
                 break;
             case '"Page "+$V{PAGE_NUMBER}+" of"':
+
                 $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'Page $this->PageNo() of',"border"=>$border,"align"=>$align,'valign'=>$valign,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"]);
                 break;
             case '$V{PAGE_NUMBER}':
@@ -964,7 +979,7 @@ class PHPJasperXML {
             }
         }
         else {
-
+// removed the hard coded TCPDF to a varible that can be set in the constuctor
             if($this->pdflib=="TCPDF") {
 			    $pdflibclass = $this->pdflibClass;
                 if($this->arrayPageSetting["orientation"]=="P")
@@ -978,6 +993,16 @@ class PHPJasperXML {
                     $this->pdf=new $pdflibclass($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageWidth"],$this->arrayPageSetting["pageHeight"]));
                 else
                     $this->pdf=new $pdflibclass($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageHeight"],$this->arrayPageSetting["pageWidth"]));
+            }
+            elseif($this->pdflib=="XLS"){
+                
+// I added thi code back from 0.8c without having any idea how it works
+            
+                 include dirname(__FILE__)."/ExportXLS.inc.php";
+                $xls= new ExportXLS($this,$filename);
+                die;
+
+
             }
         }
         //$this->arrayPageSetting["language"]=$xml_path["language"];
@@ -2582,6 +2607,7 @@ foreach($this->arrayVariable as $name=>$value){
 					$this->hideheader==true;
 					
 					$this->currentband='detail';  
+   // remaps jasper font names to the odd TCPDF font names 
 					$this->pdf->SetFont($this->getFontMap($fontfamily),$fontstyle,$fontsize);
 					$this->pdf->SetTextColor($this->forcetextcolor_r,$this->forcetextcolor_g,$this->forcetextcolor_b);
 					//$this->pdf->SetTextColor(44,123,4);
@@ -2597,6 +2623,7 @@ foreach($this->arrayVariable as $name=>$value){
 								$bltxt['align'],$bltxt['fill'],$bltxt['ln'],'','',$bltxt['reset'],
 								$bltxt['streth'],$bltxt['ishtml'],$bltxt['autopadding'],$maxheight-$bltxt['height']);
 							
+// you guess is good as mine what this does
 					if($this->pdf->balancetext!=''){
 							$this->continuenextpageText=array('width'=>$bltxt["width"], 'height'=>$bltxt["height"], 
 								'txt'=>$this->pdf->balancetext,	'border'=>$bltxt["border"] ,'align'=>$bltxt["align"], 'fill'=>$bltxt["fill"],'ln'=>1,
@@ -2634,6 +2661,7 @@ foreach($this->arrayVariable as $name=>$value){
 		//	$checkpoint=$this->arraydetail[0]["y_axis"];
 			$checkpoint=$this->arraydetail[0]["y_axis"];
 			
+// set fixed sizes to be used later
 $pageheight=$this->arrayPageSetting["pageHeight"];
 		$footerheight=$this->footerbandheight;
 		$headerheight=$this->headerbandheight;
@@ -2643,7 +2671,7 @@ $pageheight=$this->arrayPageSetting["pageHeight"];
 		//		$this->pdf->SetY($checkpoint);
 	//	$this->pdf->MultiCell(200,10,"====",1);
 
-	
+	// render footer if at bottom of page and then render header on next page
        if($checkpoint>= $pageheight- $footerheight -$bottommargin - ($this->arraygrouphead[0]['height'] * 1.5)-1)
 		 {
 						$this->pageFooter();
@@ -2661,6 +2689,7 @@ $pageheight=$this->arrayPageSetting["pageHeight"];
         
         if($this->arraysqltable) {
 		$n=0;
+// loop though band but skip if not match $filterExpressio
             while($row = $this->arraysqltable[$this->global_pointer] ) {
 	         $filterExpression_result =	$this->analyse_expression($this->filterExpression);  
 		//	var_dump( $filterExpression_result);
@@ -2685,6 +2714,8 @@ $pageheight=$this->arrayPageSetting["pageHeight"];
 		$detailheight=$this->detailbandheight;
 		
 		//if content near page footer
+
+// caclulated band hieght i think
 	             if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
                     $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
              
@@ -2730,6 +2761,9 @@ $pageheight=$this->arrayPageSetting["pageHeight"];
 $biggestY = 0;
                 foreach ($this->arraydetail as $out) {
 //						echo $out["hidden_type"]."<br/>";
+
+// when ever a items height is higher that the current heighest it because the current heighest
+// this is how we know the size of the band
                    if($this->pdf->GetY() > $biggestY) {
                                 $biggestY = $this->pdf->GetY();
                             }
@@ -2944,7 +2978,8 @@ $biggestY = 0;
     
 							$maxheight=$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->pdf->GetY()-10;
                             $this->prepare_print_array=array("type"=>"MultiCell","width"=>$out["width"],"height"=>$out["height"],"txt"=>$out["txt"],
-									"border"=>$out["border"],"align"=>$out["align"],"valign"=>$out["valign"],"fill"=>$out["fill"],"hidden_type"=>$out["hidden_type"],
+// add valign					
+				"border"=>$out["border"],"align"=>$out["align"],"valign"=>$out["valign"],"fill"=>$out["fill"],"hidden_type"=>$out["hidden_type"],
 									"printWhenExpression"=>$out["printWhenExpression"],"soverflow"=>$out["soverflow"],"poverflow"=>$out["poverflow"],"link"=>$out["link"],
 									"pattern"=>$out["pattern"],"writeHTML"=>$out["writeHTML"],"isPrintRepeatedValues"=>$out["isPrintRepeatedValues"]);
 //		$this->pdf->Cell(300,10,"==$checkpoint --",1);
@@ -3342,7 +3377,8 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 			}
         elseif($arraydata["type"]=="Image") {
             $path=$this->analyse_expression($arraydata["path"]);
-			if (file_exists($this->report_path. $path))
+// find image in root path			
+				if (file_exists($this->report_path. $path))
 			   $path =$this->report_path. $path;
                   
 		 $imgtype=substr($path,-3);
@@ -3475,6 +3511,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
             elseif($arraydata["poverflow"]=="false"&&$arraydata["soverflow"]=="true") {
 				
 				$x=$this->pdf->GetX();
+// calc height
 				$calcHeight = $this->pdf->getStringHeight($arraydata["width"],$this->formatText($txt, $arraydata["pattern"]));
 				$al = 'T';
 				$thismax = $maxheight;
@@ -3586,6 +3623,9 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
     public function analyse_expression($data,$isPrintRepeatedValue="true") {
       
+// the expressions have completly changed so that we can do true exprssions.
+// use classes for each language   language="javascript" in the jrxml or language="groovy"
+// javascript is workign
 	//  if (empty($data))
 	//     return null;
 		 
@@ -3741,6 +3781,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
     public function print_expression($data) {
         $expression=$data["printWhenExpression"];
+// use analyse_expression 
 		if($expression=="") {
             $this->print_expression_result=true;
 			return ;
