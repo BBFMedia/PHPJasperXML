@@ -988,7 +988,7 @@ class PHPJasperXML {
                     $this->pdf=new $pdflibclass($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageHeight"],$this->arrayPageSetting["pageWidth"]));
                 $this->pdf->setPrintHeader(false);
                 $this->pdf->setPrintFooter(false);
-            }else {
+            }elseif($this->pdflib=="FPDF") {
                 if($this->arrayPageSetting["orientation"]=="P")
                     $this->pdf=new $pdflibclass($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageWidth"],$this->arrayPageSetting["pageHeight"]));
                 else
