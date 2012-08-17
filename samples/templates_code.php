@@ -1,6 +1,6 @@
 <?php
 include_once "PHPJasperXML.inc";
-include_once('fpdf/fpdf.php');
+include_once('../class/fpdf/fpdf.php');
 //include_once "../../mainfile.php";
 /*$data=$_POST['a'];
 $select=$_POST['select'];

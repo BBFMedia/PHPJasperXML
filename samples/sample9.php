@@ -93,12 +93,17 @@ $datasheet->setOutputEncoding('UTF-8');
      $headers[$key] = $i;
     }
 	
-
+$emptyHeader = array();
+foreach($headers as  $h)
+{
+     $emptyHeader[$h] = '';
+     
+}
 	unset($data[0]);
      foreach($data as $item)
     {
    
-    $d = array();
+    $d = $emptyHeader;
     foreach($item as $key => $col)
       $d[$headers[$key]] = $col;
     $this->arraysqltable[] = $d;
@@ -131,23 +136,23 @@ class myTCPDF extends TCPDF
 
 	parent::__construct($orientation , $unit , $format , $unicode, $encoding, $diskcache);
 	$this->jpeg_quality = 90;
-	$fontname = $this->addTTFfont('D:\projects\OE\OE Reports\fonts\pala.ttf', 'TrueTypeUnicode', '', 32);
+	$fontname = $this->addTTFfont('pala.ttf', 'TrueTypeUnicode', '', 32);
 	
 	}
   }
 
 
 
-                
-$xml =  simplexml_load_file("D:\projects\OE\OE Reports\import\Quote.jrxml");
+$root = dirname(__FILE__);               
+$xml =  simplexml_load_file($root.'\sample9.jrxml');
 
 $PHPJasperXML = new xmlJasper("en","TCPDF","myTCPDF");
 $PHPJasperXML->fontmap['Palatino Linotype'] = 'times';
-$PHPJasperXML->report_path = "D:/OE Reports/";
+$PHPJasperXML->report_path = $root.'/';
 //$PHPJasperXML->debugsql=true;
 $PHPJasperXML->arrayParameter=array("printType"=>"quote");
 $PHPJasperXML->xml_dismantle($xml);
-$PHPJasperXML->transferXLStoArray('D:\projects\OE\OE Reports\import\PriceListImport.xls'); 
+$PHPJasperXML->transferXLStoArray($root.'/sample9.xls'); 
 				
 
 $PHPJasperXML->outpage("I");    //page output method I:standard output  D:Download file

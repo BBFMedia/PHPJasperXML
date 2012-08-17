@@ -18,6 +18,7 @@ Organization: <a href='http://www.simit.com.my'>Sim IT Sdn Bhd</a><br>
     <li><a href='sample6.php?filename=sample.pdf' target='_blank'>Sample 6</a> Grouping by new page, pattern formating and hide repeated value, report export as file (sample.pdf) at tmp/ folder.</li>
     <li><a href='sample7.php' target='_blank'>Sample 7</a>(Similar with sample2, using postgresql native driver, postgresql database 'phpjasperxml' is needed )</li>
     <li><a href='sample8.php' target='_blank'>Sample 8</a>(Support sub-reports, not yet stable)</li>
+    <li><a href='sample9.php' target='_blank'>Sample 9</a>(Images and Excel files)</li>
 </html>
 EOF;
 ?>

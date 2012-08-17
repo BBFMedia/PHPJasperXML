@@ -4,8 +4,8 @@
  * and open the template in the editor.
  */
  $filename=$_GET["filename"];
-include_once('class/tcpdf/tcpdf.php');
-include_once("class/PHPJasperXML.inc.php");
+include_once('../class/tcpdf/tcpdf.php');
+include_once("../class/PHPJasperXML.inc.php");
 
 
 include_once ('setting.php');

@@ -24,7 +24,7 @@
 	<field name="Description" class="java.lang.String"/>
 	<field name="Quantity" class="java.lang.String"/>
 	<field name="Value" class="java.lang.String"/>
-	<filterExpression><![CDATA[$F{Article}.toString().length > 0 ]]></filterExpression>
+	<filterExpression><![CDATA[$F{Article}.toString().length > 1]]></filterExpression>
 	<group name="Category" isReprintHeaderOnEachPage="true" minHeightToStartNewPage="60">
 		<groupExpression><![CDATA[$F{Category}]]></groupExpression>
 		<groupHeader>
@@ -40,18 +40,18 @@
 					<reportElement x="0" y="41" width="555" height="2" forecolor="#000000"/>
 				</line>
 				<staticText>
-					<reportElement style="Column header" x="0" y="28" width="99" height="13" forecolor="#000000"/>
+					<reportElement style="Column header" x="0" y="27" width="99" height="13" forecolor="#000000"/>
 					<textElement verticalAlignment="Bottom">
 						<font fontName="Palatino Linotype" size="9" isBold="true"/>
 					</textElement>
-					<text><![CDATA[Article No.]]></text>
+					<text><![CDATA[Article]]></text>
 				</staticText>
 				<staticText>
-					<reportElement style="Column header" x="125" y="14" width="307" height="26" forecolor="#000000"/>
+					<reportElement style="Column header" x="125" y="18" width="307" height="22" forecolor="#000000"/>
 					<textElement textAlignment="Center" verticalAlignment="Bottom">
 						<font fontName="Palatino Linotype" size="9" isBold="true"/>
 					</textElement>
-					<text><![CDATA[Product Description]]></text>
+					<text><![CDATA[Description]]></text>
 				</staticText>
 				<staticText>
 					<reportElement style="Column header" x="492" y="14" width="66" height="26" forecolor="#000000">
@@ -63,20 +63,29 @@
 					<text><![CDATA[Quotation Per Unit (US$)]]></text>
 				</staticText>
 				<staticText>
-					<reportElement style="Column header" x="443" y="14" width="47" height="26" forecolor="#000000"/>
+					<reportElement style="Column header" x="442" y="14" width="47" height="26" forecolor="#000000"/>
 					<textElement textAlignment="Center" verticalAlignment="Bottom">
 						<font fontName="Palatino Linotype" size="9" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Quantity Per Unit]]></text>
 				</staticText>
 				<staticText>
-					<reportElement style="Column header" x="502" y="15" width="50" height="26" forecolor="#000000">
+					<reportElement style="Column header" x="502" y="14" width="50" height="26" forecolor="#000000">
 						<printWhenExpression><![CDATA[$P{printType} == ( "pricelist" )]]></printWhenExpression>
 					</reportElement>
 					<textElement textAlignment="Center" verticalAlignment="Bottom">
 						<font fontName="Palatino Linotype" size="9" isBold="true"/>
 					</textElement>
-					<text><![CDATA[Price Per Pack(US$)]]></text>
+					<text><![CDATA[Price Per Unit(US$)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="Column header" x="500" y="14" width="50" height="26" forecolor="#000000">
+						<printWhenExpression><![CDATA[$P{printType} == ( "ordersheet" )]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Units Ordered]]></text>
 				</staticText>
 			</band>
 		</groupHeader>
@@ -91,7 +100,7 @@
 		<band height="70">
 			<image>
 				<reportElement x="0" y="-1" width="206" height="66"/>
-				<imageExpression><![CDATA["D:\\temp\\Station2_r1_c2.gif"]]></imageExpression>
+				<imageExpression><![CDATA["images/logo.jpg"]]></imageExpression>
 			</image>
 			<staticText>
 				<reportElement x="440" y="11" width="115" height="27">
@@ -111,6 +120,13 @@
 				</textElement>
 				<text><![CDATA[Price List]]></text>
 			</staticText>
+			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="true">
+				<reportElement style="Detail" positionType="Float" x="490" y="38" width="65" height="24"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Palatino Linotype" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[""]]></textFieldExpression>
+			</textField>
 		</band>
 	</pageHeader>
 	<columnHeader>
@@ -133,7 +149,9 @@
 				<textFieldExpression><![CDATA[$F{Description}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="true">
-				<reportElement style="Detail" positionType="Float" x="500" y="0" width="37" height="24"/>
+				<reportElement style="Detail" positionType="Float" x="500" y="0" width="37" height="24">
+					<printWhenExpression><![CDATA[$P{printType} != "ordersheet"]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font fontName="Palatino Linotype" size="8"/>
 				</textElement>
@@ -141,10 +159,10 @@
 			</textField>
 			<image hAlign="Center" vAlign="Middle" isUsingCache="false" onErrorType="Blank">
 				<reportElement stretchType="RelativeToBandHeight" x="65" y="1" width="53" height="22" forecolor="#FFFFFF"/>
-				<imageExpression><![CDATA["d://temp//images//tif2//"+ $F{Article} +".jpg"]]></imageExpression>
+				<imageExpression><![CDATA["images/"+ $F{Image} +".jpg"]]></imageExpression>
 			</image>
 			<textField isStretchWithOverflow="true">
-				<reportElement style="Detail" positionType="Float" x="430" y="0" width="65" height="24"/>
+				<reportElement style="Detail" positionType="Float" x="431" y="0" width="65" height="24"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font fontName="Palatino Linotype" size="8"/>
 				</textElement>
@@ -167,14 +185,14 @@
 				<reportElement x="0" y="17" width="557" height="32">
 					<printWhenExpression><![CDATA[$P{printType}.equals( "none" )]]></printWhenExpression>
 				</reportElement>
-				<imageExpression><![CDATA["D:\\temp\\Station2_r3_c2.gif"]]></imageExpression>
+				<imageExpression><![CDATA["images/footer.gif"]]></imageExpression>
 			</image>
 			<line>
 				<reportElement x="1" y="12" width="555" height="1" forecolor="#D92127"/>
 			</line>
 			<image onErrorType="Blank">
 				<reportElement x="0" y="17" width="557" height="32"/>
-				<imageExpression><![CDATA["D:\\temp\\Station2_r3_c22.gif"]]></imageExpression>
+				<imageExpression><![CDATA["images/footer.gif"]]></imageExpression>
 			</image>
 			<staticText>
 				<reportElement x="475" y="0" width="132" height="20"/>
@@ -183,7 +201,7 @@
 				</textElement>
 				<text><![CDATA[*All prices are ex-works]]></text>
 			</staticText>
-			<textField>
+			<textField pattern="#,##0">
 				<reportElement x="547" y="38" width="9" height="11"/>
 				<textElement textAlignment="Right">
 					<font fontName="Palatino Linotype" size="8"/>

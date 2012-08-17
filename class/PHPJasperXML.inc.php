@@ -181,18 +181,20 @@ class PHPJasperXML {
     public function page_setting($xml_path) {
         $this->arrayPageSetting["orientation"]="P";
         $this->arrayPageSetting["name"]=$xml_path["name"];
-        $this->arrayPageSetting["language"]=$xml_path["language"];
-        $this->arrayPageSetting["pageWidth"]=$xml_path["pageWidth"];
-        $this->arrayPageSetting["pageHeight"]=$xml_path["pageHeight"];
+        $this->arrayPageSetting["language"]=$xml_path["language"] ;
+        
+        // *1 to force force cast to int or float
+        $this->arrayPageSetting["pageWidth"]=$xml_path["pageWidth"] * 1;
+        $this->arrayPageSetting["pageHeight"]=$xml_path["pageHeight"]* 1;
         if(isset($xml_path["orientation"])) {
             $this->arrayPageSetting["orientation"]=substr($xml_path["orientation"],0,1);
         }
-        $this->arrayPageSetting["columnWidth"]=$xml_path["columnWidth"];
-        $this->arrayPageSetting["leftMargin"]=$xml_path["leftMargin"];
-        $this->arrayPageSetting["rightMargin"]=$xml_path["rightMargin"];
-        $this->arrayPageSetting["topMargin"]=$xml_path["topMargin"];
-        $this->y_axis=$xml_path["topMargin"];
-        $this->arrayPageSetting["bottomMargin"]=$xml_path["bottomMargin"];
+        $this->arrayPageSetting["columnWidth"]=$xml_path["columnWidth"]* 1;
+        $this->arrayPageSetting["leftMargin"]=$xml_path["leftMargin"]* 1;
+        $this->arrayPageSetting["rightMargin"]=$xml_path["rightMargin"]* 1;
+        $this->arrayPageSetting["topMargin"]=$xml_path["topMargin"]* 1;
+        $this->y_axis=$xml_path["topMargin"]* 1;
+        $this->arrayPageSetting["bottomMargin"]=$xml_path["bottomMargin"]* 1;
     }
 
     public function parameter_handler($xml_path) {
