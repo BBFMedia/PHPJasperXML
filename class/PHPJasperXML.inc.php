@@ -3,9 +3,28 @@
 class PHPJasperXML {
     
     
+    /**
+     * is the used parser class object
+     * @var jasperParser 
+     */
+    private $_parser = null;
+
+    /** 
+     * general settings 
+     * 
+     * 'database' => object
+     * 'outputType => object
+     * 
+     * if these are not set the will be created. This is also set but __construtor 
+     * for backwards compatablity
+     * 
+     * @var mixed[] 
+     */
+    private $_options = array();
+    
     
     private $adjust=1.2;
-    public $version=0.8;
+    public $version=0.9;
    
     private $pdflib;
     private $lang;
@@ -14,6 +33,11 @@ class PHPJasperXML {
     private $myconn;
     private $con;
     private $group_name;
+    
+    /**
+     * below or all vars that where used but never decalared
+     * @var type 
+     */
     public $newPageGroup = false;
     private $curgroup=0;
     private $groupno=0;
@@ -43,13 +67,21 @@ class PHPJasperXML {
     *    $pdflib only defines that it is pdf
        */
 	private $pdflibClass = 'TCPDF';
-    /** jasperReport/filterExpression string *?
+    /** jasperReport/filterExpression string */
 	private $filterExpression;
     /** the root path so that we can find images */
 	public $report_path = '';
 	private $report_count=1;		//### New declaration (variable exists in original too)
 	private $group_count = array(); //### New declaration
-    /** add  pdflibClass see above */
+        
+    /**
+     *
+     * @todo need to create JasperTDCPDF object if is set $pdflib and add it to $_options
+     * 
+     * @param type $lang
+     * @param type $pdflib
+     * @param type $pdflibClass 
+     */
     public function PHPJasperXML($lang="en",$pdflib="TCPDF",$pdflibClass = "TCPDF") {
         $this->lang=$lang;
        // error_reporting(0);
@@ -59,7 +91,7 @@ class PHPJasperXML {
     
     function __get($name)
     {
-    var_dump($name);    
+    die($name . ' - Never declared');    
     }
     public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
     $this->db_host=$db_host;
