@@ -1,6 +1,8 @@
 <?php
 //version 0.8
 class PHPJasperXMLSubReport{
+    
+    private $__database = null;
     private $adjust=1.2;
     public $version=0.8;
     private $pdflib;
@@ -25,86 +27,6 @@ class PHPJasperXMLSubReport{
         $this->xoffset=$xoffset;
     }
 
-    public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
-    $this->db_host=$db_host;
-            $this->db_user=$db_user;
-       $this->db_pass=$db_pass;
-    $this->db_or_dsn_name=$db_or_dsn_name;
-    $this->cndriver=$cndriver;
-        if($cndriver=="mysql") {
-
-            if(!$this->con) {
-                $this->myconn = @mysql_connect($db_host,$db_user,$db_pass);
-                if($this->myconn) {
-                    $seldb = @mysql_select_db($db_or_dsn_name,$this->myconn);
-                    if($seldb) {
-                        $this->con = true;
-                        return true;
-                    }
-                    else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            } else {
-                return true;
-            }
-            return true;
-        }elseif($cndriver=="psql") {
-            global $pgport;
-            if($pgport=="" || $pgport==0)
-                $pgport=5432;
-
-            $conn_string = "host=$db_host port=$pgport dbname=$db_or_dsn_name user=$db_user password=$db_pass";
-            $this->myconn = pg_connect($conn_string);
-
-
-            if($this->myconn) {
-                $this->con = true;
-
-                return true;
-            }else
-                return false;
-        }
-        else {
-
-            if(!$this->con) {
-                $this->myconn = odbc_connect($db_or_dsn_name,$db_user,$db_pass);
-
-                if( $this->myconn) {
-                    $this->con = true;
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return true;
-            }
-        }
-    }
-
-    public function disconnect($cndriver="mysql") {
-        if($cndriver=="mysql") {
-            if($this->con) {
-                if(@mysql_close()) {
-                    $this->con = false;
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }elseif($cndriver=="psql") {
-            $this->con = false;
-            pg_close($this->myconn);
-        }
-        else {
-
-            $this->con = false;
-            odbc_close( $this->myconn);
-        }
-    }
 
     public function xml_dismantle($xml) {
         $this->page_setting($xml);
@@ -580,54 +502,25 @@ class PHPJasperXMLSubReport{
                         "subreportExpression"=>$subreportExpression);
     }
 
-    public function transferDBtoArray($host,$user,$password,$db_or_dsn_name,$cndriver="mysql") {
-        $this->m=0;
-
-        if(!$this->connect($host,$user,$password,$db_or_dsn_name,$cndriver))	//connect database
-        {
-            echo "Fail to connect database";
-            exit(0);
-        }
-        if($this->debugsql==true) {
-            echo $this->sql;
-            die;
-        }
-
-        if($cndriver=="odbc") {
-
-            $result=odbc_exec( $this->myconn,$this->sql);
-            while ($row = odbc_fetch_array($result)) {
+    /**
+     *
+     * @param JasperDatabase $db 
+     */
+    public function setDatabase($db)
+    {
+        $this->_database = $db;
+        $result = $db->query($this->sql);
+        
+        while ($row = $db->next($result)) {
                 foreach($this->arrayfield as $out) {
                     $this->arraysqltable[$this->m]["$out"]=$row["$out"];
                 }
                 $this->m++;
-            }
-        }elseif($cndriver=="psql") {
-
-
-            pg_send_query($this->myconn,$this->sql);
-            $result = pg_get_result($this->myconn);
-            while ($row = pg_fetch_array($result, NULL, PGSQL_ASSOC)) {
-                foreach($this->arrayfield as $out) {
-                    $this->arraysqltable[$this->m]["$out"]=$row["$out"];
-                }
-                $this->m++;
-            }
+        
+        
         }
-        else {
-            $result = @mysql_query($this->sql); //query from db
-
-            while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-                foreach($this->arrayfield as $out) {
-                    $this->arraysqltable[$this->m]["$out"]=$row["$out"];
-                }
-                $this->m++;
-            }
-        }
-
-       	//close connection to db
-
     }
+
 
     public function time_to_sec($time) {
         $hours = substr($time, 0, -6);

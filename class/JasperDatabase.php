@@ -10,8 +10,8 @@
  *
  * @author adrian
  */
-class JasperDatabase {
-    //put your code here
+abstract class JasperDatabase {
+   abstract  public function query($sql);
+  abstract  public function next($queryObject);
 }
 
-?>

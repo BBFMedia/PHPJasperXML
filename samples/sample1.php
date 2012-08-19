@@ -3,9 +3,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-include_once('class/tcpdf/tcpdf.php');
-include_once("class/PHPJasperXML.inc.php");
+include_once('../class/tcpdf/tcpdf.php');
+include_once("../class/PHPJasperXML.inc.php");
 include_once ('setting.php');
+require_once '../class/JasperDatabase.php';
+require_once '../class/JasperMysql.php';
 
 
 

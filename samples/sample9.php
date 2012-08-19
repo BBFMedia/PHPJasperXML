@@ -7,7 +7,7 @@
 
 require_once('../class/tcpdf/tcpdf.php');
 require_once("../class/PHPJasperXML.inc.php");
-require_once("../class/jasperJS.php");
+require_once("../class/JasperJS.php");
 require_once('setting.php');
 
 

@@ -1,5 +1,7 @@
 <?php
 //version 0.8c - adrian
+
+
 class PHPJasperXML {
     
     
@@ -22,6 +24,12 @@ class PHPJasperXML {
      */
     private $_options = array();
     
+    /**
+     * The JasperDatabase object
+     * 
+     * @var type 
+     */
+    private $_database = null;
     
     private $adjust=1.2;
     public $version=0.9;
@@ -30,15 +38,21 @@ class PHPJasperXML {
     private $lang;
     private $previousarraydata;
     public $debugsql=false;
-    private $myconn;
-    private $con;
+
     private $group_name;
     
-    /**
+   
+    public $newPageGroup = false;
+   
+    
+    
+     /**
      * below or all vars that where used but never decalared
      * @var type 
      */
-    public $newPageGroup = false;
+    private $gnam = null;
+    private $arraysubdataset  = null;
+    private $arraytitle = null;
     private $curgroup=0;
     private $groupno=0;
     private $footershowed=true;
@@ -84,7 +98,7 @@ class PHPJasperXML {
      */
     public function PHPJasperXML($lang="en",$pdflib="TCPDF",$pdflibClass = "TCPDF") {
         $this->lang=$lang;
-       // error_reporting(0);
+        error_reporting(E_ALL  & ~E_NOTICE & ~E_WARNING);
         $this->pdflib=$pdflib;
             $this->pdflibClass=$pdflibClass;
     }
@@ -93,86 +107,7 @@ class PHPJasperXML {
     {
     die($name . ' - Never declared');    
     }
-    public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
-    $this->db_host=$db_host;
-            $this->db_user=$db_user;
-       $this->db_pass=$db_pass;
-    $this->db_or_dsn_name=$db_or_dsn_name;
-    $this->cndriver=$cndriver;
-        if($cndriver=="mysql") {
-
-            if(!$this->con) {
-                $this->myconn = @mysql_connect($db_host,$db_user,$db_pass);
-                if($this->myconn) {
-                    $seldb = @mysql_select_db($db_or_dsn_name,$this->myconn);
-                    if($seldb) {
-                        $this->con = true;
-                        return true;
-                    }
-                    else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            } else {
-                return true;
-            }
-            return true;
-        }elseif($cndriver=="psql") {
-            global $pgport;
-            if($pgport=="" || $pgport==0)
-                $pgport=5432;
-
-            $conn_string = "host=$db_host port=$pgport dbname=$db_or_dsn_name user=$db_user password=$db_pass";
-            $this->myconn = pg_connect($conn_string);
-
-
-            if($this->myconn) {
-                $this->con = true;
-
-                return true;
-            }else
-                return false;
-        }
-        else {
-
-            if(!$this->con) {
-                $this->myconn = odbc_connect($db_or_dsn_name,$db_user,$db_pass);
-
-                if( $this->myconn) {
-                    $this->con = true;
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return true;
-            }
-        }
-    }
-
-    public function disconnect($cndriver="mysql") {
-        if($cndriver=="mysql") {
-            if($this->con) {
-                if(@mysql_close()) {
-                    $this->con = false;
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }elseif($cndriver=="psql") {
-            $this->con = false;
-            pg_close($this->myconn);
-        }
-        else {
-
-            $this->con = false;
-            odbc_close( $this->myconn);
-        }
-    }
+  
 
     public function xml_dismantle($xml) {	
         $this->page_setting($xml);
@@ -741,7 +676,9 @@ class PHPJasperXML {
     public function transferDBtoArray($host,$user,$password,$db_or_dsn_name,$cndriver="mysql") {
         $this->m=0;
 
-        if(!$this->connect($host,$user,$password,$db_or_dsn_name,$cndriver))	//connect database
+        $this->_database = new JasperMysql(); 
+        
+        if(!$this->_database->connect($host,$user,$password,$db_or_dsn_name,$cndriver))	//connect database
         {
             echo "Fail to connect database";
             exit(0);
@@ -750,7 +687,11 @@ class PHPJasperXML {
             echo $this->sql;
             die;
         }
-
+   /* 
+    * 
+    
+    this code will be fixed once mysql works 
+    
         if($cndriver=="odbc") {
 
             $result=odbc_exec( $this->myconn,$this->sql);
@@ -772,20 +713,26 @@ class PHPJasperXML {
                 $this->m++;
             }
         }
-        else {
-            $result = @mysql_query($this->sql); //query from db
+        else
+    * 
+    *
+    */  
+    
+          {
+            $result =$this->_database->query($this->sql); //query from db
 
-            while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+            while ($row = $this->_database->next($result) ) {
                 foreach($this->arrayfield as $out) {
                     $this->arraysqltable[$this->m]["$out"]=$row["$out"];
                 }
                 $this->m++;
             }
         }
-
+         // I dont think we need to close the database, it makes execution very slow.
        	//close connection to db
 
     }
+   
 
     public function time_to_sec($time) {
         $hours = substr($time, 0, -6);
@@ -1116,8 +1063,13 @@ class PHPJasperXML {
 
         if($filename=="")
             $filename=$this->arrayPageSetting["name"].".pdf";
-
-         $this->disconnect($this->cndriver);
+        /**
+         * not sure if this is good practive.
+         * because the driver will handle this and keep it open for multiple requests
+         * and close it if needed. MYSQL keeps the connection open over multiple http requests.
+         * disconnecting is a large performance hit.
+         */
+        // $this->_database->disconnect($this->cndriver);
         return $this->pdf->Output($filename,$out_method);	//send out the complete page
 
     }
@@ -1481,13 +1433,13 @@ public function showLineChart($data,$y_axis){
         }
     else
         $sql=$this->sql;
-
-    $result = @mysql_query($sql); //query from db
+   $result =   $this->_database->query($sql); //query from db
+   // $result = @mysql_query($sql);
     $chartdata=array();
     $i=0;
 //echo $sql."<br/><br/>";
     $seriesname=array();
-    while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+    while ($row =  $this->_database->next($result)) {   //
 
                 $j=0;
                 foreach($row as $key => $value){
@@ -1791,12 +1743,14 @@ public function showBarChart($data,$y_axis,$type='barChart'){
     else
         $sql=$this->sql;
 
-    $result = @mysql_query($sql); //query from db
+   $result =   $this->_database->query($sql); //query from db
+  
+   
     $chartdata=array();
     $i=0;
 //echo $sql."<br/><br/>";
     $seriesname=array();
-    while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+   while ($row =  $this->_database->next($result)) {   
 
                 $j=0;
                 foreach($row as $key => $value){
@@ -2103,12 +2057,12 @@ public function showAreaChart($data,$y_axis,$type){
     else
         $sql=$this->sql;
 
-    $result = @mysql_query($sql); //query from db
+    $result = $this->_database->query($sql);
     $chartdata=array();
     $i=0;
 //echo $sql."<br/><br/>";
     $seriesname=array();
-    while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+ while ($row =  $this->_database->next($result)) {   //
 
                 $j=0;
                 foreach($row as $key => $value){
@@ -3938,7 +3892,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
                $PHPJasperXMLSubReport->debugsql=1;
                $PHPJasperXMLSubReport->xml_dismantle($srxml);
                $this->passAllArrayDatatoSubReport($PHPJasperXMLSubReport,$d,$current_y);
-               $PHPJasperXMLSubReport->transferDBtoArray($this->db_host,$this->db_user,$this->db_pass,$this->db_or_dsn_name);
+               $PHPJasperXMLSubReport->setDatabase($this->_database);
                $PHPJasperXMLSubReport->pdf=$this->pdf;
                $PHPJasperXMLSubReport->outpage();    //page output method I:standard output  D:Download file
   
