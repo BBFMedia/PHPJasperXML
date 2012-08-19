@@ -1,5 +1,7 @@
 PHPJasperXML
 ============
+You can find most information at  [SIMIT IT](http://www.simit.com.my/) or their [Wiki](http://www.simit.com.my/wiki/index.php/PHPJasperXML). And get the latest stable code at [Google Code](http://code.google.com/p/phpjasperxml/)
+
 
 About PHPJasperXML
 ------------------
