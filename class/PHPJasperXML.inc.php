@@ -1,8 +1,12 @@
 <?php
 //version 0.8c - adrian
 class PHPJasperXML {
+    
+    
+    
     private $adjust=1.2;
     public $version=0.8;
+   
     private $pdflib;
     private $lang;
     private $previousarraydata;
@@ -15,6 +19,26 @@ class PHPJasperXML {
     private $groupno=0;
     private $footershowed=true;
     private $titleheight=0;
+    private $arrayPageSetting = null;
+    private $arraystyle = null;
+    private $pointer = null;
+    private $arrayband = null;
+    private $arrayfield = null;
+    private $arraygroup = null;
+    private $arraygrouphead = null;
+    private $arraygroupfoot = null;
+    private $arraybackground = null;
+    private $arraypageHeader = null;
+    private $arraycolumnHeader = null;
+    private $arraydetail = null;
+    private $arraycolumnFooter = null;
+    private $arraypageFooter = null;
+    private $arraysummary = null;
+    public $arraysqltable = null;  
+    private $angle = null;
+    private $arrayVariable = null;
+    private $cndriver = null;
+    private $hideheader = null;
     /**  defines the actual class for TCPDF
     *    $pdflib only defines that it is pdf
        */
@@ -32,8 +56,11 @@ class PHPJasperXML {
         $this->pdflib=$pdflib;
             $this->pdflibClass=$pdflibClass;
     }
-
-	
+    
+    function __get($name)
+    {
+    var_dump($name);    
+    }
     public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
     $this->db_host=$db_host;
             $this->db_user=$db_user;
