@@ -7,6 +7,7 @@
 
 require_once('../class/tcpdf/tcpdf.php');
 require_once("../class/PHPJasperXML.inc.php");
+require_once("../class/JasperExp.php");
 require_once("../class/JasperJS.php");
 require_once('setting.php');
 
@@ -115,17 +116,7 @@ foreach($headers as  $h)
 if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation 
 $this->variable_calculation(	$this->m);
 }
-public $fontmap  =array();
-function getFontMap($family)
- {
-  
-  $sub = $fontmap[$family];
-  if (!empty($sub))
-    return $sub;
 
-  return $family;
- 
- }
 
 
 }
@@ -134,20 +125,21 @@ class myTCPDF extends TCPDF
   {
   	public function __construct($orientation='P', $unit='mm', $format='A4', $unicode=true, $encoding='UTF-8', $diskcache=false) {
 
-	parent::__construct($orientation , $unit , $format , $unicode, $encoding, $diskcache);
+	parent::__construct($orientation , $unit , $format , true, 'UTF-8', $diskcache);
 	$this->jpeg_quality = 90;
-	$fontname = $this->addTTFfont('pala.ttf', 'TrueTypeUnicode', '', 32);
-	
+	 $this->SetFont('cid0jp', 'BI');
+    
 	}
   }
 
 
 
 $root = dirname(__FILE__);               
-$xml =  simplexml_load_file($root.'\sample9.jrxml');
+$xml =  simplexml_load_file($root.'/sample9.jrxml');
 
 $PHPJasperXML = new xmlJasper("en","TCPDF","myTCPDF");
-$PHPJasperXML->fontmap['Palatino Linotype'] = 'times';
+$PHPJasperXML->_fontmap['palatino linotype'] = 'cid0jp';
+$PHPJasperXML->_fontmap['times'] = 'cid0jp';
 $PHPJasperXML->report_path = $root.'/';
 //$PHPJasperXML->debugsql=true;
 $PHPJasperXML->arrayParameter=array("printType"=>"quote");

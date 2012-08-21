@@ -5,7 +5,10 @@ include "../class/PHPJasperXML.inc.php";
 // Creating a workbook
 include ('setting.php');
 //$xml =  simplexml_load_file("sample9.jrxml");
-
+require_once '../class/JasperDatabase.php';
+require_once '../class/JasperMysql.php';
+require_once '../class/JasperExp.php';
+require_once '../class/JasperJS.php';
 
 
 

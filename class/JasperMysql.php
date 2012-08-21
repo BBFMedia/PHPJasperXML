@@ -20,7 +20,11 @@ class JasperMysql extends JasperDatabase {
    private $_cndriver;
    private $_con; 
    private $_myconn;
-public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
+   public function setConnection($cont)
+   {
+       $this->_myconn = $cont;
+   }
+   public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
     $this->_db_host=$db_host;
             $this->_db_user=$db_user;
        $this->_db_pass=$db_pass;
@@ -79,28 +83,6 @@ public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="my
         }
     }
 
-    public function disconnect($cndriver="mysql") {
-        if($cndriver=="mysql") {
-            if($this->_con) {
-                if(@mysql_close()) {
-                    $this->_con = false;
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }elseif($cndriver=="psql") {
-            $this->_con = false;
-            pg_close($this->_myconn);
-        }
-        else {
-
-            $this->_con = false;
-            odbc_close( $this->_myconn);
-        }
-    }
-    
     public function query($sql)
     {
        return @mysql_query($sql); 

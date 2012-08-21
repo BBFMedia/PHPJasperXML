@@ -3,11 +3,11 @@
 	<property name="ireport.zoom" value="1.0"/>
 	<property name="ireport.x" value="0"/>
 	<property name="ireport.y" value="0"/>
-	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50" isBold="false" pdfFontName="Times-Bold"/>
-	<style name="SubTitle" forecolor="#CCCCCC" fontName="Times New Roman" fontSize="18" isBold="false" pdfFontName="Times-Roman"/>
-	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="14" isBold="true" pdfFontName="Times-Roman"/>
-	<style name="Detail" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman"/>
-	<style name="Row" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman">
+	<style name="Title" forecolor="#FFFFFF" fontName="times" fontSize="50" isBold="false" pdfFontName="times"/>
+	<style name="SubTitle" forecolor="#CCCCCC" fontName="times" fontSize="18" isBold="false" pdfFontName="times"/>
+	<style name="Column header" forecolor="#666666" fontName="times" fontSize="14" isBold="true" pdfFontName="times"/>
+	<style name="Detail" mode="Transparent" fontName="times" pdfFontName="times"/>
+	<style name="Row" mode="Transparent" fontName="times" pdfFontName="times">
 		<conditionalStyle>
 			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
 			<style mode="Opaque" backcolor="#F0EFEF"/>
@@ -42,14 +42,14 @@
 				<staticText>
 					<reportElement style="Column header" x="0" y="27" width="99" height="13" forecolor="#000000"/>
 					<textElement verticalAlignment="Bottom">
-						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+						<font fontName="cid0jp" size="9" />
 					</textElement>
-					<text><![CDATA[Article]]></text>
+					<text><![CDATA[你好]]></text>
 				</staticText>
 				<staticText>
 					<reportElement style="Column header" x="125" y="18" width="307" height="22" forecolor="#000000"/>
 					<textElement textAlignment="Center" verticalAlignment="Bottom">
-						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+						<font fontName="times" size="9" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Description]]></text>
 				</staticText>
@@ -58,14 +58,14 @@
 						<printWhenExpression><![CDATA[$P{printType} == ( "quote" )]]></printWhenExpression>
 					</reportElement>
 					<textElement textAlignment="Center" verticalAlignment="Bottom">
-						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+						<font fontName="times" size="9" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Quotation Per Unit (US$)]]></text>
 				</staticText>
 				<staticText>
 					<reportElement style="Column header" x="442" y="14" width="47" height="26" forecolor="#000000"/>
 					<textElement textAlignment="Center" verticalAlignment="Bottom">
-						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+						<font fontName="times" size="9" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Quantity Per Unit]]></text>
 				</staticText>
@@ -74,7 +74,7 @@
 						<printWhenExpression><![CDATA[$P{printType} == ( "pricelist" )]]></printWhenExpression>
 					</reportElement>
 					<textElement textAlignment="Center" verticalAlignment="Bottom">
-						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+						<font fontName="times" size="9" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Price Per Unit(US$)]]></text>
 				</staticText>
@@ -83,7 +83,7 @@
 						<printWhenExpression><![CDATA[$P{printType} == ( "ordersheet" )]]></printWhenExpression>
 					</reportElement>
 					<textElement textAlignment="Center" verticalAlignment="Bottom">
-						<font fontName="Palatino Linotype" size="9" isBold="true"/>
+						<font fontName="times" size="9" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Units Ordered]]></text>
 				</staticText>
@@ -107,23 +107,23 @@
 					<printWhenExpression><![CDATA[$P{printType} == "quote"]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Right">
-					<font fontName="Palatino Linotype" size="16" isBold="true" isPdfEmbedded="true"/>
+					<font fontName="cid0jp" size="16"  isPdfEmbedded="true"/>
 				</textElement>
-				<text><![CDATA[Quotation]]></text>
+				<text><![CDATA[你好]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="440" y="12" width="115" height="27">
 					<printWhenExpression><![CDATA[$P{printType} == "pricelist"]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Right">
-					<font fontName="Palatino Linotype" size="16" isBold="true" isPdfEmbedded="true"/>
+					<font fontName="times" size="16" isBold="true" isPdfEmbedded="true"/>
 				</textElement>
 				<text><![CDATA[Price List]]></text>
 			</staticText>
 			<textField isStretchWithOverflow="true" pattern="" isBlankWhenNull="true">
 				<reportElement style="Detail" positionType="Float" x="490" y="38" width="65" height="24"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
-					<font fontName="Palatino Linotype" size="8"/>
+					<font fontName="times" size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[""]]></textFieldExpression>
 			</textField>
@@ -137,14 +137,14 @@
 			<textField isStretchWithOverflow="true">
 				<reportElement style="Detail" positionType="Float" x="0" y="0" width="65" height="24"/>
 				<textElement verticalAlignment="Middle">
-					<font fontName="Palatino Linotype" size="8"/>
+					<font fontName="times" size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{Article}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
 				<reportElement style="Detail" positionType="Float" x="123" y="0" width="307" height="24"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="Palatino Linotype" size="8" isPdfEmbedded="true"/>
+					<font fontName="times" size="8" isPdfEmbedded="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{Description}]]></textFieldExpression>
 			</textField>
@@ -153,7 +153,7 @@
 					<printWhenExpression><![CDATA[$P{printType} != "ordersheet"]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
-					<font fontName="Palatino Linotype" size="8"/>
+					<font fontName="times" size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{Value}]]></textFieldExpression>
 			</textField>
@@ -164,7 +164,7 @@
 			<textField isStretchWithOverflow="true">
 				<reportElement style="Detail" positionType="Float" x="431" y="0" width="65" height="24"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="Palatino Linotype" size="8"/>
+					<font fontName="times" size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{Quantity}]]></textFieldExpression>
 			</textField>
@@ -197,14 +197,14 @@
 			<staticText>
 				<reportElement x="475" y="0" width="132" height="20"/>
 				<textElement>
-					<font fontName="Palatino Linotype" size="8" isItalic="true" isPdfEmbedded="true"/>
+					<font fontName="times" size="8" isItalic="true" isPdfEmbedded="true"/>
 				</textElement>
 				<text><![CDATA[*All prices are ex-works]]></text>
 			</staticText>
 			<textField pattern="#,##0">
 				<reportElement x="547" y="38" width="9" height="11"/>
 				<textElement textAlignment="Right">
-					<font fontName="Palatino Linotype" size="8"/>
+					<font fontName="times" size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
 			</textField>

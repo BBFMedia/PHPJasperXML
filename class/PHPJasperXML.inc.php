@@ -77,6 +77,7 @@ class PHPJasperXML {
     private $arrayVariable = null;
     private $cndriver = null;
     private $hideheader = null;
+    private $group_pointer = null;
     /**  defines the actual class for TCPDF
     *    $pdflib only defines that it is pdf
        */
@@ -172,7 +173,17 @@ class PHPJasperXML {
 
         }
     }
+public $_fontmap  =array();
+function getFontMap($family)
+ {
+  
+  $sub = $this->_fontmap[strtolower($family)];
+  if (!empty($sub))
+    return $sub;
 
+  return $family;
+ 
+ }
     public function subDataset_handler($data){
     $this->subdataset[$data['name'].'']= $data->queryString;
 
@@ -393,6 +404,10 @@ class PHPJasperXML {
         if(isset($data->textElement["rotation"])) {
             $rotation=$data->textElement["rotation"];
         }
+        if(isset($data->textElement->font["fontName"])) {
+            $font=$data->textElement->font["fontName"];
+        }
+
         if(isset($data->textElement->font["pdfFontName"])) {
             $font=$data->textElement->font["pdfFontName"];
         }
@@ -418,7 +433,8 @@ class PHPJasperXML {
         $this->pointer[]=array("type"=>"SetFont","font"=>$font,"fontstyle"=>$fontstyle,"fontsize"=>$fontsize,"hidden_type"=>"font");
         //"height"=>$data->reportElement["height"]
 //### UTF-8 characters, a must for me.	
-		$txtEnc=utf8_decode($data->text); 
+		$txtEnc=($data->text);
+              
 /** add printWhenExpression */
 		$this->pointer[]=array("type"=>"MultiCell",
 		                "printWhenExpression"=>$data->reportElement->printWhenExpression,
@@ -574,6 +590,9 @@ class PHPJasperXML {
         }
         if(isset($data->textElement["rotation"])) {
             $rotation=$data->textElement["rotation"];
+        }
+        if(isset($data->textElement->font["fontName"])) {
+            $font=$data->textElement->font["fontName"];
         }
         if(isset($data->textElement->font["pdfFontName"])) {
             $font=$data->textElement->font["pdfFontName"];
@@ -3334,10 +3353,11 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
     }
 
         if($arraydata["type"]=="SetFont") {
-            if($arraydata["font"]=='uGB')
+      //      if($arraydata["font"]=='uGB')
+      //          $this->pdf->isUnicode=true;
+      //      else
+            // WE ONLY DO UTF8 - late maybe uGB
                 $this->pdf->isUnicode=true;
-            else
-                $this->pdf->isUnicode=false;
 
             $this->pdf->SetFont($this->getFontMap($arraydata["font"]),$arraydata["fontstyle"],$arraydata["fontsize"]);
 
@@ -3636,6 +3656,9 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
     public function analyse_expression($data,$isPrintRepeatedValue="true") {
       
+        if (($isPrintRepeatedValue) and (empty($data)))
+            return true;
+     //   return $data;
 // the expressions have completly changed so that we can do true exprssions.
 // use classes for each language   language="javascript" in the jrxml or language="groovy"
 // javascript is workign
@@ -3644,11 +3667,13 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 		 
 	
 	
+  $lang = ucfirst($this->arrayPageSetting["language"]);
+  if (empty($lang))
+       $lang = 'Javascript';
 
-
-	   $engineClass = 'jasper'.ucfirst($this->arrayPageSetting["language"]);
+	   $engineClass = 'jasper'.$lang;
         $expEngine = new $engineClass();
-		
+
 		foreach($this->arraysqltable[$this->global_pointer] as $name => $value)
 		    $expEngine->addVar('$F{'.$name.'}' ,$value);
 		foreach($this->arrayVariable as $name => $value)
@@ -3663,92 +3688,10 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 		if ($result == 'true')
 		   return true;
 		return $result;
-		$arrdata=explode("+",$data);
-
-        $i=0;
-        
-        foreach($arrdata as $num=>$out) {
-            $i++;
-			$out = trim($out);
-			if (substr($out,0,1) == '"')
-			   $out = stripcslashes($out);
-			  
-            $arrdata[$num]=str_replace('"',"",$out);
-            $this->arraysqltable[$this->global_pointer][substr($out,3,-1)];
-
-            if(substr($out,0,3)=='$F{') {
                 
-                if($isPrintRepeatedValue=="true" ||$isPrintRepeatedValue=="") {
-                    $arrdata[$num]=$this->arraysqltable[$this->global_pointer][substr($out,3,-1)];
-                    
-                }
-                else {
-
-                    if($this->previousarraydata[$arrdata[$num]]==$this->arraysqltable[$this->global_pointer][substr($out,3,-1)]) {
-
-                        $arrdata[$num]="";
-                    }
-                    else {
-                        $arrdata[$num]=$this->arraysqltable[$this->global_pointer][substr($out,3,-1)];
-                        $this->previousarraydata[$out]=$this->arraysqltable[$this->global_pointer][substr($out,3,-1)];
-                    }
-                }
-              //  echo $arrdata[$num]."==";
-            }
-            elseif(substr($out,0,3)=='$V{') {
-//###	A new function to handle iReport's "+-/*" expressions.
-// It works like a cheap calculator, without precedences, so 1+2*3 will be 9, NOT 7.
-			
-				$p1=3;
-				$p2=strpos($out,"}");
-				if ($p2!==false){ 
-					$total=&$this->arrayVariable[substr($out,$p1,$p2-$p1)]["ans"];
-					$p1=$p2+1;
-					while ($p1<strlen($out)){
-						if (strpos("+-/*",substr($out,$p1,1))!==false) $opr=substr($out,$p1,1);
-						else $opr="";
-						$p1=strpos($out,'$V{',$p1)+3;
-						$p2=strpos($out,"}",$p1);
-						if ($p2!==false){ $nbr=&$this->arrayVariable[substr($out,$p1,$p2-$p1)]["ans"];
-							switch ($opr){
-								case "+": $total+=$nbr;
-										  break;
-								case "-": $total-=$nbr;
-										  break;
-								case "*": $total*=$nbr;
-										  break;
-								case "/": $total/=$nbr;
-										  break;
-							}
-						}
-						$p1=$p2+1;
-					}
-				}
-				$arrdata[$num]=$total;
-//### End of modifications, below is the original line.				
-//                $arrdata[$num]=&$this->arrayVariable[substr($out,3,-1)]["ans"];
-            }
-            elseif(substr($out,0,3)=='$P{') {
-                $arrdata[$num]=$this->arrayParameter[substr($out,3,-1)];
-            }
-          //  echo "<br/>";
-        }
-
-        if($this->left($data,3)=='"("' && $this->right($data,3)=='")"') {
-            $total=0;
-
-            foreach($arrdata as $num=>$out) {
-                if($num>0 && $num<$i)
-                    $total+=$out;
-
-            }
-            return $total;
-
-        }
-        else {
-
-            return implode($arrdata);
-        }
+                
+     /// this below needs be put in a groovy class
+	
     }
 
     public function formatText($txt,$pattern) {

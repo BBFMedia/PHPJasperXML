@@ -80,7 +80,7 @@ FROM
 			</staticText>
 			<image>
 				<reportElement x="7" y="4" width="76" height="67"/>
-				<imageExpression><![CDATA["./simitlogo.jpg"]]></imageExpression>
+				<imageExpression><![CDATA["simitlogo.jpg"]]></imageExpression>
 			</image>
 			<textField pattern="dd/MM/yyyy">
 				<reportElement x="447" y="51" width="100" height="20"/>
@@ -99,7 +99,9 @@ FROM
 			</textField>
 			<staticText>
 				<reportElement x="170" y="50" width="215" height="37"/>
-				<textElement/>
+					<textElement textAlignment="Center">
+					<font size="12" fontName="cid0jp" isBold="true"/>
+				</textElement>
 				<text><![CDATA[Não ha resultados 我喜欢]]></text>
 			</staticText>
 		</band>
@@ -121,7 +123,9 @@ FROM
 			</textField>
 			<textField>
 				<reportElement x="93" y="0" width="354" height="20"/>
-				<textElement/>
+				<textElement textAlignment="left">
+					<font  fontName="cid0jp" />
+				</textElement>
 				<textFieldExpression><![CDATA[$F{sample1_itemname}]]></textFieldExpression>
 			</textField>
 			<textField pattern="###0.00">
@@ -131,7 +135,7 @@ FROM
 			</textField>
 			<textField>
 				<reportElement x="507" y="0" width="48" height="20"/>
-				<textElement/>
+				<textElement/> 
 				<textFieldExpression><![CDATA[$F{sample1_uom}]]></textFieldExpression>
 			</textField>
 		</band>

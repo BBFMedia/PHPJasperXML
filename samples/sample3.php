@@ -8,7 +8,10 @@ include_once('../class/tcpdf/tcpdf.php');
 include_once("../class/PHPJasperXML.inc.php");
 
 include_once ('setting.php');
-
+require_once '../class/JasperDatabase.php';
+require_once '../class/JasperMysql.php';
+require_once '../class/JasperExp.php';
+require_once '../class/JasperJS.php';
 
 $xml =  simplexml_load_file("sample3.jrxml");
 
