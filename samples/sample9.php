@@ -126,8 +126,8 @@ class myTCPDF extends TCPDF
   	public function __construct($orientation='P', $unit='mm', $format='A4', $unicode=true, $encoding='UTF-8', $diskcache=false) {
 
 	parent::__construct($orientation , $unit , $format , true, 'UTF-8', $diskcache);
-	$this->jpeg_quality = 90;
-	 $this->SetFont('cid0jp', 'BI');
+	//$this->jpeg_quality = 90;
+	// $this->SetFont('cid0jp', 'BI');
     
 	}
   }
@@ -137,9 +137,12 @@ class myTCPDF extends TCPDF
 $root = dirname(__FILE__);               
 $xml =  simplexml_load_file($root.'/sample9.jrxml');
 
-$PHPJasperXML = new xmlJasper("en","TCPDF","myTCPDF");
-$PHPJasperXML->_fontmap['palatino linotype'] = 'cid0jp';
-$PHPJasperXML->_fontmap['times'] = 'cid0jp';
+$PHPJasperXML = new xmlJasper("en","TCPDF");
+$pdfout = new JasperPdfType();
+$pdfout->addFont('palatino linotype', 'cid0jp');
+$pdfout->addFont('times', 'cid0jp');
+$PHPJasperXML->setOutput($pdfout);
+
 $PHPJasperXML->report_path = $root.'/';
 //$PHPJasperXML->debugsql=true;
 $PHPJasperXML->arrayParameter=array("printType"=>"quote");
