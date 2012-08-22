@@ -1,6 +1,6 @@
 PHPJasperXML
 ============
-You can find most information at  [SIMIT IT](http://www.simit.com.my/) or their [Wiki](http://www.simit.com.my/wiki/index.php/PHPJasperXML). And get the latest stable code at [Google Code](http://code.google.com/p/phpjasperxml/)
+You can find most information at  [SIMIT IT](http://www.simit.com.my/) or their [Wiki](http://www.simit.com.my/wiki/index.php/PHPJasperXML). And get the latest stable code at [github](https://github.com/BBFMedia/PHPJasperXML)
 
 
 About PHPJasperXML
@@ -9,16 +9,12 @@ We initialize this project (Actually it is a class) because of we want to develo
 
 This project still under Alpha stage, a lot of function is not ready. However, if you're expert in this project you'll found that it already can create a lot of reports.
 
-Project Leader:
+Developer:
 ------------------
-Ks Tan
-Sim IT Sdn Bhd
-kstan@simit.com.my
+Ks Tan (Sim IT Sdn Bhd) kstan@simit.com.my
+Adrian Jones (BBFMedia) adrianj98@gmail.com
+Ng Jey Ruey (Left, but great thanks to him)
 
-Core Programmer:
-------------------
-Ng Jey Ruey (Multimedia University Practical Student)
-jeyrue@simit.com.my
 
 License
 ------------------
