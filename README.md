@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 PHPJasperXML
 ============
 
@@ -59,4 +58,4 @@ but run natively in PHP. This project is completely difference from
 php-java bridge, a wrapper class will convered report element from jrxml
 and pass to tcpdf/PHPExcel class.
 
->>>>>>> Put read me msg
+
