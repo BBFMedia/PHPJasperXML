@@ -1,7 +1,7 @@
 PHPJasperXML
 ============
 
->>> Please not that our github repository is for new developent that can be found in the Refractor branch. The master branch is the legecy code.
+>>> Please not that our github repository is for new development that can be found in the Refractor branch. The master branch is the legecy code.
 
 
 
