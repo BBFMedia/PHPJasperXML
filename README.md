@@ -1,6 +1,10 @@
 PHPJasperXML
 ============
 
+>>> Please not that our github repository is for new developent that can be found in the Refractor branch. The master branch is the legecy code.
+
+
+
 About PHPJasperXML
 ------------------
 We initialize this project (Actually it is a class) because of we want to develop web report in php easily(The output of report is PDF because it platform indepent and printer friendly). This project allow php programmer design report with java iReport and run from PHP. This project is completely difference from php-java bridge, the code is run completely from PHP. A wrapper will convered report element from jrxml and pass to fpdf class.
