@@ -7,7 +7,7 @@
  * @author adrian
  */
                
-class jasperJavascript extends JasperExp
+class JasperGroovy extends JasperExp
 {
 
  function _setVar($name,$codename,$value) {
@@ -17,10 +17,25 @@ class jasperJavascript extends JasperExp
 }
 
 
+    function right($value, $count) {
+
+        return substr($value, ($count * -1));
+    }
+
+    function left($string, $count) {
+        return substr($string, 0, $count);
+    }
+    
+public $arraysqltable;
+public $previousarraydata ;
+public $arrayVariable;
+public $global_pointer;
+public $arrayParameter;
+
 function run($code)
 {
 
-$code = $this->replaceVars($code); 
+//$code = $this->replaceVars($code); 
 
 	$arrdata=explode("+",$code);
 
@@ -108,7 +123,7 @@ $code = $this->replaceVars($code);
 
             return implode($arrdata);
         }
-return $result ;
+return false ;
 
  }
  

@@ -1,7 +1,8 @@
 <?php
 /* 
   J4P5: EcmaScript interpreter for php
-  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+  ------------------------------------
+ 
   (also known as JavaScript over PHP5)
   
   This is a true EcmaScript/JavaScript interpreter, as defined by Ecma-262 3d edition.
@@ -41,6 +42,8 @@ enum("JS_INLINE", "JS_DIRECT");
 
 class js {
 
+   static private $compiled = array();
+   static private $memorycache = true;
   #-- auto-magic function that should work out of the box without being too inefficient.
   static function run($src, $mode=JS_DIRECT, $id=NULL) {
     #-- attempt to setup our cache directory
@@ -50,6 +53,29 @@ class js {
     #-- we need a unique ID for this script. passing $id makes this faster, but whatever.
     if ($id==NULL) $id = md5($src);
     $path = JS_CACHE_DIR."/".$id.".php";
+    
+        if (self::$memorycache)
+    {
+    if (empty(self::$compiled[$id])) 
+    {
+      #-- ok. we need to compile the darn thing.
+      require_once(dirname(__FILE__)."/jsc.php");
+
+      if ($mode==JS_INLINE) $src = "?>".$src;
+      $t1 = microtime(1);
+      $php = jsc::compile($src);
+       $t2 = microtime(2);
+      #echo "Compilation done in ".($t2-$t1). " seconds<hr>";
+     #-- then we run it.
+      self::$compiled[$id] = $php;
+    }
+    else
+        $php = self::$compiled[$id];
+  
+    eval($php);
+    }else
+    {
+    
     if (!file_exists($path)) {
       #-- ok. we need to compile the darn thing.
       require_once(dirname(__FILE__)."/jsc.php");
@@ -58,12 +84,15 @@ class js {
       $t1 = microtime(1);
       $php = jsc::compile($src);
       $t2 = microtime(2);
+   
       #echo "Compilation done in ".($t2-$t1). " seconds<hr>";
       file_put_contents($path, "<?php\n".$php."\n?>");
+       echo $php;
       #-- then we run it.
     }
     #echo highlight_linenum($path);
     include $path;
+    }
   }
   
   #-- normally called by generated code. Your code doesn't need to call it.

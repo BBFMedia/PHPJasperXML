@@ -16,6 +16,7 @@ class jsrt {
 
 static $contexts;
 #-- collection of functions. useful for lambda expressions
+static $jsfunctions;
 static $functions;
 static $global;
 static $zero;
@@ -332,6 +333,7 @@ static function define_function($phpname, $jsname='', $args=array(), $proto = NU
   if (is_string($phpname)) {
     jsrt::$functions[$phpname] = $func;
   }
+  jsrt::$jsfunctions[$jsname] =  $phpname;
   return $func;
 }
 

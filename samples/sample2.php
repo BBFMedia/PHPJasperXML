@@ -19,8 +19,9 @@ $xml =  simplexml_load_file("sample2.jrxml");
 
 $PHPJasperXML = new PHPJasperXML();
 //$PHPJasperXML->debugsql=true;
-$PHPJasperXML->arrayParameter=array("parameter1"=>1);
+$PHPJasperXML->report->parameters=array("parameter1"=>1);
 $PHPJasperXML->xml_dismantle($xml);
+$PHPJasperXML->report->pageSetting["language"] = 'javascript';
 
 $PHPJasperXML->transferDBtoArray($server,$user,$pass,$db); 
 // use this line if you want to connect with mysql

@@ -126,10 +126,10 @@ $PHPJasperXML->setOutput($pdfout);
 
 $PHPJasperXML->report_path = $root . '/';
 //$PHPJasperXML->debugsql=true;
-$PHPJasperXML->arrayParameter = array("printType" => "quote");
 $PHPJasperXML->xml_dismantle($xml);
 $PHPJasperXML->transferXLStoArray($root . '/sample9.xls');
 
+$PHPJasperXML->report->parameters = array("printType" => "quote");
 
 $PHPJasperXML->outpage("I");    //page output method I:standard output  D:Download file
 

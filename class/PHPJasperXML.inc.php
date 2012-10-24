@@ -3,6 +3,7 @@
 //version 0.8c - adrian
 require_once dirname(__FILE__) . '/JasperOutputType.php';
 require_once dirname(__FILE__) . '/JasperPdfType.php';
+require_once dirname(__FILE__) . '/parser/JasperParser.php';
 
 class PHPJasperXML {
 
@@ -11,7 +12,11 @@ class PHPJasperXML {
      * @var jasperParser 
      */
     private $_parser = null;
-
+    /**
+     *
+     * @var report 
+     */
+    public $report;
     /**
      * general settings 
      * 
@@ -44,37 +49,28 @@ class PHPJasperXML {
     private $previousarraydata;
     public $debugsql = false;
     private $group_name;
-    public $newPageGroup = false;
+    private $global_pointer;
+    public $arraypageHeader;
+    public $currentband;
 
+    public $group_count;
     /**
      * below or all vars that where used but never decalared
      * @var type 
      */
-    public $gnam = null;
-    public $arraysubdataset = null;
-    public $arraytitle = null;
+   
+  
     public $curgroup = 0;
     public $groupno = 0;
     public $footershowed = true;
     public $titleheight = 0;
-    public $arrayPageSetting = null;
     public $arraystyle = null;
     public $pointer = null;
-    public $arrayband = null;
-    public $arrayfield = null;
-    public $arraygroup = null;
-    public $arraygrouphead = null;
-    public $arraygroupfoot = null;
-    public $arraybackground = null;
-    public $arraypageHeader = null;
-    public $arraycolumnHeader = null;
-    public $arraydetail = null;
-    public $arraycolumnFooter = null;
-    public $arraypageFooter = null;
-    public $arraysummary = null;
+
+  
     public $arraysqltable = null;
     public $angle = null;
-    public $arrayVariable = null;
+ 
     public $cndriver = null;
     public $hideheader = null;
     public $group_pointer = null;
@@ -82,14 +78,22 @@ class PHPJasperXML {
      *    $pdflib only defines that it is pdf
      */
 
-    /** jasperReport/filterExpression string */
-    private $filterExpression;
+
 
     /** the root path so that we can find images */
     public $report_path = '';
     private $report_count = 1;  //### New declaration (variable exists in original too)
-    private $group_count = array(); //### New declaration
-
+   
+ /**   
+    function __get($name)
+    {
+  //      echo $name."\n";
+    }
+   function __set($name,$var)
+    {
+    //    echo $name."\n";
+    }  
+    */
     /**
      *
      * @todo need to create JasperTDCPDF object if is set $pdflib and add it to $_options
@@ -103,67 +107,15 @@ class PHPJasperXML {
         $this->lang = $lang;
         error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
         $this->pdflib = $pdflib;
+        $this->report = new report();
     }
 
     public function xml_dismantle($xml) {
-        $this->page_setting($xml);
-        foreach ($xml as $k => $out) {
-            switch ($k) {
-
-                /**  mirrors  filterExpression from the jrxml files */
-                case "filterExpression" :
-                    $this->filterExpression_handler($out);
-                    break;
-
-                case "parameter":
-                    $this->parameter_handler($out);
-                    break;
-                case "queryString":
-                    $this->queryString_handler($out);
-                    break;
-                case "field":
-                    $this->field_handler($out);
-                    break;
-                case "variable":
-                    $this->variable_handler($out);
-                    break;
-                case "group":
-                    $this->group_handler($out);
-                    break;
-                case "subDataset":
-                    $this->subDataset_handler($out);
-                    break;
-                case "background":
-                    $this->pointer = &$this->arraybackground;
-                    $this->pointer[] = array("height" => $out->band["height"], "splitType" => $out->band["splitType"]);
-                    foreach ($out as $bg) {
-                        $this->default_handler($bg);
-                    }
-                    break;
-                default:
-                    foreach ($out as $object) {
-
-                        eval("\$this->pointer=&" . "\$this->array$k" . ";");
-                        $this->arrayband[] = array("name" => $k);
-                        if ($k == 'detail')
-                            $this->detailbandheight = $object["height"] + 0;
-                        elseif ($k == 'pageHeader')
-                            $this->headerbandheight = $object["height"] + 0;
-                        elseif ($k == 'pageFooter')
-                            $this->footerbandheight = $object["height"] + 0;
-                        elseif ($k == 'lastPageFooter')
-                            $this->lastfooterbandheight = $object["height"] + 0;
-                        elseif ($k == 'summary')
-                            $this->summarybandheight = $object["height"] + 0;
-
-                        $this->pointer[] = array("type" => "band", "height" => $object["height"], "splitType" => $object["splitType"], "y_axis" => $this->y_axis);
-                        $this->default_handler($object);
-                    }
-                    $this->y_axis = $this->y_axis + $out->band["height"]; //after handle , then adjust y axis
-
-                    break;
-            }
-        }
+        
+        $this->_parser = new JasperParser();
+        $this->_parser->parse($xml,$this->report);
+      var_dump(  $this->_parser->report);
+      die;
     }
 
     function getFontMap($family) {
@@ -172,500 +124,11 @@ class PHPJasperXML {
         return $this->_output->getFontMap($family);
     }
 
-    public function subDataset_handler($data) {
-        $this->subdataset[$data['name'] . ''] = $data->queryString;
-    }
-
-//read level 0,Jasperreport page setting
-    public function page_setting($xml_path) {
-        $this->arrayPageSetting["orientation"] = "P";
-        $this->arrayPageSetting["name"] = $xml_path["name"];
-        $this->arrayPageSetting["language"] = $xml_path["language"];
-
-        // *1 to force cast to int or float 
-        $this->arrayPageSetting["pageWidth"] = $xml_path["pageWidth"] * 1;
-        $this->arrayPageSetting["pageHeight"] = $xml_path["pageHeight"] * 1;
-        if (isset($xml_path["orientation"])) {
-            $this->arrayPageSetting["orientation"] = substr($xml_path["orientation"], 0, 1);
-        }
-        $this->arrayPageSetting["columnWidth"] = $xml_path["columnWidth"] * 1;
-        $this->arrayPageSetting["leftMargin"] = $xml_path["leftMargin"] * 1;
-        $this->arrayPageSetting["rightMargin"] = $xml_path["rightMargin"] * 1;
-        $this->arrayPageSetting["topMargin"] = $xml_path["topMargin"] * 1;
-        $this->y_axis = $xml_path["topMargin"] * 1;
-        $this->arrayPageSetting["bottomMargin"] = $xml_path["bottomMargin"] * 1;
-    }
-
-    public function parameter_handler($xml_path) {
-        //    $defaultValueExpression=str_replace('"','',$xml_path->defaultValueExpression);
-        // if($defaultValueExpression!='')
-        //  $this->arrayParameter[$xml_path["name"].'']=$defaultValueExpression;
-        // else
-        $this->arrayParameter[$xml_path["name"] . ''];
-    }
-
-    public function filterExpression_handler($xml_path) {
 
 
-        $this->filterExpression = $xml_path;
-    }
-
-    public function queryString_handler($xml_path) {
-        $this->sql = $xml_path;
-        if (isset($this->arrayParameter)) {
-            foreach ($this->arrayParameter as $v => $a) {
-                $this->sql = str_replace('$P{' . $v . '}', $a, $this->sql);
-            }
-        }
-    }
-
-    public function field_handler($xml_path) {
-        $this->arrayfield[] = $xml_path["name"];
-    }
-
-    public function variable_handler($xml_path) {
-
-        $this->arrayVariable["$xml_path[name]"] = array("calculation" => $xml_path["calculation"], "target" => substr($xml_path->variableExpression, 3, -1), "class" => $xml_path["class"], "resetType" => $xml_path["resetType"]);
-    }
-
-    public function group_handler($xml_path) {
-
-//        $this->arraygroup=$xml_path;
-
-
-        if ($xml_path["isStartNewPage"] == "true")
-            $this->newPageGroup = true;
-        else
-            $this->newPageGroup = "";
-
-        foreach ($xml_path as $tag => $out) {
-            switch ($tag) {
-                case "groupHeader":
-                    $this->pointer = &$this->arraygroup[$xml_path["name"]]["groupHeader"];
-                    $this->pointer = &$this->arraygrouphead;
-                    $this->arraygroupheadheight = $out->band["height"];
-                    $this->arrayband[] = array("name" => "group", "gname" => $xml_path["name"], "isStartNewPage" => $xml_path["isStartNewPage"], "groupExpression" => substr($xml_path->groupExpression, 3, -1));
-                    $this->pointer[] = array("type" => "band", "height" => $out->band["height"] + 0, "y_axis" => "", "groupExpression" => substr($xml_path->groupExpression, 3, -1));
-//### Modification for group count
-                    $gnam = $xml_path["name"];
-                    $this->gnam = $xml_path["name"];
-                    $this->group_count["$gnam"] = 1; // Count rows of groups, we're on the first row of the group.
-//### End of modification
-                    foreach ($out as $band) {
-                        $this->default_handler($band);
-                    }
-
-                    $this->y_axis = $this->y_axis + $out->band["height"];  //after handle , then adjust y axis
-                    break;
-                case "groupFooter":
-
-                    $this->pointer = &$this->arraygroup[$xml_path["name"]]["groupFooter"];
-                    $this->pointer = &$this->arraygroupfoot;
-                    $this->arraygroupfootheight = $out->band["height"];
-                    $this->pointer[] = array("type" => "band", "height" => $out->band["height"] + 0, "y_axis" => "", "groupExpression" => substr($xml_path->groupExpression, 3, -1));
-                    foreach ($out as $b => $band) {
-                        $this->default_handler($band);
-                    }
-                    break;
-                default:
-
-                    break;
-            }
-        }
-    }
-
-    public function default_handler($xml_path) {
-        foreach ($xml_path as $k => $out) {
-
-            switch ($k) {
-                case "staticText":
-                    $this->element_staticText($out);
-                    break;
-                case "image":
-                    $this->element_image($out);
-                    break;
-                case "line":
-                    $this->element_line($out);
-                    break;
-                case "rectangle":
-                    $this->element_rectangle($out);
-                    break;
-                case "ellipse":
-                    $this->element_ellipse($out);
-                    break;
-                case "textField":
-                    $this->element_textField($out);
-                    break;
-//                case "stackedBarChart":
-//                    $this->element_barChart($out,'StackedBarChart');
-//                    break;
-//                case "barChart":
-//                    $this->element_barChart($out,'BarChart');
-//                    break;
-//                case "pieChart":
-//                    $this->element_pieChart($out);
-//                    break;
-//                case "pie3DChart":
-//                    $this->element_pie3DChart($out);
-//                    break;
-//                case "lineChart":
-//                    $this->element_lineChart($out);
-//                    break;
-//                case "stackedAreaChart":
-//                    $this->element_areaChart($out,'stackedAreaChart');
-//                    break;
-                case "stackedBarChart":
-                    $this->element_Chart($out, 'stackedBarChart');
-                    break;
-                case "barChart":
-                    $this->element_Chart($out, 'barChart');
-                    break;
-                case "pieChart":
-                    $this->element_Chart($out, 'pieChart');
-                    break;
-                case "pie3DChart":
-                    $this->element_pie3DChart($out, 'pie3DChart');
-                    break;
-                case "lineChart":
-                    $this->element_Chart($out, 'lineChart');
-                    break;
-                case "stackedAreaChart":
-                    $this->element_Chart($out, 'stackedAreaChart');
-                    break;
-                case "subreport":
-                    $this->element_subReport($out);
-                    break;
-                default:
-                    break;
-            }
-        };
-    }
-
-    public function element_staticText($data) {
-        $align = "L";
-        $fill = 0;
-        $border = 0;
-        $fontsize = 10;
-        $font = "helvetica";
-        $fontstyle = "";
-        $textcolor = array("r" => 0, "g" => 0, "b" => 0);
-        $fillcolor = array("r" => 255, "g" => 255, "b" => 255);
-        $txt = "";
-        $rotation = "";
-        $drawcolor = array("r" => 0, "g" => 0, "b" => 0);
-        $height = $data->reportElement["height"];
-        $stretchoverflow = "true";
-        $printoverflow = "false";
-
-        /** allow forground color "forecolor" */
-        if (isset($data->reportElement["forecolor"])) {
-            $textcolor = array("r" => hexdec(substr($data->reportElement["forecolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["forecolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["forecolor"], 5, 2)));
-        }
-        if (isset($data->reportElement["backcolor"])) {
-            $fillcolor = array("r" => hexdec(substr($data->reportElement["backcolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["backcolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["backcolor"], 5, 2)));
-        }
-        if ($data->reportElement["mode"] == "Opaque") {
-            $fill = 1;
-        }
-        if (isset($data["isStretchWithOverflow"]) && $data["isStretchWithOverflow"] == "true") {
-            $stretchoverflow = "true";
-        }
-        if (isset($data->reportElement["isPrintWhenDetailOverflows"]) && $data->reportElement["isPrintWhenDetailOverflows"] == "true") {
-            $printoverflow = "true";
-            $stretchoverflow = "false";
-        }
-        if ((isset($data->box)) && ($data->box->pen["lineWidth"] > 0)) {
-            $border = 1;
-            if (isset($data->box->pen["lineColor"])) {
-                $drawcolor = array("r" => hexdec(substr($data->box->pen["lineColor"], 1, 2)), "g" => hexdec(substr($data->box->pen["lineColor"], 3, 2)), "b" => hexdec(substr($data->box->pen["lineColor"], 5, 2)));
-            }
-        }
-        if (isset($data->textElement["textAlignment"])) {
-            $align = $this->get_first_value($data->textElement["textAlignment"]);
-        }
-        if (isset($data->textElement["rotation"])) {
-            $rotation = $data->textElement["rotation"];
-        }
-        if (isset($data->textElement->font["fontName"])) {
-            $font = $data->textElement->font["fontName"];
-        }
-
-        if (isset($data->textElement->font["pdfFontName"])) {
-            $font = $data->textElement->font["pdfFontName"];
-        }
-        if (isset($data->textElement->font["size"])) {
-            $fontsize = $data->textElement->font["size"];
-        }
-        if (isset($data->textElement->font["isBold"]) && $data->textElement->font["isBold"] == "true") {
-            $fontstyle = $fontstyle . "B";
-        }
-        if (isset($data->textElement->font["isItalic"]) && $data->textElement->font["isItalic"] == "true") {
-            $fontstyle = $fontstyle . "I";
-        }
-        if (isset($data->textElement->font["isUnderline"]) && $data->textElement->font["isUnderline"] == "true") {
-            $fontstyle = $fontstyle . "U";
-        }
-        if (isset($data->reportElement["key"])) {
-            $height = $fontsize * $this->adjust;
-        }
-        $this->pointer[] = array("type" => "SetXY", "x" => $data->reportElement["x"], "y" => $data->reportElement["y"], "hidden_type" => "SetXY");
-        $this->pointer[] = array("type" => "SetTextColor", "r" => $textcolor["r"], "g" => $textcolor["g"], "b" => $textcolor["b"], "hidden_type" => "textcolor");
-        $this->pointer[] = array("type" => "SetDrawColor", "r" => $drawcolor["r"], "g" => $drawcolor["g"], "b" => $drawcolor["b"], "hidden_type" => "drawcolor");
-        $this->pointer[] = array("type" => "SetFillColor", "r" => $fillcolor["r"], "g" => $fillcolor["g"], "b" => $fillcolor["b"], "hidden_type" => "fillcolor");
-        $this->pointer[] = array("type" => "SetFont", "font" => $font, "fontstyle" => $fontstyle, "fontsize" => $fontsize, "hidden_type" => "font");
-        //"height"=>$data->reportElement["height"]
-//### UTF-8 characters, a must for me.	
-        $txtEnc = ($data->text);
-
-        /** add printWhenExpression */
-        $this->pointer[] = array("type" => "MultiCell",
-            "printWhenExpression" => $data->reportElement->printWhenExpression,
-            "width" => $data->reportElement["width"], "height" => $height, "txt" => $txtEnc, "border" => $border, "align" => $align, "fill" => $fill, "hidden_type" => "statictext", "soverflow" => $stretchoverflow, "poverflow" => $printoverflow, "rotation" => $rotation);
-//### End of modification, below is the original line		
-//        $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>$data->text,"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"statictext","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"rotation"=>$rotation);
-    }
-
-    public function element_image($data) {
-        $imagepath = $data->imageExpression;
-        //$imagepath= substr($data->imageExpression, 1, -1);
-        //$imagetype= substr($imagepath,-3);
-        // $imagepath=$this->analyse_expression($imagepath);
-
-        switch ($data[scaleImage]) {
-            case "FillFrame":
-                /** add hAlign */
-                $this->pointer[] = array("type" => "Image", "path" => $imagepath, "x" => $data->reportElement["x"] + 0, "y" => $data->reportElement["y"] + 0, "width" => $data->reportElement["width"] + 0, "height" => $data->reportElement["height"] + 0, "imgtype" => $imagetype, "link" => substr($data->hyperlinkReferenceExpression, 1, -1), "hidden_type" => "image", 'hAlign' => $data['hAlign']);
-                break;
-            default:
-                $this->pointer[] = array("type" => "Image", "path" => $imagepath, "x" => $data->reportElement["x"] + 0, "y" => $data->reportElement["y"] + 0, "width" => $data->reportElement["width"] + 0, "height" => $data->reportElement["height"] + 0, "imgtype" => $imagetype, "link" => substr($data->hyperlinkReferenceExpression, 1, -1), "hidden_type" => "image");
-                break;
-        }
-    }
-
-    public function element_line($data) { //default line width=0.567(no detect line width)
-        $drawcolor = array("r" => 0, "g" => 0, "b" => 0);
-        $hidden_type = "line";
-        if (isset($data->reportElement["forecolor"])) {
-            $drawcolor = array("r" => hexdec(substr($data->reportElement["forecolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["forecolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["forecolor"], 5, 2)));
-        }
-        /** add drawing of lines */
-        if ((isset($data->graphicElement) ) and (isset($data->graphicElement->pen))) {
-            if (isset($data->graphicElement->pen["lineColor"]))
-                $drawcolor = array("r" => hexdec(substr($data->graphicElement->pen["lineColor"], 1, 2)), "g" => hexdec(substr($data->graphicElement->pen["lineColor"], 3, 2)), "b" => hexdec(substr($data->graphicElement->pen["lineColor"], 5, 2)));
-            if (isset($data->graphicElement->pen["lineWidth"]))
-                $this->pointer[] = array("type" => "SetLineWidth", "width" => $data->graphicElement->pen["lineWidth"]);
-        }
-
-        $this->pointer[] = array("type" => "SetDrawColor", "r" => $drawcolor["r"], "g" => $drawcolor["g"], "b" => $drawcolor["b"], "hidden_type" => "drawcolor");
-        if (isset($data->reportElement[positionType]) && $data->reportElement[positionType] == "FixRelativeToBottom") {
-            $hidden_type = "relativebottomline";
-        }
-        if ($data->reportElement["width"][0] + 0 > $data->reportElement["height"][0] + 0) { //width > height means horizontal line
-            $this->pointer[] = array("type" => "Line", "x1" => $data->reportElement["x"], "y1" => $data->reportElement["y"], "x2" => $data->reportElement["x"] + $data->reportElement["width"], "y2" => $data->reportElement["y"] + $data->reportElement["height"] - 1, "hidden_type" => $hidden_type);
-        } elseif ($data->reportElement["height"][0] + 0 > $data->reportElement["width"][0] + 0) {  //vertical line
-            $this->pointer[] = array("type" => "Line", "x1" => $data->reportElement["x"], "y1" => $data->reportElement["y"], "x2" => $data->reportElement["x"] + $data->reportElement["width"] - 1, "y2" => $data->reportElement["y"] + $data->reportElement["height"], "hidden_type" => $hidden_type);
-        }
-        $this->pointer[] = array("type" => "SetLineWidth", "width" => "1");
-
-        $this->pointer[] = array("type" => "SetDrawColor", "r" => 0, "g" => 0, "b" => 0, "hidden_type" => "drawcolor");
-        $this->pointer[] = array("type" => "SetFillColor", "r" => 255, "g" => 255, "b" => 255, "hidden_type" => "fillcolor");
-    }
-
-    public function element_rectangle($data) {
-
-        $radius = $data['radius'];
-        $drawcolor = array("r" => 0, "g" => 0, "b" => 0);
-
-        $fillcolor = array("r" => 255, "g" => 255, "b" => 255);
-
-
-        if (isset($data->reportElement["forecolor"])) {
-            $drawcolor = array("r" => hexdec(substr($data->reportElement["forecolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["forecolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["forecolor"], 5, 2)));
-        }
-
-        if (isset($data->reportElement["backcolor"])) {
-            $fillcolor = array("r" => hexdec(substr($data->reportElement["backcolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["backcolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["backcolor"], 5, 2)));
-        }
-
-
-        $this->pointer[] = array("type" => "SetDrawColor", "r" => $drawcolor["r"], "g" => $drawcolor["g"], "b" => $drawcolor["b"], "hidden_type" => "drawcolor");
-        $this->pointer[] = array("type" => "SetFillColor", "r" => $fillcolor["r"], "g" => $fillcolor["g"], "b" => $fillcolor["b"], "hidden_type" => "fillcolor");
-
-        if ($radius == '')
-            $this->pointer[] = array("type" => "Rect", "x" => $data->reportElement["x"], "y" => $data->reportElement["y"], "width" => $data->reportElement["width"], "height" => $data->reportElement["height"], "hidden_type" => "rect", "drawcolor" => $drawcolor, "fillcolor" => $fillcolor, "mode" => $data->reportElement["mode"]);
-        else
-            $this->pointer[] = array("type" => "RoundedRect", "x" => $data->reportElement["x"], "y" => $data->reportElement["y"], "width" => $data->reportElement["width"], "height" => $data->reportElement["height"], "hidden_type" => "roundedrect", "radius" => $radius, "drawcolor" => $drawcolor, "fillcolor" => $fillcolor, "mode" => $data->reportElement["mode"]);
-        $this->pointer[] = array("type" => "SetDrawColor", "r" => 0, "g" => 0, "b" => 0, "hidden_type" => "drawcolor");
-        $this->pointer[] = array("type" => "SetFillColor", "r" => 255, "g" => 255, "b" => 255, "hidden_type" => "fillcolor");
-    }
-
-    public function element_ellipse($data) {
-        $drawcolor = array("r" => 0, "g" => 0, "b" => 0);
-        $fillcolor = array("r" => 255, "g" => 255, "b" => 255);
-        if (isset($data->reportElement["forecolor"])) {
-            $drawcolor = array("r" => hexdec(substr($data->reportElement["forecolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["forecolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["forecolor"], 5, 2)));
-        }
-        if (isset($data->reportElement["backcolor"])) {
-            $fillcolor = array("r" => hexdec(substr($data->reportElement["backcolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["backcolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["backcolor"], 5, 2)));
-        }
-
-        //$color=array("r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"]);
-        $this->pointer[] = array("type" => "SetFillColor", "r" => $fillcolor["r"], "g" => $fillcolor["g"], "b" => $fillcolor["b"], "hidden_type" => "fillcolor");
-        $this->pointer[] = array("type" => "SetDrawColor", "r" => $drawcolor["r"], "g" => $drawcolor["g"], "b" => $drawcolor["b"], "hidden_type" => "drawcolor");
-        $this->pointer[] = array("type" => "Ellipse", "x" => $data->reportElement["x"], "y" => $data->reportElement["y"], "width" => $data->reportElement["width"], "height" => $data->reportElement["height"], "hidden_type" => "ellipse", "drawcolor" => $drawcolor, "fillcolor" => $fillcolor);
-        $this->pointer[] = array("type" => "SetDrawColor", "r" => 0, "g" => 0, "b" => 0, "hidden_type" => "drawcolor");
-        $this->pointer[] = array("type" => "SetFillColor", "r" => 255, "g" => 255, "b" => 255, "hidden_type" => "fillcolor");
-    }
-
-    public function element_textField($data) {
-        $align = "L";
-        $fill = 0;
-        $border = 0;
-        $fontsize = 10;
-        $font = "helvetica";
-        $rotation = "";
-        $fontstyle = "";
-        $textcolor = array("r" => 0, "g" => 0, "b" => 0);
-        $fillcolor = array("r" => 255, "g" => 255, "b" => 255);
-        $stretchoverflow = "false";
-        $printoverflow = "false";
-        $height = $data->reportElement["height"];
-        $drawcolor = array("r" => 0, "g" => 0, "b" => 0);
-        if (isset($data->reportElement["forecolor"])) {
-            $textcolor = array("r" => hexdec(substr($data->reportElement["forecolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["forecolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["forecolor"], 5, 2)));
-        }
-        if (isset($data->reportElement["backcolor"])) {
-            $fillcolor = array("r" => hexdec(substr($data->reportElement["backcolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["backcolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["backcolor"], 5, 2)));
-        }
-        if ($data->reportElement["mode"] == "Opaque") {
-            $fill = 1;
-        }
-        if (isset($data["isStretchWithOverflow"]) && $data["isStretchWithOverflow"] == "true") {
-            $stretchoverflow = "true";
-        }
-        if (isset($data->reportElement["isPrintWhenDetailOverflows"]) && $data->reportElement["isPrintWhenDetailOverflows"] == "true") {
-            $printoverflow = "true";
-        }
-        if (isset($data->box) && $data->box->pen["lineWidth"] > 0) {
-            $border = 1;
-            if (isset($data->box->pen["lineColor"])) {
-                $drawcolor = array("r" => hexdec(substr($data->box->pen["lineColor"], 1, 2)), "g" => hexdec(substr($data->box->pen["lineColor"], 3, 2)), "b" => hexdec(substr($data->box->pen["lineColor"], 5, 2)));
-            }
-        }
-        if (isset($data->reportElement["key"])) {
-            $height = $fontsize * $this->adjust;
-        }
-        if (isset($data->textElement["textAlignment"])) {
-            $align = $this->get_first_value($data->textElement["textAlignment"]);
-        }
-        /** get verital align */
-        if (isset($data->textElement["textAlignment"])) {
-            $valign = $this->get_first_value($data->textElement["verticalAlignment"]);
-        }
-        if (isset($data->textElement["rotation"])) {
-            $rotation = $data->textElement["rotation"];
-        }
-        if (isset($data->textElement->font["fontName"])) {
-            $font = $data->textElement->font["fontName"];
-        }
-        if (isset($data->textElement->font["pdfFontName"])) {
-            $font = $data->textElement->font["pdfFontName"];
-        }
-        if (isset($data->textElement->font["size"])) {
-            $fontsize = $data->textElement->font["size"];
-        }
-        if (isset($data->textElement->font["isBold"]) && $data->textElement->font["isBold"] == "true") {
-            $fontstyle = $fontstyle . "B";
-        }
-        if (isset($data->textElement->font["isItalic"]) && $data->textElement->font["isItalic"] == "true") {
-            $fontstyle = $fontstyle . "I";
-        }
-        if (isset($data->textElement->font["isUnderline"]) && $data->textElement->font["isUnderline"] == "true") {
-            $fontstyle = $fontstyle . "U";
-        }
-        $this->pointer[] = array("type" => "SetXY", "x" => $data->reportElement["x"], "y" => $data->reportElement["y"], "hidden_type" => "SetXY");
-        /** todo: need to check that forecolor and backcolor work. I add it from older code without checking it */
-        $this->pointer[] = array("type" => "SetTextColor", "forecolor" => $data->reportElement["forecolor"], "r" => $textcolor["r"], "g" => $textcolor["g"], "b" => $textcolor["b"], "hidden_type" => "textcolor");
-        $this->pointer[] = array("type" => "SetDrawColor", "r" => $drawcolor["r"], "g" => $drawcolor["g"], "b" => $drawcolor["b"], "hidden_type" => "drawcolor");
-        $this->pointer[] = array("type" => "SetFillColor", "backcolor" => $data->reportElement["backcolor"], "r" => $fillcolor["r"], "g" => $fillcolor["g"], "b" => $fillcolor["b"], "hidden_type" => "fillcolor");
-        $this->pointer[] = array("type" => "SetFont", "font" => $font, "fontstyle" => $fontstyle, "fontsize" => $fontsize, "hidden_type" => "font");
-        //$data->hyperlinkReferenceExpression=$this->analyse_expression($data->hyperlinkReferenceExpression);
-        //if( $data->hyperlinkReferenceExpression!=''){echo "$data->hyperlinkReferenceExpression";die;}
-
-
-        switch ($data->textFieldExpression) {
-            case 'new java.util.Date()':
-//### New: =>date("Y.m.d.",....
-                /** added valign  for the next 35 lines */
-                $this->pointer[] = array("type" => "MultiCell", "width" => $data->reportElement["width"], "height" => $height, "txt" => date("Y-m-d H:i:s"), "border" => $border, "align" => $align, 'valign' => $valign, "fill" => $fill, "hidden_type" => "date", "soverflow" => $stretchoverflow, "poverflow" => $printoverflow, "link" => substr($data->hyperlinkReferenceExpression, 1, -1));
-//### End of modification				
-                break;
-            case '"Page "+$V{PAGE_NUMBER}+" of"':
-
-                $this->pointer[] = array("type" => "MultiCell", "width" => $data->reportElement["width"], "height" => $height, "txt" => 'Page $this->PageNo() of', "border" => $border, "align" => $align, 'valign' => $valign, "fill" => $fill, "hidden_type" => "pageno", "soverflow" => $stretchoverflow, "poverflow" => $printoverflow, "link" => substr($data->hyperlinkReferenceExpression, 1, -1), "pattern" => $data["pattern"]);
-                break;
-            case '$V{PAGE_NUMBER}':
-                if (isset($data["evaluationTime"]) && $data["evaluationTime"] == "Report") {
-                    $this->pointer[] = array("type" => "MultiCell", "width" => $data->reportElement["width"], "height" => $height, "txt" => '{nb}', "border" => $border, "align" => $align, 'valign' => $valign, "fill" => $fill, "hidden_type" => "pageno", "soverflow" => $stretchoverflow, "poverflow" => $printoverflow, "link" => substr($data->hyperlinkReferenceExpression, 1, -1), "pattern" => $data["pattern"]);
-                } else {
-                    $this->pointer[] = array("type" => "MultiCell", "width" => $data->reportElement["width"], "height" => $height, "txt" => '$this->PageNo()', "border" => $border, "align" => $align, 'valign' => $valign, "fill" => $fill, "hidden_type" => "pageno", "soverflow" => $stretchoverflow, "poverflow" => $printoverflow, "link" => substr($data->hyperlinkReferenceExpression, 1, -1), "pattern" => $data["pattern"]);
-                }
-                break;
-            case '" " + $V{PAGE_NUMBER}':
-                $this->pointer[] = array("type" => "MultiCell", "width" => $data->reportElement["width"], "height" => $height, "txt" => ' {nb}', "border" => $border, "align" => $align, 'valign' => $valign, "fill" => $fill, "hidden_type" => "nb", "soverflow" => $stretchoverflow, "poverflow" => $printoverflow, "link" => substr($data->hyperlinkReferenceExpression, 1, -1), "pattern" => $data["pattern"]);
-                break;
-            case '$V{REPORT_COUNT}':
-//###                $this->report_count=0;	
-                $this->pointer[] = array("type" => "MultiCell", "width" => $data->reportElement["width"], "height" => $height, "txt" => &$this->report_count, "border" => $border, "align" => $align, 'valign' => $valign, "fill" => $fill, "hidden_type" => "report_count", "soverflow" => $stretchoverflow, "poverflow" => $printoverflow, "link" => substr($data->hyperlinkReferenceExpression, 1, -1), "pattern" => $data["pattern"]);
-                break;
-            case '$V{' . $this->gnam . '_COUNT}':
-//            case '$V{'.$this->arrayband[0]["gname"].'_COUNT}':
-//###                $this->group_count=0;
-                $gnam = $this->arrayband[0]["gname"];
-                $this->pointer[] = array("type" => "MultiCell", "width" => $data->reportElement["width"], "height" => $height, "txt" => &$this->group_count["$this->gnam"], "border" => $border, "align" => $align, 'valign' => $valign, "fill" => $fill, "hidden_type" => "group_count", "soverflow" => $stretchoverflow, "poverflow" => $printoverflow, "link" => substr($data->hyperlinkReferenceExpression, 1, -1), "pattern" => $data["pattern"]);
-                break;
-            default:
-                $writeHTML = false;
-                if ($data->reportElement->property["name"] == "writeHTML")
-                    $writeHTML = $data->reportElement->property["value"];
-                if (isset($data->reportElement["isPrintRepeatedValues"]))
-                    $isPrintRepeatedValues = $data->reportElement["isPrintRepeatedValues"];
-
-
-                $this->pointer[] = array("type" => "MultiCell", "width" => $data->reportElement["width"], "height" => $height, "txt" => $data->textFieldExpression,
-                    "border" => $border, "align" => $align, "fill" => $fill, 'valign' => $valign,
-                    "hidden_type" => "field", "soverflow" => $stretchoverflow, "poverflow" => $printoverflow,
-                    "printWhenExpression" => $data->reportElement->printWhenExpression,
-                    "link" => substr($data->hyperlinkReferenceExpression, 1, -1), "pattern" => $data["pattern"],
-                    "writeHTML" => $writeHTML, "isPrintRepeatedValues" => $isPrintRepeatedValues, "rotation" => $rotation);
-                break;
-        }
-    }
-
-    public function element_subReport($data) {
-//        $b=$data->subreportParameter;
-        $srsearcharr = array('.jasper', '"', "'", ' ', '$P{SUBREPORT_DIR}+');
-        $srrepalcearr = array('.jrxml', "", "", '', $this->arrayParameter['SUBREPORT_DIR']);
-
-        if (strpos($data->subreportExpression, '$P{SUBREPORT_DIR}') === false) {
-            $subreportExpression = str_replace($srsearcharr, $srrepalcearr, $data->subreportExpression);
-        } else {
-            $subreportExpression = str_replace($srsearcharr, $srrepalcearr, $data->subreportExpression);
-        }
-        $b = array();
-        foreach ($data as $name => $out) {
-            if ($name == 'subreportParameter') {
-                $b[$out['name'] . ''] = $out->subreportParameterExpression;
-            }
-        }//loop to let multiple parameter pass to subreport pass to subreport
-        $this->pointer[] = array("type" => "subreport", "x" => $data->reportElement["x"], "y" => $data->reportElement["y"],
-            "width" => $data->reportElement["width"], "height" => $data->reportElement["height"],
-            "subreportparameterarray" => $b, "connectionExpression" => $data->connectionExpression,
-            "subreportExpression" => $subreportExpression, "hidden_type" => "subreport");
-    }
 
     public function transferDBtoArray($host, $user, $password, $db_or_dsn_name, $cndriver = "mysql") {
-        $this->m = 0;
+        $m = 0;
 
         $this->_database = new JasperMysql();
 
@@ -674,7 +137,7 @@ class PHPJasperXML {
             exit(0);
         }
         if ($this->debugsql == true) {
-            echo $this->sql;
+            echo $this->report->sql;
             die;
         }
         /*
@@ -684,9 +147,9 @@ class PHPJasperXML {
 
           if($cndriver=="odbc") {
 
-          $result=odbc_exec( $this->myconn,$this->sql);
+          $result=odbc_exec( $this->myconn,$this->report->sql);
           while ($row = odbc_fetch_array($result)) {
-          foreach($this->arrayfield as $out) {
+          foreach( $this->report->field as $out) {
           $this->arraysqltable[$this->m]["$out"]=$row["$out"];
           }
           $this->m++;
@@ -694,10 +157,10 @@ class PHPJasperXML {
           }elseif($cndriver=="psql") {
 
 
-          pg_send_query($this->myconn,$this->sql);
+          pg_send_query($this->myconn,$this->report->sql);
           $result = pg_get_result($this->myconn);
           while ($row = pg_fetch_array($result, NULL, PGSQL_ASSOC)) {
-          foreach($this->arrayfield as $out) {
+          foreach( $this->report->field as $out) {
           $this->arraysqltable[$this->m]["$out"]=$row["$out"];
           }
           $this->m++;
@@ -707,13 +170,14 @@ class PHPJasperXML {
          * 
          *
          */ {
-            $result = $this->_database->query($this->sql); //query from db
+            $sql = $this->analyse_expression($this->report->sql, false);
+            $result = $this->_database->query($sql); //query from db
 
             while ($row = $this->_database->next($result)) {
-                foreach ($this->arrayfield as $out) {
-                    $this->arraysqltable[$this->m]["$out"] = $row["$out"];
+                foreach ($this->report->field as $out) {
+                    $this->arraysqltable[$m]["$out"] = $row["$out"];
                 }
-                $this->m++;
+                $m++;
             }
         }
         // I dont think we need to close the database, it makes execution very slow.
@@ -738,12 +202,12 @@ class PHPJasperXML {
 
     public function orivariable_calculation() {
 
-        foreach ($this->arrayVariable as $k => $out) {
+        foreach ($this->report->Variable as $k => $out) {
             //   echo $out['resetType']. "<br/><br/>";
             switch ($out["calculation"]) {
                 case "Sum":
                     $sum = 0;
-                    if (isset($this->arrayVariable[$k]['class']) && $this->arrayVariable[$k]['class'] == "java.sql.Time") {
+                    if (isset($this->report->Variable[$k]['class']) && $this->report->Variable[$k]['class'] == "java.sql.Time") {
                         foreach ($this->arraysqltable as $table) {
                             $sum = $sum + $this->time_to_sec($table["$out[target]"]);
                             //$sum=$sum+substr($table["$out[target]"],0,2)*3600+substr($table["$out[target]"],3,2)*60+substr($table["$out[target]"],6,2);
@@ -758,13 +222,13 @@ class PHPJasperXML {
                         }
                     }
 
-                    $this->arrayVariable[$k]["ans"] = $sum;
+                    $this->report->Variable[$k]["ans"] = $sum;
                     break;
                 case "Average":
 
                     $sum = 0;
 
-                    if (isset($this->arrayVariable[$k]['class']) && $this->arrayVariable[$k]['class'] == "java.sql.Time") {
+                    if (isset($this->report->Variable[$k]['class']) && $this->report->Variable[$k]['class'] == "java.sql.Time") {
                         $m = 0;
                         foreach ($this->arraysqltable as $table) {
                             $m++;
@@ -773,15 +237,15 @@ class PHPJasperXML {
                         }
 
                         $sum = $this->sec_to_time($sum / $m);
-                        $this->arrayVariable[$k]["ans"] = $sum;
+                        $this->report->Variable[$k]["ans"] = $sum;
                     } else {
-                        $this->arrayVariable[$k]["ans"] = $sum;
+                        $this->report->Variable[$k]["ans"] = $sum;
                         $m = 0;
                         foreach ($this->arraysqltable as $table) {
                             $m++;
                             $sum = $sum + $table["$out[target]"];
                         }
-                        $this->arrayVariable[$k]["ans"] = $sum / $m;
+                        $this->report->Variable[$k]["ans"] = $sum / $m;
                     }
 
 
@@ -795,24 +259,24 @@ class PHPJasperXML {
                         if ($table[$out["target"]] < $lowest) {
                             $lowest = $table[$out["target"]];
                         }
-                        $this->arrayVariable[$k]["ans"] = $lowest;
+                        $this->report->Variable[$k]["ans"] = $lowest;
                     }
                     break;
                 case "Highest":
                     $out["ans"] = 0;
                     foreach ($this->arraysqltable as $table) {
                         if ($table[$out["target"]] > $out["ans"]) {
-                            $this->arrayVariable[$k]["ans"] = $table[$out["target"]];
+                            $this->report->Variable[$k]["ans"] = $table[$out["target"]];
                         }
                     }
                     break;
 //### A Count for groups, as a variable. Not tested yet, but seemed to work in print_r()
                 case "Count":
-                    $value = $this->arrayVariable[$k]["ans"];
+                    $value = $this->report->Variable[$k]["ans"];
                     if ($this->arraysqltable[$this->global_pointer][$this->group_pointer] != $this->arraysqltable[$this->global_pointer - 1][$this->group_pointer])
                         $value = 0;
                     $value++;
-                    $this->arrayVariable[$k]["ans"] = $value;
+                    $this->report->Variable[$k]["ans"] = $value;
                     break;
 //### End of modification				
                 default:
@@ -827,14 +291,14 @@ class PHPJasperXML {
         //   print_r($this->arraysqltable);
 
 
-        foreach ($this->arrayVariable as $k => $out) {
+        foreach ($this->report->Variable as $k => $out) {
             //   echo $out['resetType']. "<br/><br/>";
             switch ($out["calculation"]) {
                 case "Sum":
 
-                    $value = $this->arrayVariable[$k]["ans"];
+                    $value = $this->report->Variable[$k]["ans"];
                     if ($out['resetType'] == '') {
-                        if (isset($this->arrayVariable[$k]['class']) && $this->arrayVariable[$k]['class'] == "java.sql.Time") {
+                        if (isset($this->report->Variable[$k]['class']) && $this->report->Variable[$k]['class'] == "java.sql.Time") {
                             //    foreach($this->arraysqltable as $table) {
                             $value = $this->time_to_sec($value);
 
@@ -856,7 +320,7 @@ class PHPJasperXML {
                         if ($this->arraysqltable[$this->global_pointer][$this->group_pointer] != $this->arraysqltable[$this->global_pointer - 1][$this->group_pointer])
                             $value = 0;
                         //    echo $this->global_pointer.",".$this->group_pointer.",".$this->arraysqltable[$this->global_pointer][$this->group_pointer].",".$this->arraysqltable[$this->global_pointer-1][$this->group_pointer].",".$this->arraysqltable[$rowno]["$out[target]"];
-                        if (isset($this->arrayVariable[$k]['class']) && $this->arrayVariable[$k]['class'] == "java.sql.Time") {
+                        if (isset($this->report->Variable[$k]['class']) && $this->report->Variable[$k]['class'] == "java.sql.Time") {
                             $value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
                             //$sum= floor($sum / 3600).":".floor($sum%3600 / 60);
                             //if($sum=="0:0"){$sum="00:00";}
@@ -867,16 +331,16 @@ class PHPJasperXML {
                     }
 
 
-                    $this->arrayVariable[$k]["ans"] = $value;
+                    $this->report->Variable[$k]["ans"] = $value;
                     //      echo ",$value<br/>";
                     break;
                 case "Average":
 
                     $sum = 0;
 
-                    if (isset($this->arrayVariable[$k]['class']) && $this->arrayVariable[$k]['class'] == "java.sql.Time") {
+                    if (isset($this->report->Variable[$k]['class']) && $this->report->Variable[$k]['class'] == "java.sql.Time") {
                         $m = 0;
-                        //$value=$this->arrayVariable[$k]["ans"];
+                        //$value=$this->report->Variable[$k]["ans"];
                         //$value=$this->time_to_sec($value);
                         //$value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
 
@@ -890,15 +354,15 @@ class PHPJasperXML {
 
                         $sum = $this->sec_to_time($sum / $m);
                         // echo "Total:".$sum."<br/>";
-                        $this->arrayVariable[$k]["ans"] = $sum;
+                        $this->report->Variable[$k]["ans"] = $sum;
                     } else {
-                        $this->arrayVariable[$k]["ans"] = $sum;
+                        $this->report->Variable[$k]["ans"] = $sum;
                         $m = 0;
                         foreach ($this->arraysqltable as $table) {
                             $m++;
                             $sum = $sum + $table["$out[target]"];
                         }
-                        $this->arrayVariable[$k]["ans"] = $sum / $m;
+                        $this->report->Variable[$k]["ans"] = $sum / $m;
                     }
 
 
@@ -912,24 +376,24 @@ class PHPJasperXML {
                         if ($table[$out["target"]] < $lowest) {
                             $lowest = $table[$out["target"]];
                         }
-                        $this->arrayVariable[$k]["ans"] = $lowest;
+                        $this->report->Variable[$k]["ans"] = $lowest;
                     }
                     break;
                 case "Highest":
                     $out["ans"] = 0;
                     foreach ($this->arraysqltable as $table) {
                         if ($table[$out["target"]] > $out["ans"]) {
-                            $this->arrayVariable[$k]["ans"] = $table[$out["target"]];
+                            $this->report->Variable[$k]["ans"] = $table[$out["target"]];
                         }
                     }
                     break;
 //### A Count for groups, as a variable. Not tested yet, but seemed to work in print_r()					
                 case "Count":
-                    $value = $this->arrayVariable[$k]["ans"];
+                    $value = $this->report->Variable[$k]["ans"];
                     if ($this->arraysqltable[$this->global_pointer][$this->group_pointer] != $this->arraysqltable[$this->global_pointer - 1][$this->group_pointer])
                         $value = 0;
                     $value++;
-                    $this->arrayVariable[$k]["ans"] = $value;
+                    $this->report->Variable[$k]["ans"] = $value;
                     break;
 //### End of modification
                 default:
@@ -945,11 +409,11 @@ class PHPJasperXML {
         if ($this->pdflib == "TCPDF") {
             if (empty($this->_output))
                 $this->_output = new JasperPdfType();
-            $this->_output->orientation = empty($this->arrayPageSetting["orientation"]) ? 'P' : $this->arrayPageSetting["orientation"];
-            if ($this->arrayPageSetting["orientation"] == "P")
-                $this->_output->pageLayout = array($this->arrayPageSetting["pageWidth"], $this->arrayPageSetting["pageHeight"]);
+            $this->_output->orientation = empty($this->report->pageSetting["orientation"]) ? 'P' : $this->report->pageSetting["orientation"];
+            if ($this->report->pageSetting["orientation"] == "P")
+                $this->_output->pageLayout = array($this->report->pageSetting["pageWidth"], $this->report->pageSetting["pageHeight"]);
             else
-                $this->_output->pageLayout = array($this->arrayPageSetting["pageHeight"], $this->arrayPageSetting["pageWidth"]);
+                $this->_output->pageLayout = array($this->report->pageSetting["pageHeight"], $this->report->pageSetting["pageWidth"]);
 
             $this->_output->setPrintHeader(false);
             $this->_output->setPrintFooter(false);
@@ -965,17 +429,17 @@ class PHPJasperXML {
         if ($this->lang == "cn")
             $this->_output->AddUniGBhwFont("uGB");
 
-        //$this->arrayPageSetting["language"]=$xml_path["language"];
-        $this->_output->SetLeftMargin($this->arrayPageSetting["leftMargin"]);
-        $this->_output->SetRightMargin($this->arrayPageSetting["rightMargin"]);
-        $this->_output->SetTopMargin($this->arrayPageSetting["topMargin"]);
-        $this->_output->SetAutoPageBreak(true, $this->arrayPageSetting["bottomMargin"] / 2);
+        //$this->report->pageSetting["language"]=$xml_path["language"];
+        $this->_output->SetLeftMargin($this->report->pageSetting["leftMargin"]);
+        $this->_output->SetRightMargin($this->report->pageSetting["rightMargin"]);
+        $this->_output->SetTopMargin($this->report->pageSetting["topMargin"]);
+        $this->_output->SetAutoPageBreak(true, $this->report->pageSetting["bottomMargin"] / 2);
         $this->_output->AliasNbPages();
 
 
         $this->global_pointer = 0;
 
-        foreach ($this->arrayband as $band) {
+        foreach ($this->report->band as $band) {
 //            $this->currentband=$band["name"]; // to know current where current band in!
             switch ($band["name"]) {
                 case "title":
@@ -983,15 +447,15 @@ class PHPJasperXML {
                         $this->title();
                     break;
                 case "pageHeader":
-                    if (!$this->newPageGroup) {
-                        $headerY = $this->arrayPageSetting["topMargin"] + $this->arraypageHeader[0]["height"];
+                    if (!$this->report->group->newPageGroup) {
+                        $headerY = $this->report->pageSetting["topMargin"] + $this->arraypageHeader[0]["height"];
                         $this->pageHeader($headerY);
                     } else {
                         $this->pageHeaderNewPage();
                     }
                     break;
                 case "detail":
-                    if (!$this->newPageGroup) {
+                    if (!$this->report->group->newPageGroup) {
                         $this->detail();
                     } else {
                         $this->detailNewPage();
@@ -1014,7 +478,7 @@ class PHPJasperXML {
         }
 
         if ($filename == "")
-            $filename = $this->arrayPageSetting["name"] . ".pdf";
+            $filename = $this->report->pageSetting["name"] . ".pdf";
         /**
          * not sure if this is good practive.
          * because the driver will handle this and keep it open for multiple requests
@@ -1023,120 +487,6 @@ class PHPJasperXML {
          */
         // $this->_database->disconnect($this->cndriver);
         return $this->_output->Output($filename, $out_method); //send out the complete page
-    }
-
-    public function element_pieChart($data) {
-
-        $height = $data->chart->reportElement["height"];
-        $width = $data->chart->reportElement["width"];
-        $x = $data->chart->reportElement["x"];
-        $y = $data->chart->reportElement["y"];
-        $charttitle['position'] = $data->chart->chartTitle['position'];
-
-        $charttitle['text'] = $data->chart->chartTitle->titleExpression;
-        $chartsubtitle['text'] = $data->chart->chartSubTitle->subtitleExpression;
-        $chartLegendPos = $data->chart->chartLegend['position'];
-
-        $dataset = $data->pieDataset->dataset->datasetRun['subDataset'];
-
-        $seriesexp = $data->pieDataset->keyExpression;
-        $valueexp = $data->pieDataset->valueExpression;
-        $bb = $data->pieDataset->dataset->datasetRun['subDataset'];
-        $sql = $this->arraysubdataset["$bb"]['sql'];
-
-        // $ylabel=$data->linePlot->valueAxisLabelExpression;
-
-
-        $param = array();
-        foreach ($data->categoryDataset->dataset->datasetRun->datasetParameter as $tag => $value) {
-            $param[] = array("$value[name]" => $value->datasetParameterExpression);
-        }
-//          print_r($param);
-
-        $this->pointer[] = array('type' => 'PieChart', 'x' => $x, 'y' => $y, 'height' => $height, 'width' => $width, 'charttitle' => $charttitle,
-            'chartsubtitle' => $chartsubtitle,
-            'chartLegendPos' => $chartLegendPos, 'dataset' => $dataset, 'seriesexp' => $seriesexp,
-            'valueexp' => $valueexp, 'param' => $param, 'sql' => $sql, 'ylabel' => $ylabel);
-    }
-
-    public function element_pie3DChart($data) {
-        
-    }
-
-    public function element_Chart($data, $type) {
-        $seriesexp = array();
-        $catexp = array();
-        $valueexp = array();
-        $labelexp = array();
-        $height = $data->chart->reportElement["height"];
-        $width = $data->chart->reportElement["width"];
-        $x = $data->chart->reportElement["x"];
-        $y = $data->chart->reportElement["y"];
-        $charttitle['position'] = $data->chart->chartTitle['position'];
-        $titlefontname = $data->chart->chartTitle->font['pdfFontName'];
-        $titlefontsize = $data->chart->chartTitle->font['size'];
-        $charttitle['text'] = $data->chart->chartTitle->titleExpression;
-        $chartsubtitle['text'] = $data->chart->chartSubTitle->subtitleExpression;
-        $chartLegendPos = $data->chart->chartLegend['position'];
-        $dataset = $data->categoryDataset->dataset->datasetRun['subDataset'];
-        $subcatdataset = $data->categoryDataset;
-        //echo $subcatdataset;
-        $i = 0;
-        foreach ($subcatdataset as $cat => $catseries) {
-            foreach ($catseries as $a => $series) {
-                if ("$series->categoryExpression" != '') {
-                    array_push($seriesexp, "$series->seriesExpression");
-                    array_push($catexp, "$series->categoryExpression");
-                    array_push($valueexp, "$series->valueExpression");
-                    array_push($labelexp, "$series->labelExpression");
-                }
-            }
-        }
-
-
-        $bb = $data->categoryDataset->dataset->datasetRun['subDataset'];
-        $sql = $this->arraysubdataset[$bb]['sql'];
-        switch ($type) {
-            case "barChart":
-                $ylabel = $data->barPlot->valueAxisLabelExpression;
-                $xlabel = $data->barPlot->categoryAxisLabelExpression;
-                $maxy = $data->barPlot->rangeAxisMaxValueExpression;
-                $miny = $data->barPlot->rangeAxisMinValueExpression;
-                break;
-            case "lineChart":
-                $ylabel = $data->linePlot->valueAxisLabelExpression;
-                $xlabel = $data->linePlot->categoryAxisLabelExpression;
-                $maxy = $data->linePlot->rangeAxisMaxValueExpression;
-                $miny = $data->linePlot->rangeAxisMinValueExpression;
-                $showshape = $data->linePlot["isShowShapes"];
-                break;
-            case "stackedAreaChart":
-                $ylabel = $data->areaPlot->valueAxisLabelExpression;
-                $xlabel = $data->areaPlot->categoryAxisLabelExpression;
-                $maxy = $data->areaPlot->rangeAxisMaxValueExpression;
-                $miny = $data->areaPlot->rangeAxisMinValueExpression;
-
-
-                break;
-        }
-
-
-
-        $param = array();
-        foreach ($data->categoryDataset->dataset->datasetRun->datasetParameter as $tag => $value) {
-            $param[] = array("$value[name]" => $value->datasetParameterExpression);
-        }
-        if ($maxy != '' && $miny != '') {
-            $scalesetting = array(0 => array("Min" => $miny, "Max" => $maxy));
-        }
-        else
-            $scalesetting = "";
-
-        $this->pointer[] = array('type' => $type, 'x' => $x, 'y' => $y, 'height' => $height, 'width' => $width, 'charttitle' => $charttitle,
-            'chartsubtitle' => $chartsubtitle,
-            'chartLegendPos' => $chartLegendPos, 'dataset' => $dataset, 'seriesexp' => $seriesexp,
-            'catexp' => $catexp, 'valueexp' => $valueexp, 'labelexp' => $labelexp, 'param' => $param, 'sql' => $sql, 'xlabel' => $xlabel, 'showshape' => $showshape,
-            'titlefontsize' => $titlefontname, 'titlefontsize' => $titlefontsize, 'scalesetting' => $scalesetting);
     }
 
 //    public function element_lineChart($data){
@@ -1192,7 +542,7 @@ class PHPJasperXML {
 //          else
 //              $scalesetting="";
 //
-//         $this->pointer[]=array('type'=>'LineChart','x'=>$x,'y'=>$y,'height'=>$height,'width'=>$width,'charttitle'=>$charttitle,
+//         $this->report->pointer[]=array('type'=>'LineChart','x'=>$x,'y'=>$y,'height'=>$height,'width'=>$width,'charttitle'=>$charttitle,
 //            'chartsubtitle'=> $chartsubtitle,
 //               'chartLegendPos'=> $chartLegendPos,'dataset'=>$dataset,'seriesexp'=>$seriesexp,
 //             'catexp'=>$catexp,'valueexp'=>$valueexp,'labelexp'=>$labelexp,'param'=>$param,'sql'=>$sql,'xlabel'=>$xlabel,'showshape'=>$showshape,
@@ -1253,7 +603,7 @@ class PHPJasperXML {
 //          }
 ////          print_r($param);
 //
-//         $this->pointer[]=array('type'=>$type,'x'=>$x,'y'=>$y,'height'=>$height,'width'=>$width,'charttitle'=>$charttitle,
+//         $this->report->pointer[]=array('type'=>$type,'x'=>$x,'y'=>$y,'height'=>$height,'width'=>$width,'charttitle'=>$charttitle,
 //            'chartsubtitle'=> $chartsubtitle,
 //               'chartLegendPos'=> $chartLegendPos,'dataset'=>$dataset,'seriesexp'=>$seriesexp,
 //             'catexp'=>$catexp,'valueexp'=>$valueexp,'labelexp'=>$labelexp,'param'=>$param,'sql'=>$sql,'ylabel'=>$ylabel,'xlabel'=>$xlabel,
@@ -1416,7 +766,7 @@ class PHPJasperXML {
             $sql = $this->changeSubDataSetSql($sql);
         }
         else
-            $sql = $this->sql;
+            $sql = $this->report->sql;
         $result = $this->_database->query($sql); //query from db
         // $result = @mysql_query($sql);
         $chartdata = array();
@@ -1637,7 +987,7 @@ class PHPJasperXML {
         $this->chart->Render($photofile);
 
         if (file_exists($photofile)) {
-            $this->_output->Image($photofile, $x + $this->arrayPageSetting["leftMargin"], $y_axis + $y1, $w, $h, "PNG");
+            $this->_output->Image($photofile, $x + $this->report->pageSetting["leftMargin"], $y_axis + $y1, $w, $h, "PNG");
             unlink($photofile);
         }
     }
@@ -1710,7 +1060,7 @@ class PHPJasperXML {
             $sql = $this->changeSubDataSetSql($sql);
         }
         else
-            $sql = $this->sql;
+            $sql = $this->report->sql;
 
         $result = $this->_database->query($sql); //query from db
 
@@ -1934,7 +1284,7 @@ class PHPJasperXML {
         $this->chart->Render($photofile);
 
         if (file_exists($photofile)) {
-            $this->_output->Image($photofile, $x + $this->arrayPageSetting["leftMargin"], $y_axis + $y1, $w, $h, "PNG");
+            $this->_output->Image($photofile, $x + $this->report->pageSetting["leftMargin"], $y_axis + $y1, $w, $h, "PNG");
             unlink($photofile);
         }
     }
@@ -2008,7 +1358,7 @@ class PHPJasperXML {
             $sql = $this->changeSubDataSetSql($sql);
         }
         else
-            $sql = $this->sql;
+            $sql = $this->report->sql;
 
         $result = $this->_database->query($sql);
         $chartdata = array();
@@ -2229,7 +1579,7 @@ class PHPJasperXML {
         $this->chart->Render($photofile);
 
         if (file_exists($photofile)) {
-            $this->_output->Image($photofile, $x + $this->arrayPageSetting["leftMargin"], $y_axis + $y1, $w, $h, "PNG");
+            $this->_output->Image($photofile, $x + $this->report->pageSetting["leftMargin"], $y_axis + $y1, $w, $h, "PNG");
             unlink($photofile);
         }
     }
@@ -2239,27 +1589,27 @@ class PHPJasperXML {
         foreach ($this->currentrow as $name => $value)
             $sql = str_replace('$F{' . $name . '}', $value, $sql);
 
-        foreach ($this->arrayParameter as $name => $value)
+        foreach ($this->report->parameters as $name => $value)
             $sql = str_replace('$P{' . $name . '}', $value, $sql);
 
-        foreach ($this->arrayVariable as $name => $value) {
+        foreach ($this->report->Variable as $name => $value) {
             $sql = str_replace('$V{' . $value['target'] . '}', $value['ans'], $sql);
         }
 
 
-//print_r($this->arrayparameter);
+//print_r($this->report->parameters);
 //variable not yet implemented
         return $sql;
     }
 
     public function background() {
-        foreach ($this->arraybackground as $out) {
+        foreach ($this->report->background as $out) {
             switch ($out["hidden_type"]) {
                 case "field":
-                    $this->display($out, $this->arrayPageSetting["topMargin"], true);
+                    $this->display($out, $this->report->pageSetting["topMargin"], true);
                     break;
                 default:
-                    $this->display($out, $this->arrayPageSetting["topMargin"], false);
+                    $this->display($out, $this->report->pageSetting["topMargin"], false);
                     break;
             }
         }
@@ -2270,7 +1620,7 @@ class PHPJasperXML {
         $this->_output->AddPage();
         $this->background();
         if (isset($this->arraypageHeader)) {
-            $this->arraypageHeader[0]["y_axis"] = $this->arrayPageSetting["topMargin"];
+            $this->arraypageHeader[0]["y_axis"] = $this->report->pageSetting["topMargin"];
         }
         foreach ($this->arraypageHeader as $out) {
             switch ($out["hidden_type"]) {
@@ -2291,7 +1641,7 @@ class PHPJasperXML {
         $this->_output->AddPage();
         $this->background();
         if (isset($this->arraypageHeader)) {
-            $this->arraypageHeader[0]["y_axis"] = $this->arrayPageSetting["topMargin"];
+            $this->arraypageHeader[0]["y_axis"] = $this->report->pageSetting["topMargin"];
         }
         foreach ($this->arraypageHeader as $out) {
             switch ($out["hidden_type"]) {
@@ -2303,7 +1653,7 @@ class PHPJasperXML {
                     break;
             }
         }
-        $this->showGroupHeader($this->arrayPageSetting["topMargin"] + $this->arraypageHeader[0]["height"]);
+        $this->showGroupHeader($this->report->pageSetting["topMargin"] + $this->arraypageHeader[0]["height"]);
     }
 
     public function title() {
@@ -2315,7 +1665,7 @@ class PHPJasperXML {
 
         //print_r($this->arraytitle);die;
         if (isset($this->arraytitle)) {
-            $this->arraytitle[0]["y_axis"] = $this->arrayPageSetting["topMargin"];
+            $this->arraytitle[0]["y_axis"] = $this->report->pageSetting["topMargin"];
         }
 
         foreach ($this->arraytitle as $out) {
@@ -2359,14 +1709,14 @@ class PHPJasperXML {
     public function group($headerY) {
 
 
-        $gname = $this->arrayband[0]["gname"] . "";
+        $gname = $this->report->band[0]["gname"] . "";
         if (isset($this->arraypageHeader)) {
             $this->arraygroup[$gname]["groupHeader"][0]["y_axis"] = $headerY;
         }
         if (isset($this->arraypageFooter)) {
-            $this->arraygroup[$gname]["groupFooter"][0]["y_axis"] = $this->arrayPageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->arrayPageSetting["bottomMargin"] - $this->arraygroup[$gname]["groupFooter"][0]["height"];
+            $this->arraygroup[$gname]["groupFooter"][0]["y_axis"] = $this->report->pageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->report->pageSetting["bottomMargin"] - $this->arraygroup[$gname]["groupFooter"][0]["height"];
         } else {
-            $this->arraygroup[$gname]["groupFooter"][0]["y_axis"] = $this->arrayPageSetting["pageHeight"] - $this->arrayPageSetting["bottomMargin"] - $this->arraygroup[$gname]["groupFooter"][0]["height"];
+            $this->arraygroup[$gname]["groupFooter"][0]["y_axis"] = $this->report->pageSetting["pageHeight"] - $this->report->pageSetting["bottomMargin"] - $this->arraygroup[$gname]["groupFooter"][0]["height"];
         }
 
         if (isset($this->arraygroup)) {
@@ -2410,15 +1760,15 @@ class PHPJasperXML {
     }
 
     public function groupNewPage() {
-        $gname = $this->arrayband[0]["gname"] . "";
+        $gname = $this->report->band[0]["gname"] . "";
 
         if (isset($this->arraypageHeader)) {
-            $this->arraygroup[$gname]["groupHeader"][0]["y_axis"] = $this->arrayPageSetting["topMargin"] + $this->arraypageHeader[0]["height"];
+            $this->arraygroup[$gname]["groupHeader"][0]["y_axis"] = $this->report->pageSetting["topMargin"] + $this->arraypageHeader[0]["height"];
         }
         if (isset($this->arraypageFooter)) {
-            $this->arraygroup[$gname]["groupFooter"][0]["y_axis"] = $this->arrayPageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->arrayPageSetting["bottomMargin"] - $this->arraygroup[$gname]["groupFooter"][0]["height"];
+            $this->arraygroup[$gname]["groupFooter"][0]["y_axis"] = $this->report->pageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->report->pageSetting["bottomMargin"] - $this->arraygroup[$gname]["groupFooter"][0]["height"];
         } else {
-            $this->arraygroup[$gname]["groupFooter"][0]["y_axis"] = $this->arrayPageSetting["pageHeight"] - $this->arrayPageSetting["bottomMargin"] - $this->arraygroup[$gname]["groupFooter"][0]["height"];
+            $this->arraygroup[$gname]["groupFooter"][0]["y_axis"] = $this->report->pageSetting["pageHeight"] - $this->report->pageSetting["bottomMargin"] - $this->arraygroup[$gname]["groupFooter"][0]["height"];
         }
 
         if (isset($this->arraygroup)) {
@@ -2462,10 +1812,10 @@ class PHPJasperXML {
             foreach ($this->arraypageFooter as $out) {
                 switch ($out["hidden_type"]) {
                     case "field":
-                        $this->display($out, $this->arrayPageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->arrayPageSetting["bottomMargin"], true);
+                        $this->display($out, $this->report->pageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->report->pageSetting["bottomMargin"], true);
                         break;
                     default:
-                        $this->display($out, $this->arrayPageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->arrayPageSetting["bottomMargin"], false);
+                        $this->display($out, $this->report->pageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->report->pageSetting["bottomMargin"], false);
                         break;
                 }
             }
@@ -2481,10 +1831,10 @@ class PHPJasperXML {
             foreach ($this->arraylastPageFooter as $out) {
                 switch ($out["hidden_type"]) {
                     case "field":
-                        $this->display($out, $this->arrayPageSetting["pageHeight"] - $this->arraylastPageFooter[0]["height"] - $this->arrayPageSetting["bottomMargin"], true);
+                        $this->display($out, $this->report->pageSetting["pageHeight"] - $this->arraylastPageFooter[0]["height"] - $this->report->pageSetting["bottomMargin"], true);
                         break;
                     default:
-                        $this->display($out, $this->arrayPageSetting["pageHeight"] - $this->arraylastPageFooter[0]["height"] - $this->arrayPageSetting["bottomMargin"], false);
+                        $this->display($out, $this->report->pageSetting["pageHeight"] - $this->arraylastPageFooter[0]["height"] - $this->report->pageSetting["bottomMargin"], false);
                         break;
                 }
             }
@@ -2514,7 +1864,7 @@ class PHPJasperXML {
         $bltxt = $this->continuenextpageText;
         $this->_output->SetY($this->arraypageHeader[0]["height"] + 15);
         $this->_output->SetX($bltxt['x']);
-        $maxheight = $this->arrayPageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->_output->GetY() - $bltxt['height'];
+        $maxheight = $this->report->pageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->_output->GetY() - $bltxt['height'];
 
         $this->_output->MultiCell($bltxt['width'], $bltxt['height'], $bltxt['txt'], $bltxt['border'], $bltxt['align'], $bltxt['fill'], $bltxt['ln'], '', '', $bltxt['reset'], $bltxt['streth'], $bltxt['ishtml'], $bltxt['autopadding'], $maxheight - $bltxt['height']);
 
@@ -2543,33 +1893,33 @@ class PHPJasperXML {
         $this->maxpagey = array();
         $this->currentband = 'detail';
 
-        $this->arraydetail[0]["y_axis"] = $this->arraydetail[0]["y_axis"] - $this->titleheight;
-        $field_pos_y = $this->arraydetail[0]["y_axis"];
+        $this->report->arraydetail[0]["y_axis"] = $this->report->arraydetail[0]["y_axis"] - $this->titleheight;
+        $field_pos_y = $this->report->arraydetail[0]["y_axis"];
         $biggestY = 0;
-        $tempY = $this->arraydetail[0]["y_axis"];
+        $tempY = $this->report->arraydetail[0]["y_axis"];
 
         if (isset($this->SubReportCheckPoint))
             $checkpoint = $this->SubReportCheckPoint;
         //  else
-        //	$checkpoint=$this->arraydetail[0]["y_axis"];
-        $checkpoint = $this->arraydetail[0]["y_axis"];
+        //	$checkpoint=$this->report->arraydetail[0]["y_axis"];
+        $checkpoint = $this->report->arraydetail[0]["y_axis"];
 
 // set fixed sizes to be used later
-        $pageheight = $this->arrayPageSetting["pageHeight"];
-        $footerheight = $this->footerbandheight;
-        $headerheight = $this->headerbandheight;
-        $bottommargin = $this->arrayPageSetting["bottomMargin"];
-        $detailheight = $this->detailbandheight;
+        $pageheight = $this->report->pageSetting["pageHeight"];
+        $footerheight = $this->report->footer->height;
+        $headerheight = $this->report->header->height;
+        $bottommargin = $this->report->pageSetting["bottomMargin"];
+        $detailheight = $this->report->header->height;
 
         //		$this->_output->SetY($checkpoint);
         //	$this->_output->MultiCell(200,10,"====",1);
         // render footer if at bottom of page and then render header on next page
-        if ($checkpoint >= $pageheight - $footerheight - $bottommargin - ($this->arraygrouphead[0]['height'] * 1.5) - 1) {
+        if ($checkpoint >= $pageheight - $footerheight - $bottommargin - ($this->report->group->head[0]['height'] * 1.5) - 1) {
             $this->pageFooter();
             $this->pageHeader();
         }
 
-        $gheader = $this->showGroupHeader($this->arrayPageSetting["topMargin"] + $this->arraypageHeader[0]["height"]);
+        $gheader = $this->showGroupHeader($this->report->pageSetting["topMargin"] + $this->arraypageHeader[0]["height"]);
 
         $isgroupfooterprinted = false;
 //		$this->_output->SetY($checkpoint+$gheader);
@@ -2581,7 +1931,7 @@ class PHPJasperXML {
             $n = 0;
 // loop though band but skip if not match $filterExpressio
             while ($row = $this->arraysqltable[$this->global_pointer]) {
-                $filterExpression_result = $this->analyse_expression($this->filterExpression);
+                $filterExpression_result = $this->analyse_expression($this->report->filterExpression);
                 //	var_dump( $filterExpression_result);
                 if ($filterExpression_result) {
 
@@ -2596,26 +1946,26 @@ class PHPJasperXML {
                         $checkpoint = $this->maxpagey['page_' . ($this->_output->getNumPages() - 1)];
                     //                   echo $checkpoint."<br/>";
 
-                    $pageheight = $this->arrayPageSetting["pageHeight"];
-                    $footerheight = $this->footerbandheight;
-                    $headerheight = $this->headerbandheight;
-                    $bottommargin = $this->arrayPageSetting["bottomMargin"];
-                    $detailheight = $this->detailbandheight;
+                    $pageheight = $this->report->pageSetting["pageHeight"];
+                    $footerheight = $this->report->footer->height;
+                    $headerheight = $this->report->header->height;
+                    $bottommargin = $this->report->pageSetting["bottomMargin"];
+                    $detailheight = $this->report->header->height;
 
                     //if content near page footer
 // caclulated band hieght i think
-                    if (isset($this->arrayVariable)) //if self define variable existing, go to do the calculation
+                    if (isset($this->report->Variable)) //if self define variable existing, go to do the calculation
                         $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
 
                     if ($checkpoint >= $pageheight - $footerheight - $bottommargin - ($detailheight * 1.5) - 1) {
                         $this->pageFooter();
                         $this->pageHeader();
                         $currentpage = $this->_output->getNumPages();
-                        $ghheight = $this->showGroupHeader($this->arrayPageSetting["topMargin"] + $this->arraypageHeader[0]["height"]);
+                        $ghheight = $this->showGroupHeader($this->report->pageSetting["topMargin"] + $this->arraypageHeader[0]["height"]);
                         $isgroupfooterprinted = false;
 
                         $isheaderforpageout = true;
-                        $checkpoint = $this->arrayPageSetting["topMargin"] + $this->arraypageHeader[0]["height"] + $ghheight; //$this->arraydetail[0]["y_axis"]- $this->titleheight;
+                        $checkpoint = $this->report->pageSetting["topMargin"] + $this->arraypageHeader[0]["height"] + $ghheight; //$this->report->arraydetail[0]["y_axis"]- $this->titleheight;
                         $this->maxpagey[($this->_output->getPage() - 1)] = $checkpoint;
                     } else
                     if (isset($this->arraygroup) && ($this->global_pointer > 0) &&
@@ -2644,7 +1994,7 @@ class PHPJasperXML {
 
 //begin page handling
                     $biggestY = 0;
-                    foreach ($this->arraydetail as $out) {
+                    foreach ($this->report->arraydetail as $out) {
 //						echo $out["hidden_type"]."<br/>";
 // when ever a items height is higher that the current heighest it because the current heighest
 // this is how we know the size of the band
@@ -2655,14 +2005,14 @@ class PHPJasperXML {
                             case "field":
                                 //        $txt=$this->analyse_expression($compare["txt"]);
 
-                                $maxheight = $this->arrayPageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->_output->GetY() - 15;
+                                $maxheight = $this->report->pageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->_output->GetY() - 15;
                                 $this->prepare_print_array = array("type" => "MultiCell", "width" => $out["width"], "height" => $out["height"], "txt" => $out["txt"],
                                     "border" => $out["border"], "align" => $out["align"], "valign" => $out["valign"], "fill" => $out["fill"], "hidden_type" => $out["hidden_type"],
                                     "printWhenExpression" => $out["printWhenExpression"], "soverflow" => $out["soverflow"], "poverflow" => $out["poverflow"], "link" => $out["link"],
                                     "pattern" => $out["pattern"], "writeHTML" => $out["writeHTML"], "isPrintRepeatedValues" => $out["isPrintRepeatedValues"]);
 
                                 $this->display($this->prepare_print_array, 0, true, $maxheight);
-                                //                                  $checkpoint=$this->arraydetail[0]["y_axis"];
+                                //                                  $checkpoint=$this->report->arraydetail[0]["y_axis"];
 
                                 break;
                             case "relativebottomline":
@@ -2677,8 +2027,8 @@ class PHPJasperXML {
                                 //echo $out["hidden_type"]."=".print_r($out,true)."<br/><br/>";
                                 $this->display($out, $checkpoint);
 
-                                $maxheight = $this->arrayPageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->_output->GetY() - 15;
-                                //				$checkpoint=$this->arraydetail[0]["y_axis"];
+                                $maxheight = $this->report->pageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->_output->GetY() - 15;
+                                //				$checkpoint=$this->report->arraydetail[0]["y_axis"];
                                 //$checkpoint=$this->_output->GetY();
                                 break;
                         }
@@ -2698,13 +2048,13 @@ class PHPJasperXML {
 
 
 
-                        $pageheight = $this->arrayPageSetting["pageHeight"];
-                        $footerheight = $this->footerbandheight;
-                        $headerheight = $this->headerbandheight;
-                        $topmargin = $this->arrayPageSetting["topMargin"];
-                        $bottommargin = $this->arrayPageSetting["bottomMargin"];
-                        $detailheight = $this->detailbandheight;
-                        $gfootheight = $this->arraygroupfoot[0]['height'];
+                        $pageheight = $this->report->pageSetting["pageHeight"];
+                        $footerheight = $this->report->footer->height;
+                        $headerheight = $this->report->header->height;
+                        $topmargin = $this->report->pageSetting["topMargin"];
+                        $bottommargin = $this->report->pageSetting["bottomMargin"];
+                        $detailheight = $this->report->header->height;
+                        $gfootheight = $this->report->group->groupfoot[0]['height'];
                         $currentY = $this->maxpagey['page_' . ($this->_output->getNumPages() - 1)];
 
                         if (($currentY + $gfootheight) < ($pageheight - $bottommargin - $footerheight)) {
@@ -2713,12 +2063,12 @@ class PHPJasperXML {
                             $checkpoint = $this->maxpagey['page_' . ($this->_output->getNumPages() - 1)] + $gfoot;
                         } else {
                             $this->pageFooter();
-                            $hhead = $this->pageHeader($this->arrayPageSetting["topMargin"] + $this->arraypageHeader[0]["height"]);
+                            $hhead = $this->pageHeader($this->report->pageSetting["topMargin"] + $this->arraypageHeader[0]["height"]);
                             //					  $checkpoint=$this->maxpagey['page_'.($this->_output->getNumPages()-1)]+$gfoot;						      
-                            $gfoot = $this->showGroupFooter($headerheight + $this->arrayPageSetting["topMargin"]);
+                            $gfoot = $this->showGroupFooter($headerheight + $this->report->pageSetting["topMargin"]);
                             $isgroupfooterprinted = true;
                             //	$this->_output->Cell(100,30,"New pages footer",1);
-                            $checkpoint = $gfoot + $headerheight + $this->arrayPageSetting["topMargin"]; //$hhead+$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]+$gfoot;						      
+                            $checkpoint = $gfoot + $headerheight + $this->report->pageSetting["topMargin"]; //$hhead+$this->report->pageSetting["topMargin"]+$this->arraypageHeader[0]["height"]+$gfoot;						      
                             $this->maxpagey['page_' . ($this->_output->getNumPages() - 1)] = $checkpoint;
                         }
                         $this->currentband = 'detail';
@@ -2764,7 +2114,7 @@ class PHPJasperXML {
         $this->maxpagey = array();
         $this->currentband = 'detail';
 
-        $this->arraydetail[0]["y_axis"] = $this->arraydetail[0]["y_axis"] - $this->titleheight;
+        $this->report->arraydetail[0]["y_axis"] = $this->arraydetail[0]["y_axis"] - $this->titleheight;
         $field_pos_y = $this->arraydetail[0]["y_axis"];
         $biggestY = 0;
         $tempY = $this->arraydetail[0]["y_axis"];
@@ -2797,12 +2147,12 @@ class PHPJasperXML {
                     $checkpoint = $this->maxpagey['page_' . ($this->_output->getNumPages() - 1)];
                 //                   echo $checkpoint."<br/>";
 
-                $pageheight = $this->arrayPageSetting["pageHeight"];
-                $footerheight = $this->footerbandheight;
-                $headerheight = $this->headerbandheight;
-                $bottommargin = $this->arrayPageSetting["bottomMargin"];
-                $detailheight = $this->detailbandheight;
-                $topmargin = $this->arrayPageSetting["topmargin"];
+                $pageheight = $this->report->pageSetting["pageHeight"];
+                $footerheight = $this->report->footer->height;
+                $headerheight = $this->report->header->height;
+                $bottommargin = $this->report->pageSetting["bottomMargin"];
+                $detailheight = $this->report->header->height;
+                $topmargin = $this->report->pageSetting["topmargin"];
 
 
                 //if content near page footer
@@ -2812,12 +2162,12 @@ class PHPJasperXML {
 
                     $this->_output->lastpage();
                     $currentpage = $this->_output->getNumPages();
-                    $checkpoint = $this->arrayPageSetting["topMargin"] + $this->arraypageHeader[0]["height"] + $this->arraygrouphead[0]['height']; //$this->arraydetail[0]["y_axis"]- $this->titleheight;
+                    $checkpoint = $this->report->pageSetting["topMargin"] + $this->arraypageHeader[0]["height"] + $this->report->group->head[0]['height']; //$this->arraydetail[0]["y_axis"]- $this->titleheight;
                     //	$this->_output->Cell(300,10,"$currentY+$gfootheight > $pageheight-$bottommargin-$footerheight",1);
                     $this->maxpagey[($this->_output->getPage() - 1)] = $checkpoint;
                 }
 
-                if (isset($this->arrayVariable)) //if self define variable existing, go to do the calculation
+                if (isset($this->report->Variable)) //if self define variable existing, go to do the calculation
                     $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
 
 
@@ -2828,7 +2178,7 @@ class PHPJasperXML {
                     $this->_output->lastPage();
                     $currentpage = $this->_output->getNumPages();
 
-                    $checkpoint = $this->arrayPageSetting["topMargin"] + $this->arraypageHeader[0]["height"] + $this->arraygrouphead[0]['height'];
+                    $checkpoint = $this->report->pageSetting["topMargin"] + $this->arraypageHeader[0]["height"] + $this->report->group->head[0]['height'];
                     $this->maxpagey[($this->_output->getPage() - 1)] = $checkpoint;
 
                     $this->footershowed = true;
@@ -2849,7 +2199,7 @@ class PHPJasperXML {
                             //        $txt=$this->analyse_expression($compare["txt"]);
 //                $this->_output->SetY($checkpoint);
 
-                            $maxheight = $this->arrayPageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->_output->GetY() - 10;
+                            $maxheight = $this->report->pageSetting["pageHeight"] - $this->arraypageFooter[0]["height"] - $this->_output->GetY() - 10;
                             $this->prepare_print_array = array("type" => "MultiCell", "width" => $out["width"], "height" => $out["height"], "txt" => $out["txt"],
 // add valign					
                                 "border" => $out["border"], "align" => $out["align"], "valign" => $out["valign"], "fill" => $out["fill"], "hidden_type" => $out["hidden_type"],
@@ -2885,13 +2235,13 @@ class PHPJasperXML {
 
 
 
-                    $pageheight = $this->arrayPageSetting["pageHeight"];
-                    $footerheight = $this->footerbandheight;
-                    $headerheight = $this->headerbandheight;
-                    $topmargin = $this->arrayPageSetting["topMargin"];
-                    $bottommargin = $this->arrayPageSetting["bottomMargin"];
-                    $detailheight = $this->detailbandheight;
-                    $gfootheight = $this->arraygroupfoot[0]['height'];
+                    $pageheight = $this->report->pageSetting["pageHeight"];
+                    $footerheight = $this->report->footer->height;
+                    $headerheight = $this->report->header->height;
+                    $topmargin = $this->report->pageSetting["topMargin"];
+                    $bottommargin = $this->report->pageSetting["bottomMargin"];
+                    $detailheight = $this->report->header->height;
+                    $gfootheight = $this->report->group->groupfoot[0]['height'];
                     $currentY = $this->maxpagey['page_' . ($this->_output->getNumPages() - 1)];
 //		$this->_output->Cell(300,10,"$currentY+$gfootheight > $pageheight-$bottommargin-$footerheight",1);
 
@@ -2904,7 +2254,7 @@ class PHPJasperXML {
                         $gfoot = $this->showGroupFooter($this->maxpagey['page_' . ($this->_output->getPage() - 1)]);
                         $checkpoint = $this->maxpagey['page_' . ($this->_output->getNumPages() - 1)] + $gfoot;
                         //			                    $this->pageHeader();
-                        //			$this->pageHeader($this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]);
+                        //			$this->pageHeader($this->report->pageSetting["topMargin"]+$this->arraypageHeader[0]["height"]);
                         //                   $gfoot= $this->showGroupFooter($this->maxpagey['page_'.($this->_output->getPage()-1)]);
                         //				  $checkpoint=$this->maxpagey['page_'.($this->_output->getNumPages()-1)]+$gfoot;						      
                     }
@@ -2966,7 +2316,7 @@ class PHPJasperXML {
       //check the group's groupExpression existed and same or not
       if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])) {
 
-      if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
+      if(isset($this->report->Variable))	//if self define variable existing, go to do the calculation
       {
       $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
       }
@@ -2987,7 +2337,7 @@ class PHPJasperXML {
       $txt=$this->analyse_expression($row["$compare[txt]"]);
       //check group footer existed or not
 
-      if(isset($this->arraygroup[$this->group_name]["groupFooter"])&&(($checkpoint+($compare["height"]*$txt))>($this->arrayPageSetting[pageHeight]-$this->arraygroup["$this->group_name"][groupFooter][0]["height"]-$this->arrayPageSetting["bottomMargin"]))) {
+      if(isset($this->arraygroup[$this->group_name]["groupFooter"])&&(($checkpoint+($compare["height"]*$txt))>($this->report->pageSetting[pageHeight]-$this->arraygroup["$this->group_name"][groupFooter][0]["height"]-$this->report->pageSetting["bottomMargin"]))) {
       //   $this->showGroupHeader();
       $this->showGroupFooter();
       $this->pageFooter();
@@ -3000,21 +2350,21 @@ class PHPJasperXML {
       $tempY=$this->arraydetail[0]["y_axis"];
       }
       //check pagefooter existed or not
-      elseif(isset($this->arraypageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"]))) {
+      elseif(isset($this->arraypageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->report->pageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->report->pageSetting["bottomMargin"]))) {
       $this->showGroupFooter();
       $this->pageFooter();
       //  $this->_output->AddPage();
       $this->pageHeaderNewPage();
       //     $this->showGroupHeader();
       //   $this->background();
-      $headerY = $this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
+      $headerY = $this->report->pageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
 
       $checkpoint=$this->arraydetail[0]["y_axis"];
       $biggestY=0;
       $tempY=$this->arraydetail[0]["y_axis"];
       }
       //check lastpagefooter existed or not
-      elseif(isset($this->arraylastPageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->arrayPageSetting["pageHeight"]-$this->arraylastPageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"]))) {
+      elseif(isset($this->arraylastPageFooter)&&(($checkpoint+($compare["height"]*($this->NbLines($compare["width"],$txt))))>($this->report->pageSetting["pageHeight"]-$this->arraylastPageFooter[0]["height"]-$this->report->pageSetting["bottomMargin"]))) {
 
       $this->showGroupFooter();
       $this->lastPageFooter();
@@ -3049,13 +2399,13 @@ class PHPJasperXML {
 
 
 
-      if($checkpoint+$this->arraydetail[0]["height"]>($this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"]))	//check the upcoming band is greater than footer position or not
+      if($checkpoint+$this->arraydetail[0]["height"]>($this->report->pageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->report->pageSetting["bottomMargin"]))	//check the upcoming band is greater than footer position or not
       {
       $this->pageFooter();
 
       //      $this->_output->AddPage();
       //    $this->background();
-      $headerY = $this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
+      $headerY = $this->report->pageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
       $this->pageHeaderNewPage();
       //  $this->showGroupHeader();
 
@@ -3126,9 +2476,9 @@ class PHPJasperXML {
 
     public function showGroupHeader($y) {
         $this->currentband = 'groupHeader';
-        $bandheight = $this->arraygrouphead[0]['height'];
+        $bandheight = $this->report->group->head[0]['height'];
 
-        foreach ($this->arraygrouphead as $out) {
+        foreach ($this->report->group->head as $out) {
             $this->display($out, $y, !($out['hidden_type'] == 'statictext'));
         }
         $this->currentband = '';
@@ -3138,9 +2488,9 @@ class PHPJasperXML {
     public function showGroupFooter($y) {
         $this->currentband = 'groupFooter';
         //$this->_output->MultiCell(100,10,"???1-$y,XY=". $this->_output->GetX().",". $this->_output->GetY());
-        $bandheight = $this->arraygroupfoot[0]['height'];
+        $bandheight = $this->report->group->groupfoot[0]['height'];
 
-        foreach ($this->arraygroupfoot as $out) {
+        foreach ($this->report->group->groupfoot as $out) {
             $this->display($out, $y, !$out['hidden_type'] == 'statictext');
         }
         $this->footershowed = true;
@@ -3203,7 +2553,7 @@ class PHPJasperXML {
                 $this->checkoverflow($arraydata, $this->updatePageNo($this->analyse_expression($arraydata["txt"], $arraydata["isPrintRepeatedValues"])), $maxheight);
             }
         } elseif ($arraydata["type"] == "SetXY") {
-            $this->_output->SetXY($arraydata["x"] + $this->arrayPageSetting["leftMargin"], $arraydata["y"] + $y_axis);
+            $this->_output->SetXY($arraydata["x"] + $this->report->pageSetting["leftMargin"], $arraydata["y"] + $y_axis);
         } elseif ($arraydata["type"] == "Cell") {
 
 
@@ -3214,7 +2564,7 @@ class PHPJasperXML {
             else
                 $style = 'FD';
 
-            $this->_output->Rect($arraydata["x"] + $this->arrayPageSetting["leftMargin"], $arraydata["y"] + $y_axis, $arraydata["width"], $arraydata["height"], $style);
+            $this->_output->Rect($arraydata["x"] + $this->report->pageSetting["leftMargin"], $arraydata["y"] + $y_axis, $arraydata["width"], $arraydata["height"], $style);
         }
         elseif ($arraydata["type"] == "RoundedRect") {
             if ($arraydata['mode'] == 'Transparent')
@@ -3222,10 +2572,10 @@ class PHPJasperXML {
             else
                 $style = 'FD';
 
-            $this->_output->RoundedRect($arraydata["x"] + $this->arrayPageSetting["leftMargin"], $arraydata["y"] + $y_axis, $arraydata["width"], $arraydata["height"], $arraydata["radius"], '1111', $style, array('color' => $arraydata['drawcolor']), $arraydata['fillcolor']);
+            $this->_output->RoundedRect($arraydata["x"] + $this->report->pageSetting["leftMargin"], $arraydata["y"] + $y_axis, $arraydata["width"], $arraydata["height"], $arraydata["radius"], '1111', $style, array('color' => $arraydata['drawcolor']), $arraydata['fillcolor']);
         }
         elseif ($arraydata["type"] == "Ellipse") {
-            $this->_output->Ellipse($arraydata["x"] + $arraydata["width"] / 2 + $this->arrayPageSetting["leftMargin"], $arraydata["y"] + $y_axis + $arraydata["height"] / 2, $arraydata["width"] / 2, $arraydata["height"] / 2, 0, 0, 360, 'FD', array('color' => $arraydata['drawcolor']), $arraydata['fillcolor']);
+            $this->_output->Ellipse($arraydata["x"] + $arraydata["width"] / 2 + $this->report->pageSetting["leftMargin"], $arraydata["y"] + $y_axis + $arraydata["height"] / 2, $arraydata["width"] / 2, $arraydata["height"] / 2, 0, 0, 360, 'FD', array('color' => $arraydata['drawcolor']), $arraydata['fillcolor']);
         } elseif ($arraydata["type"] == "Image") {
             $path = $this->analyse_expression($arraydata["path"]);
 // find image in root path			
@@ -3238,7 +2588,7 @@ class PHPJasperXML {
             //($file, $x='', $y='', $w=0, $h=0, $type='', $link='', $align='', $resize=false, $dpi=300, $palign='', $ismask=false, $imgmask=false, $border=0, $fitbox=false, $hidden=false) {
 
             if (file_exists($path))
-                $this->_output->Image($path, $arraydata["x"] + $this->arrayPageSetting["leftMargin"], $arraydata["y"] + $y_axis, $arraydata["width"], $arraydata["height"], $imgtype, $arraydata["link"], substr($arraydata["hAlign"], 0, 1), false, 300, '', false, false, 0, true, false);
+                $this->_output->Image($path, $arraydata["x"] + $this->report->pageSetting["leftMargin"], $arraydata["y"] + $y_axis, $arraydata["width"], $arraydata["height"], $imgtype, $arraydata["link"], substr($arraydata["hAlign"], 0, 1), false, 300, '', false, false, 0, true, false);
         }
 
         elseif ($arraydata["type"] == "SetTextColor") {
@@ -3259,7 +2609,7 @@ class PHPJasperXML {
         } elseif ($arraydata["type"] == "SetLineWidth") {
             $this->_output->SetLineWidth($arraydata["width"]);
         } elseif ($arraydata["type"] == "Line") {
-            $this->_output->Line($arraydata["x1"] + $this->arrayPageSetting["leftMargin"], $arraydata["y1"] + $y_axis, $arraydata["x2"] + $this->arrayPageSetting["leftMargin"], $arraydata["y2"] + $y_axis);
+            $this->_output->Line($arraydata["x1"] + $this->report->pageSetting["leftMargin"], $arraydata["y1"] + $y_axis, $arraydata["x2"] + $this->report->pageSetting["leftMargin"], $arraydata["y2"] + $y_axis);
         } elseif ($arraydata["type"] == "SetFillColor") {
             $this->fillcolor_r = $arraydata['r'];
             $this->fillcolor_g = $arraydata['g'];
@@ -3289,7 +2639,7 @@ class PHPJasperXML {
         return str_replace('$this->PageNo()', $this->_output->PageNo(), $s);
     }
 
-    public function staticText($xml_path) {//$this->pointer[]=array("type"=>"SetXY","x"=>$xml_path->reportElement["x"],"y"=>$xml_path->reportElement["y"]);
+    public function staticText($xml_path) {//$this->report->pointer[]=array("type"=>"SetXY","x"=>$xml_path->reportElement["x"],"y"=>$xml_path->reportElement["y"]);
     }
 
     public function checkoverflow($arraydata, $txt = "", $maxheight = 0) {
@@ -3428,18 +2778,7 @@ class PHPJasperXML {
         return array("r" => $r, "g" => $g, "b" => $b);
     }
 
-    public function get_first_value($value) {
-        return (substr($value, 0, 1));
-    }
 
-    function right($value, $count) {
-
-        return substr($value, ($count * -1));
-    }
-
-    function left($string, $count) {
-        return substr($string, 0, $count);
-    }
 
     public function analyse_expression($data, $isPrintRepeatedValue = "true") {
 
@@ -3454,19 +2793,24 @@ class PHPJasperXML {
 
 
 
-        $lang = ucfirst($this->arrayPageSetting["language"]);
+        $lang = ucfirst($this->report->pageSetting["language"]);
         if (empty($lang))
-            $lang = 'Javascript';
+            $lang = 'Groovy';
 
-        $engineClass = 'jasper' . $lang;
+        $engineClass = 'Jasper' . $lang;
         $expEngine = new $engineClass();
+$expEngine->arraysqltable = $this->arraysqltable;
+$expEngine->previousarraydata = $this->previousarraydata;
+$expEngine->arrayVariable = $this->report->Variable;
+$expEngine->global_pointer = $this->global_pointer;
+$expEngine->arrayParameter = $this->report->parameters;
 
         foreach ($this->arraysqltable[$this->global_pointer] as $name => $value)
             $expEngine->addVar('$F{' . $name . '}', $value);
-        foreach ($this->arrayVariable as $name => $value)
+        foreach ($this->report->Variable as $name => $value)
             $expEngine->addVar('$V{' . $name . '}', $value);
 
-        foreach ($this->arrayParameter as $name => $value)
+        foreach ($this->report->parameters as $name => $value)
             $expEngine->addVar('$P{' . $name . '}', $value);
 
         $result = $expEngine->run($data);
@@ -3523,16 +2867,16 @@ class PHPJasperXML {
         $expression = $data["printWhenExpression"];
 // use analyse_expression 
         if ($expression == "") {
-            $this->print_expression_result = true;
-            return;
+           return $this->print_expression_result = true;
+           
         }
         $result = $this->analyse_expression($expression);
-        $this->print_expression_result = $result;
-        return;
+        return $this->print_expression_result = $result;
+        
 
         $expression = str_replace('$F{', '$this->arraysqltable[$this->global_pointer][', $expression);
-        $expression = str_replace('$P{', '$this->arrayParameter[', $expression);
-        $expression = str_replace('$V{', '$this->arrayVariable[', $expression);
+        $expression = str_replace('$P{', '$this->report->parameters[', $expression);
+        $expression = str_replace('$V{', '$this->report->Variable[', $expression);
         $expression = str_replace('}', ']', $expression);
 
         $this->print_expression_result = false;
@@ -3555,9 +2899,9 @@ class PHPJasperXML {
                 if (substr($b, 0, 3) == '$F{') {
                     $arrdata2[$name . ''] = $this->arraysqltable[$this->global_pointer][substr($b, 3, -1)];
                 } elseif (substr($b, 0, 3) == '$V{') {
-                    $arrdata2[$name . ''] = &$this->arrayVariable[substr($b, 3, -1)]["ans"];
+                    $arrdata2[$name . ''] = &$this->report->Variable[substr($b, 3, -1)]["ans"];
                 } elseif (substr($b, 0, 3) == '$P{') {
-                    $arrdata2[$name . ''] = $this->arrayParameter[substr($b, 3, -1)];
+                    $arrdata2[$name . ''] = $this->report->parameters[substr($b, 3, -1)];
                 }
             }
             $t = implode($arrdata);
@@ -3596,13 +2940,13 @@ class PHPJasperXML {
             $xmlAry = $this->xmlobj2arr(simplexml_load_file($fileName));
 
             foreach ($xmlAry[header] as $key => $value)
-                $this->arraysqltable["$this->m"]["$key"] = $value;
+                $this->arraysqltable[0]["$key"] = $value;
 
-            foreach ($xmlAry[detail][record]["$this->m"] as $key2 => $value2)
-                $this->arraysqltable["$this->m"]["$key2"] = $value2;
+            foreach ($xmlAry[detail][record][0] as $key2 => $value2)
+                $this->arraysqltable[0]["$key2"] = $value2;
         }
 
-        //  if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
+        //  if(isset($this->report->Variable))	//if self define variable existing, go to do the calculation
         //     $this->variable_calculation();
     }
 
@@ -3624,7 +2968,7 @@ class PHPJasperXML {
 
     public function passAllArrayDatatoSubReport($PHPJasperXMLSubReport, $d, $current_y) {
 
-        $PHPJasperXMLSubReport->arrayMainPageSetting = $this->arrayPageSetting;
+        $PHPJasperXMLSubReport->arrayMainPageSetting = $this->report->pageSetting;
         if (isset($this->arraypageHeader)) {
             $PHPJasperXMLSubReport->arrayPageSetting["subreportpageHeight"] = $PHPJasperXMLSubReport->arrayPageSetting["pageHeight"];
             $PHPJasperXMLSubReport->arrayMainpageHeader = $this->arraypageHeader;
@@ -3643,15 +2987,15 @@ class PHPJasperXML {
 ###
             $PHPJasperXMLSubReport->BottomHeightFromMainPage = $PHPJasperXMLSubReport->arrayMainPageSetting["bottomMargin"]
                     + $PHPJasperXMLSubReport->arrayMainpageFooter[0]["height"];
-            $PHPJasperXMLSubReport->arrayPageSetting["leftMargin"] = $PHPJasperXMLSubReport->arrayPageSetting["leftMargin"] + $this->arrayPageSetting["leftMargin"];
+            $PHPJasperXMLSubReport->arrayPageSetting["leftMargin"] = $PHPJasperXMLSubReport->arrayPageSetting["leftMargin"] + $this->report->pageSetting["leftMargin"];
 ###Set fixed pageHeight constant despite the changes of $PHPJasperXMLSubReport->TopHeightFromMainPage due to subreport in Detail band
-            $PHPJasperXMLSubReport->arrayPageSetting["pageHeight"] = $this->arrayPageSetting["pageHeight"]
+            $PHPJasperXMLSubReport->arrayPageSetting["pageHeight"] = $this->report->pageSetting["pageHeight"]
                     - ($PHPJasperXMLSubReport->arrayMainPageSetting["topMargin"]
                     + $PHPJasperXMLSubReport->arrayMainpageHeader[0]["height"] + $d['y'])
                     - $this->arraypageFooter[0]["height"]
                     - $PHPJasperXMLSubReport->arrayMainPageSetting["bottomMargin"] - $d['y'];
 ###
-//                $PHPJasperXMLSubReport->arrayPageSetting["pageHeight"]=$this->arrayPageSetting["pageHeight"]
+//                $PHPJasperXMLSubReport->arrayPageSetting["pageHeight"]=$this->report->pageSetting["pageHeight"]
 //                                                                                                                    -$PHPJasperXMLSubReport->TopHeightFromMainPage
 //                                                                                                                    -$this->arraypageFooter[0]["height"]
 //                                                                                                                    -$PHPJasperXMLSubReport->arrayMainPageSetting["bottomMargin"]-$d['y'];
