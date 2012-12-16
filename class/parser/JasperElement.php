@@ -10,7 +10,7 @@
  *
  * @author adrian
  */
-class JasperElement extends JasperObject {
+class Jasper_reportElement extends JasperObject {
    
     function getInt($value,$def=0)
     {
@@ -25,6 +25,11 @@ class JasperElement extends JasperObject {
             return $def;
        return (string)$value;
         
+    }
+
+    function __construct($parent) {
+      $this->parent = $parent;
+      parent::__construct();
     }
     function getBool($value,$def=false)
     {
@@ -47,7 +52,7 @@ class JasperElement extends JasperObject {
         protected $_fillcolor = array("r" => 255, "g" => 255, "b" => 255);
         protected $_stretchoverflow = "true";
         protected $_printoverflow = "false";  
-     
+      protected $_printWhenExpression = '';
      function parse($data)
     {
          
@@ -56,7 +61,7 @@ class JasperElement extends JasperObject {
          $this->y =  $this->getInt($data->reportElement["y"]);
          $this->width =  $this->getInt($data->reportElement["width"]);
         /** allow forground color "forecolor" */
-        
+        $this->printWhenExpression = $this->getString($data->reportElement->printWhenExpression);
        //reportElement
        if (isset($data->reportElement["forecolor"])) {
             $this->textcolor = array("r" => hexdec(substr($data->reportElement["forecolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["forecolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["forecolor"], 5, 2)));
@@ -76,15 +81,24 @@ class JasperElement extends JasperObject {
         }
         
     }
+    
+    function layout()
+    {
+      // if visible
+      
+    }
 }
 
 
-class JasperBox extends JasperElement
+class Jasper_box extends Jasper_reportElement
 {
       //box
-             protected $_border = 0;
+         protected $_border = 0;
          protected $_drawcolor = array("r" => 0, "g" => 0, "b" => 0);
-     
+    function layout()
+    {
+      parent::layout();
+    } 
    function parse($data)
     {
      parent::parse($data)       ;
@@ -99,7 +113,7 @@ class JasperBox extends JasperElement
           
 }
 
-class JasperText extends JasperBox
+class Jasper_textElement extends Jasper_box
 {
 
   //textElement       
@@ -110,7 +124,10 @@ class JasperText extends JasperBox
         protected $_font = "helvetica";
        protected $_fontstyle = '';
      
-         
+   function getTextSize($text)
+   {
+     
+   }
    function parse($data)
     {
      parent::parse($data)       ;

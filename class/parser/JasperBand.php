@@ -16,7 +16,7 @@ include dirname(__FILE__).'/JasperElements.php';
  * @author adrian
  */
 
-class JasperBand extends JasperObject {
+class Jasper_band extends JasperObject {
 
     protected $_height;
     protected $_isSplitAllowed;
@@ -42,9 +42,9 @@ class JasperBand extends JasperObject {
 
             $elementName = 'Jasper_'.$k;
             if (class_exists($elementName))
-                 $element = new $elementName();
+                 $element = new $elementName($this);
                else
-                 $element = new JasperElement();
+                 $element = new Jasper_reportElement($this);
             $element->type = $k;
             $element->parse($out);
             $this->addElement($element);

@@ -18,7 +18,7 @@ class JasperBandTest extends PHPUnit_Framework_TestCase {
      * This method is called before a test is executed.
      */
     protected function setUp() {
-        $this->object = new JasperBand();
+        $this->object = new Jasper_band();
     }
 
     /**
@@ -71,8 +71,10 @@ class JasperBandTest extends PHPUnit_Framework_TestCase {
     public $testBand =   '<pageHeader>
 		<band height="177" splitType="Stretch">
 			<textField>
-				<reportElement x="478" y="98" width="69" height="20"/>
-				<textElement/>
+				<reportElement style="Column header" x="492" y="14" width="66" height="26" forecolor="#000000">
+						<printWhenExpression><![CDATA[$P{printType} == ( "quote" )]]></printWhenExpression>
+					</reportElement>
+        <textElement/>
 				<textFieldExpression><![CDATA[$F{sample2_date}]]></textFieldExpression>
 			</textField>
 			<textField>

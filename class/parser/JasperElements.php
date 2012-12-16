@@ -10,7 +10,7 @@
  *
  * @author adrian
  */
-class Jasper_staticText extends JasperText {
+class Jasper_staticText extends Jasper_textElement {
 
     protected $_text = "";
 
@@ -27,7 +27,7 @@ class Jasper_staticText extends JasperText {
         //    $this->report->pointer[] = array("type" => "SetFont", "font" => $font, "fontstyle" => $fontstyle, "fontsize" => $fontsize, "hidden_type" => "font");
         //"height"=>$data->reportElement["height"]
 //### UTF-8 characters, a must for me.	
-        $txtEnc = ($data->text);
+        $txtEnc = (string)($data->text);
         $this->text = $$txtEnc;
 
 
@@ -38,7 +38,12 @@ class Jasper_staticText extends JasperText {
 //### End of modification, below is the original line		
 //        $this->report->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>$data->text,"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"statictext","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"rotation"=>$rotation);
     }
-
+    function layout()
+    {
+      parent::layout();
+      
+     $this->getTextSize($this->text);
+    }
 }
 
 /**
@@ -46,7 +51,7 @@ class Jasper_staticText extends JasperText {
  * 
  * @todo hyperlinks need to be covered 
  */
-class Jasper_textField extends JasperText {
+class Jasper_textField extends Jasper_textElement {
 
     protected $_textFieldExpression = "";
 
@@ -55,15 +60,20 @@ class Jasper_textField extends JasperText {
         parent::parse($data);
 
 
-        $this->textFieldExpression = $data->textFieldExpression;
+        $this->textFieldExpression = (string) $data->textFieldExpression;
     }
-
+    function layout()
+    {
+      parent::layout();
+      $text = ''; //need get text expression
+      $this->getTextSize($text);
+    }
 }
 /**
  * 
  * @link http://jasperforge.org/uploads/publish/jasperreportswebsite/trunk/schema.reference.html#group
  */
-class Japser_group extends JasperElement {
+class Japser_group extends Jasper_reportElement {
 
     public $_groupFooter;
     public $_groupHeader;
