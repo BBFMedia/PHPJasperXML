@@ -1,5 +1,6 @@
 <?php
 
+require_once(dirname(__FILE__).'/JasperExp.php');
 
 /**
  * Description of JasperGroovy

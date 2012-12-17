@@ -15,11 +15,15 @@ class JasperObject implements Iterator {
 
     protected $elements = array();
     protected $elements_position = 0;
-
-    public function __construct() {
+    protected $parent = null;
+    public $report = null;
+    public function __construct($parent) {
         $this->elements_position = 0;
+      $this->parent = $parent;
+      if (isset($parent))
+      $this->report = $this->parent->report;
+     
     }
-
     function rewind() {
         $this->elements_position = 0;
     }
@@ -57,6 +61,26 @@ class JasperObject implements Iterator {
         $this->$name = $value;
     }
     
+    
+    function loadValues($values)
+    {
+        foreach($values->attributes() as $name => $value)
+        {
+           $name = '_'.$name;
+           if (property_exists($this, $name)){
+              $type =  gettype($this->$name ) ;
+               if ($type== 'string' ) 
+                      $this->$name = (string) $value;   
+             elseif ($type== 'integer' ) 
+                      $this->$name = (integer) $value;   
+             elseif ($type == 'double' ) 
+                      $this->$name = (float) $value;   
+             else
+                     $this->$name =  $value;   
+           }
+                     
+        }
+    }
     
 
 }

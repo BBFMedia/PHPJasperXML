@@ -71,6 +71,9 @@ class JasperBandTest extends PHPUnit_Framework_TestCase {
     public $testBand =   '<pageHeader>
 		<band height="177" splitType="Stretch">
 			<textField>
+                                    <box>
+                                        <leftPen lineStyle="Solid" />
+                                     </box>
 				<reportElement style="Column header" x="492" y="14" width="66" height="26" forecolor="#000000">
 						<printWhenExpression><![CDATA[$P{printType} == ( "quote" )]]></printWhenExpression>
 					</reportElement>

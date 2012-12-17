@@ -4,9 +4,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-include dirname(__FILE__).'/JasperObject.php';
-include dirname(__FILE__).'/JasperElement.php';
-include dirname(__FILE__).'/JasperElements.php';
+require_once dirname(__FILE__).'/JasperObject.php';
+require_once dirname(__FILE__).'/JasperElement.php';
+require_once dirname(__FILE__).'/JasperElements.php';
 
 /**
  * Description of JasperBand
@@ -18,19 +18,30 @@ include dirname(__FILE__).'/JasperElements.php';
 
 class Jasper_band extends JasperObject {
 
-    protected $_height;
-    protected $_isSplitAllowed;
-    protected $_splitType;
+    protected $_height = 0;    //	Height of the band.
+    protected $_isSplitAllowed = '';   //	Deprecated. Replaced by attribute splitType. Flag that indicates if the band is allowed to split when it stretches.
+    
+    /** 
+     *	Specifies the band split behavior.
+     * 
+     * Stretch		The band is allowed to split, but never within its declared height. This means the band splits only when its content stretches.
+     * Prevent		Prevents the band from splitting on first break attempt. On subsequent pages/columns, the band is allowed to split, to avoid infinite loops.
+     * Immediate		The band is allowed to split anywhere, as early as needed, but not before at least one element being printed on the current page/column.
+     * @var string 
+     */
+    protected $_splitType;  
     
     function addElement($element) {
         $this->elements[] = $element;
     }
-    function parse($xm_path)
+    function parse($band)
     {
-        $band = $xm_path->band[0];
-         $this->height =   (integer) $band['height'];
-         $this->isSplitAllowed = (string) $band['isSplitAllowed'];
-         $this->splitType =  (string) $band['splitType'];
+    
+    //     $this->height =   $this-> $band['height'];
+     //    $this->isSplitAllowed = (string) $band['isSplitAllowed'];
+      //   $this->splitType =  (string) $band['splitType'];
+     
+        $this->loadValues($band);
         $this->parseElements($band);
         //array("type" => "band", "height" => $object["height"], "splitType" => $object["splitType"], "y_axis" => $this->y_axis);
           
@@ -45,7 +56,6 @@ class Jasper_band extends JasperObject {
                  $element = new $elementName($this);
                else
                  $element = new Jasper_reportElement($this);
-            $element->type = $k;
             $element->parse($out);
             $this->addElement($element);
 //                case "stackedBarChart":

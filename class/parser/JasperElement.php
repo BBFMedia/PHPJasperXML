@@ -27,10 +27,7 @@ class Jasper_reportElement extends JasperObject {
         
     }
 
-    function __construct($parent) {
-      $this->parent = $parent;
-      parent::__construct();
-    }
+
     function getBool($value,$def=false)
     {
         if (!isset($value))
@@ -89,31 +86,53 @@ class Jasper_reportElement extends JasperObject {
     }
 }
 
-
+class Jasper_pen extends JasperObject{
+    protected $_lineColor = '';
+    protected $_lineStyle = '';
+    protected $_lineWidth = -1;
+}
 class Jasper_box extends Jasper_reportElement
 {
       //box
-         protected $_border = 0;
-         protected $_drawcolor = array("r" => 0, "g" => 0, "b" => 0);
+protected $_pen;
+protected $_topPen;
+protected $_leftPen;
+protected $_bottomPen;
+protected $_rightPen;
+
+protected $_padding = 0;
+protected $_topPadding = 0;
+protected $_leftPadding = 0;
+protected $_rightPadding = 0;
+protected $_bottomPadding = 0;
+
     function layout()
-    {
+    { 
       parent::layout();
     } 
    function parse($data)
     {
-     parent::parse($data)       ;
+     parent::parse($data);
+     $this->loadValues($data);
+     
+     $data = $data->box;
+         if ($data->getName() == 'box')
+         {
 // box dom   there is a lot more needed for this dom
-        if ((isset($data->box)) && ($data->box->pen["lineWidth"] > 0)) {
-            $this->border = 1;
-            if (isset($data->box->pen["lineColor"])) {
-                $this->drawcolor = array("r" => hexdec(substr($data->box->pen["lineColor"], 1, 2)), "g" => hexdec(substr($data->box->pen["lineColor"], 3, 2)), "b" => hexdec(substr($data->box->pen["lineColor"], 5, 2)));
+        foreach (array('pen', 'topPen', 'leftPen', 'bottomPen', 'rightPen') as $pen) {
+           $p = $data->$pen;
+           $penname = $p->getName();
+            if (!empty($penname)) {
+                $penname = '_' . $penname;
+                $this->$penname = new Jasper_pen($this);
+                $this->$penname->loadValues($p);
             }
-       }
-    }
+        }
+    }}
           
 }
 
-class Jasper_textElement extends Jasper_box
+abstract class Jasper_textElement extends Jasper_box
 {
 
   //textElement       
@@ -123,7 +142,7 @@ class Jasper_textElement extends Jasper_box
                protected $_fontsize = 10;
         protected $_font = "helvetica";
        protected $_fontstyle = '';
-     
+   abstract function getText();
    function getTextSize($text)
    {
      

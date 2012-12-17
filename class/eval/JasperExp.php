@@ -54,3 +54,16 @@ function replaceVars($code)
   function _setVar($name,$codename,$value) { }
 
 }
+
+
+function loadData($report)
+{
+        foreach ($report->table[$data->global_pointer] as $name => $value)
+            $this->addVar('$F{' . $name . '}', $value);
+        foreach ($report->variable as $name => $value)
+            $this->addVar('$V{' . $name . '}', $value);
+        foreach ($report->parameters as $name => $value)
+            $this->addVar('$P{' . $name . '}', $value);
+   
+    
+}

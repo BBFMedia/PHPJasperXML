@@ -1,6 +1,6 @@
 <?php
-
-require_once(dirname(__FILE__) . '/j4p5/js.php');
+require_once(dirname(__FILE__).'/JasperExp.php');
+require_once(dirname(__FILE__) . '/../j4p5/js.php');
 
 class jasperJavascript extends JasperExp {
 

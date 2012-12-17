@@ -14,6 +14,10 @@ class Jasper_staticText extends Jasper_textElement {
 
     protected $_text = "";
 
+    function getText()
+    {
+        return $this->_text;
+    }
     public function parse($data) {
 
         parent::parse($data);
@@ -54,16 +58,22 @@ class Jasper_staticText extends Jasper_textElement {
 class Jasper_textField extends Jasper_textElement {
 
     protected $_textFieldExpression = "";
-
+    protected $_curData ;
     public function parse($data) {
 
+        
+        
         parent::parse($data);
-
+       
 
         $this->textFieldExpression = (string) $data->textFieldExpression;
     }
+    function getText() {
+        return '';
+    }
     function layout()
-    {
+    { 
+   
       parent::layout();
       $text = ''; //need get text expression
       $this->getTextSize($text);
