@@ -5,6 +5,27 @@
  * and open the template in the editor.
  */
 
+
+class bounds {
+    
+     public $top = 0;
+     public $left = 0;
+     public $right = null;
+     public $bottom = null;
+     public $nextPage = null;
+     public function __construct($left,$top,$bottom=null,$right=null) {
+         
+      $this->top = $top;
+      $this->left = $left;
+      $this->right = $right;
+      $this->bottom = $bottom;
+        
+     }
+    
+    
+}
+
+
 /**
  * Description of JasperElements
  *
@@ -12,32 +33,7 @@
  */
 class Jasper_reportElement extends JasperObject {
    
-    function getInt($value,$def=0)
-    {
-       if (!isset($value))
-            return $def;
-       return (integer)$value;
-        
-    }
-   function getString($value,$def='')
-    {
-       if (!isset($value))
-            return $def;
-       return (string)$value;
-        
-    }
-
-
-    function getBool($value,$def=false)
-    {
-        if (!isset($value))
-            return$def;
-        if (strtolower($value) == 'false') return false;
-        if (strtolower($value) == 'no') return false;
-        if (empty($value)) return false;
-        if ($value)
-            return true;
-    }
+   
     public $_type;
         protected $_height = 0;
   
@@ -52,38 +48,36 @@ class Jasper_reportElement extends JasperObject {
       protected $_printWhenExpression = '';
      function parse($data)
     {
-         
-        $this->height =  $this->getInt($data->reportElement["height"],0);
-         $this->x =  $this->getInt($data->reportElement["x"]);
-         $this->y =  $this->getInt($data->reportElement["y"]);
-         $this->width =  $this->getInt($data->reportElement["width"]);
+      $this->loadValues($data->reportElement);      
         /** allow forground color "forecolor" */
-        $this->printWhenExpression = $this->getString($data->reportElement->printWhenExpression);
+      if ($data->reportElement->printWhenExpression)
+        $this->printWhenExpression = (string)$data->reportElement->printWhenExpression;
        //reportElement
-       if (isset($data->reportElement["forecolor"])) {
-            $this->textcolor = array("r" => hexdec(substr($data->reportElement["forecolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["forecolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["forecolor"], 5, 2)));
-        }
-        if (isset($data->reportElement["backcolor"])) {
-            $this->fillcolor = array("r" => hexdec(substr($data->reportElement["backcolor"], 1, 2)), "g" => hexdec(substr($data->reportElement["backcolor"], 3, 2)), "b" => hexdec(substr($data->reportElement["backcolor"], 5, 2)));
-        }
-        if ($data->reportElement["mode"] == "Opaque") {
-            $this->fill = 1;
-        }
-        if (isset($data["isStretchWithOverflow"]) && $data["isStretchWithOverflow"] == "true") {
-            $this->stretchoverflow = "true";
-        }
-        if (isset($data->reportElement["isPrintWhenDetailOverflows"]) && $data->reportElement["isPrintWhenDetailOverflows"] == "true") {
-            $this->printoverflow = "true";
-            $this->stretchoverflow = "false";
-        }
+    
+     
+
         
     }
+
+    public $layout_top;
+    public $layout_left;
+    public $layout_bottom;
+    public $layout_right;
     
-    function layout()
+    
+    function layout($output)
     {
-      // if visible
-      
+ 
+    $this->layout_top = $bounds->top + $this->y;
+    $this->layout_left = $bounds->left + $this->x;
+    $this->layout_right = $this->layout_left + $this->width;
+    $this->layout_bottom =   $this->layout_top + $this->height;
     }
+     function render($output)
+     {
+         $output->roster[] = array('cmd'=>'position', 'top'=> $this->layout_top,'left'=>$this->layout_left );
+         
+     }
 }
 
 class Jasper_pen extends JasperObject{
@@ -106,9 +100,9 @@ protected $_leftPadding = 0;
 protected $_rightPadding = 0;
 protected $_bottomPadding = 0;
 
-    function layout()
+    function layout($output)
     { 
-      parent::layout();
+      parent::layout($output);
     } 
    function parse($data)
     {
@@ -138,10 +132,8 @@ abstract class Jasper_textElement extends Jasper_box
   //textElement       
         protected $_verticalAlignment ;
         protected $_textAlignment; 
-          protected $_rotation = "";
-               protected $_fontsize = 10;
-        protected $_font = "helvetica";
-       protected $_fontstyle = '';
+
+
    abstract function getText();
    function getTextSize($text)
    {
@@ -152,37 +144,27 @@ abstract class Jasper_textElement extends Jasper_box
      parent::parse($data)       ;
 
         /// textElement dom 
-        if (isset($data->textElement["textAlignment"])) {
-            $this->textAlignment = substr($data->textElement["textAlignment"], 0, 1);
-        }
-        if (isset($data->textElement["verticalAlignment"])) {
-            $this->verticalAlignment = substr($data->textElement["verticalAlignment"], 0, 1);
-        }
-        if (isset($data->textElement["rotation"])) {
-            $this->rotation = $data->textElement["rotation"];
-        }
-        if (isset($data->textElement->font["fontName"])) {
-            $this->font = $data->textElement->font["fontName"];
-        }
+     $this->loadValues($data->textElement);
 
-        if (isset($data->textElement->font["pdfFontName"])) {
-            $this->font = $data->textElement->font["pdfFontName"];
-        }
-        if (isset($data->textElement->font["size"])) {
-            $this->fontsize = $data->textElement->font["size"];
-        }
-        if (isset($data->textElement->font["isBold"]) && $data->textElement->font["isBold"] == "true") {
-            $fontstyle = $fontstyle . "B";
-        }
-        if (isset($data->textElement->font["isItalic"]) && $data->textElement->font["isItalic"] == "true") {
-            $fontstyle = $fontstyle . "I";
-        }
-        if (isset($data->textElement->font["isUnderline"]) && $data->textElement->font["isUnderline"] == "true") {
-            $fontstyle = $fontstyle . "U";
-        }
-        $this->fontstyle = $fontstyle;
-        if (isset($data->reportElement["key"])) {
-            $this->height = $fontsize * $this->adjust;
+    }   
+    
+   function layout($output,$bounds)
+    {
+       
+        $this->_height =  $output->getTextHeight($this->text);
+      parent::layout($output);
+      
+      // if height is stretch
+      
+   
     }
-    }        
+    
+    
+   function render($output)
+    {
+     parent::render($output);
+     $output->roster[] = array('cmd'=>'textout','text'=>$this->text,'width'=>$this->_width);
+    }
+    
+    
 }

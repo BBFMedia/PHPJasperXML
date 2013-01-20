@@ -42,11 +42,10 @@ class Jasper_staticText extends Jasper_textElement {
 //### End of modification, below is the original line		
 //        $this->report->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>$data->text,"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"statictext","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"rotation"=>$rotation);
     }
-    function layout()
+    function layout($output)
     {
-      parent::layout();
-      
-     $this->getTextSize($this->text);
+      parent::layout($output);
+  
     }
 }
 
@@ -71,10 +70,10 @@ class Jasper_textField extends Jasper_textElement {
     function getText() {
         return '';
     }
-    function layout()
+    function layout($output)
     { 
    
-      parent::layout();
+      parent::layout($output);
       $text = ''; //need get text expression
       $this->getTextSize($text);
     }

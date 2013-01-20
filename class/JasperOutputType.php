@@ -10,10 +10,10 @@
  *
  * @author adrian
  */
-class JasperOutputType {
+abstract class JasperOutputType {
 
     public $_fonts;
-
+    public $roster = array();
     /**
      *
      * @param type $jasperName
@@ -37,5 +37,9 @@ class JasperOutputType {
         return $family;
     }
 
+    
+    
+    
+    abstract function getTextHeight($text,$wrapWidth = null);
 }
 

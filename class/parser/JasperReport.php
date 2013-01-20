@@ -27,7 +27,7 @@ class JasperReport extends JasperObject {
     
     
     protected $_pageHeader = null;
-
+   protected $_parameters = array();
     public function parse($xml_path) {
 
 
@@ -57,6 +57,16 @@ class JasperReport extends JasperObject {
           }
         }
     }
-
+function getBounds()
+{
+    
+   $result = new bounds();
+   $result->left = $this->leftMargin;
+   $result->top = $this->topMargin ; //+ $this->currentPage->top;
+   $result->right = $this->pageWidth - $this->rightMargin;
+   $result->bottom = null;
+   $result->nextPage = $this->pageHeight - $this->bottomMargin; //+ $this->currentPage->top;
+   return $result;
+}
 }
 

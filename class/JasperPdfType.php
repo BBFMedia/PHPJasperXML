@@ -108,5 +108,14 @@ class JasperPdfType extends JasperOutputType {
     public function clearBalancetext() {
         $this->_pdf->balancetext = '';
     }
-
+   function getTextHeight($text ,$wrapWidth = null)
+    {
+      
+       if ($wrapWidth == null)
+           return $this->_pdf->GetStringWidth($s) ;
+       else
+       {
+          return  $this->_pdf->getStringHeight($wrapWidth,$text );
+       }
+    }
 }

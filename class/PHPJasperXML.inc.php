@@ -2779,7 +2779,7 @@ class PHPJasperXML {
     }
 
 
-
+    
     public function analyse_expression($data, $isPrintRepeatedValue = "true") {
 
         if (($isPrintRepeatedValue) and (empty($data)))

@@ -20,7 +20,7 @@ class JasperReportTest extends PHPUnit_Framework_TestCase {
 
        $report->parse($xml);
        
-       
+     //  $report->layout();
        
    }
 }

@@ -82,6 +82,19 @@ class JasperObject implements Iterator {
         }
     }
     
-
+    /**
+     *  returns usually to it's child the bounds of this element
+     * 
+     * @return type
+     * 
+     */
+    function getBounds()
+    {
+        if ((isset($this->parent)) and (method_exists($this->parent,'getBounds')))
+        {
+            return $this->parent->getBounds();
+        }
+        return null;
+    }
 }
 
