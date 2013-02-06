@@ -344,6 +344,7 @@ class PHPJasperXML {
         $height=$data->reportElement["height"];
         $stretchoverflow="true";
         $printoverflow="false";
+        $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperlinkReferenceExpression);
         if(isset($data->reportElement["forecolor"])) {
             
             $textcolor = array('forecolor'=>$data->reportElement["forecolor"],"r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
@@ -409,7 +410,7 @@ class PHPJasperXML {
         $imagepath=$data->imageExpression;
         //$imagepath= substr($data->imageExpression, 1, -1);
         //$imagetype= substr($imagepath,-3);
-
+$data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperlinkReferenceExpression);
         switch($data[scaleImage]) {
             case "FillFrame":
                 $this->pointer[]=array("type"=>"Image","path"=>$imagepath,"x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0,"width"=>$data->reportElement["width"]+0,"height"=>$data->reportElement["height"]+0,"imgtype"=>$imagetype,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"hidden_type"=>"image");
@@ -502,6 +503,7 @@ class PHPJasperXML {
         $printoverflow="false";
         $height=$data->reportElement["height"];
         $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
+        $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperlinkReferenceExpression);
         if(isset($data->reportElement["forecolor"])) {
             $textcolor = array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
         }
@@ -567,14 +569,14 @@ class PHPJasperXML {
                 break;
             case '$V{PAGE_NUMBER}':
                 if(isset($data["evaluationTime"])&&$data["evaluationTime"]=="Report") {
-                    $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'{nb}',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"]);
+                    $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'{:ptp:}',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"]);
                 }
                 else {
                     $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'$this->PageNo()',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"]);
                 }
                 break;
             case '" " + $V{PAGE_NUMBER}':
-                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>' {nb}',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"nb","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"]);
+                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>' {:ptp:}',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"nb","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"]);
                 break;
             case '$V{REPORT_COUNT}':
 //###                $this->report_count=0;	
@@ -636,7 +638,8 @@ class PHPJasperXML {
             exit(0);
         }
         if($this->debugsql==true) {
-            echo $this->sql;
+            
+            echo "<textarea cols='100' rows='40'>$this->sql</textarea>";
             die;
         }
 
@@ -930,26 +933,37 @@ class PHPJasperXML {
 
             if($this->pdflib=="TCPDF") {
                 if($this->arrayPageSetting["orientation"]=="P")
-                    $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageWidth"],$this->arrayPageSetting["pageHeight"]));
+                    $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array(intval($this->arrayPageSetting["pageWidth"]),intval($this->arrayPageSetting["pageHeight"])));
                 else
-                    $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageHeight"],$this->arrayPageSetting["pageWidth"]));
+                    $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array( intval($this->arrayPageSetting["pageHeight"]),intval($this->arrayPageSetting["pageWidth"])));
                 $this->pdf->setPrintHeader(false);
                 $this->pdf->setPrintFooter(false);
+                
             }elseif($this->pdflib=="FPDF") {
                 if($this->arrayPageSetting["orientation"]=="P")
-                    $this->pdf=new FPDF($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageWidth"],$this->arrayPageSetting["pageHeight"]));
+                    $this->pdf=new FPDF($this->arrayPageSetting["orientation"],'pt',array(intval($this->arrayPageSetting["pageWidth"]),intval($this->arrayPageSetting["pageHeight"])));
                 else
-                    $this->pdf=new FPDF($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageHeight"],$this->arrayPageSetting["pageWidth"]));
+                    $this->pdf=new FPDF($this->arrayPageSetting["orientation"],'pt',array(intval($this->arrayPageSetting["pageHeight"]),intval($this->arrayPageSetting["pageWidth"])));
             }
             elseif($this->pdflib=="XLS"){
                 
 
             
                  include dirname(__FILE__)."/ExportXLS.inc.php";
-                $xls= new ExportXLS($this,$filename);
+                $xls= new ExportXLS($this,$filename, 'Excel5');
                 die;
 
 
+            }elseif($this->pdflib == 'CSV'){
+                
+                 include dirname(__FILE__)."/ExportXLS.inc.php";
+                $xls= new ExportXLS($this,$filename, 'CSV');
+                die;
+            }elseif($this->pdflib == 'XLST'){
+                
+                include dirname(__FILE__)."/ExportXLS.inc.php";
+                $xls= new ExportXLS($this,$filename, 'Excel2007');
+                die;
             }
         }
         //$this->arrayPageSetting["language"]=$xml_path["language"];
@@ -2774,8 +2788,13 @@ foreach($this->arrayVariable as $name=>$value){
 
 
 //        $this->global_pointer--;
-           if($this->arraysummary[0]["height"]>0)
-                    $this->summary($checkpoint);
+           if($this->arraysummary[0]["height"]>0){
+               if(isset($this->arraygroup))
+                  $this->summary($checkpoint);
+               else
+                  $this->summary($this->maxpagey['page_'.($this->pdf->getNumPages()-1)]);
+           }
+
  
         if(isset($this->arraylastPageFooter))
             $this->lastPageFooter();
@@ -3280,11 +3299,38 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
         elseif($arraydata["type"]=="Image") {
             $path=$this->analyse_expression($arraydata["path"]);
             $imgtype=substr($path,-3);
-            if($imgtype=='jpg')
-				$imgtype="JPEG";
-         
-        if(file_exists($path))
-            $this->pdf->Image($path,$arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis,$arraydata["width"],$arraydata["height"],$imgtype,$arraydata["link"]);
+            
+            if($imgtype=='jpg' || right($path,3)=='jpg' || right($path,4)=='jpeg')
+		$imgtype="JPEG";
+            elseif($imgtype=='png'|| $imgtype=='PNG')
+                  $imgtype="PNG";
+          
+        if(file_exists($path) || left($path,4)=='http' ){            
+            $this->pdf->Image($path,$arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis,
+                    $arraydata["width"],$arraydata["height"],$imgtype,$arraydata["link"]); 
+        }
+        elseif(left($path,22)==  "data:image/jpeg;base64"){
+            $imgtype="JPEG";
+            $img=  str_replace('data:image/jpeg;base64,', '', $path);
+            $imgdata = base64_decode($img);
+            $this->pdf->Image('@'.$imgdata,$arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis,$arraydata["width"],
+                    $arraydata["height"]);//,$imgtype,$arraydata["link"]); 
+            
+        }
+        elseif(left($path,22)==  "data:image/png;base64,"){
+                  $imgtype="PNG";
+                 // $this->pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+
+                 $img= str_replace('data:image/png;base64,', '', $path);
+                             $imgdata = base64_decode($img);
+
+           
+            $this->pdf->Image('@'.$imgdata,$arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis,
+                    $arraydata["width"],$arraydata["height"]);//,$imgtype,$arraydata["link"]); 
+    
+            
+        }
+
         }
 
         elseif($arraydata["type"]=="SetTextColor") {

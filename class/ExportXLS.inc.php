@@ -29,7 +29,7 @@ class ExportXLS{
     public $arrayParameter;
     public $arraygroupfoot;
     public $arraygrouphead;
-    public function ExportXLS($raw,$filename){
+    public function ExportXLS($raw,$filename, $type='Excel5'){
         
         	include dirname(__FILE__)."/PHPExcel.php";
                 $this->wb  = new PHPExcel();
@@ -56,6 +56,8 @@ class ExportXLS{
                 
                 $this->arraygroupfoot=$raw->arraygroupfoot;
                 $this->arraygrouphead=$raw->arraygrouphead;
+
+                $this->summaryexit=false;
                /*
                 
                 
@@ -101,16 +103,19 @@ class ExportXLS{
                      }
                     break;
                 case "lastPageFooter":
+                     if($raw->arraysummary[0]["height"]>0){
+                        $this->summary();
+                     }
                      if($raw->arraylastPageFooter[0]["height"]>0){
                         $this->lastPageFooter();
                                     //    echo "end detail<br/><br/>";
                      }
                     break;
                 case "summary":
-                     if($raw->arraysummary[0]["height"]>0){
-                        $this->summary();
-                                    //    echo "end detail<br/><br/>";
-                     }
+//                     if($raw->arraysummary[0]["height"]>0){
+//                        $this->summary();
+//                                    //    echo "end detail<br/><br/>";
+//                     }
                     break;
                 case "group":
                         $this->group_pointer=$band["groupExpression"];
@@ -128,12 +133,12 @@ class ExportXLS{
         // Redirect output to a client’s web browser (Excel2007)
         if($filename=='')
             $filename="report.xls";
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: inline;attachment;filename="'.$filename.'"');
-            header('Cache-Control: max-age=0');
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition:attachment;filename="'.$filename.'"');
+        header('Cache-Control: max-age=0');
 
-            $objWriter = PHPExcel_IOFactory::createWriter($this->wb, 'Excel5');
-            $objWriter->save('php://output');
+        $objWriter = PHPExcel_IOFactory::createWriter($this->wb, $type);
+        $objWriter->save('php://output');
 
 
     }
@@ -172,7 +177,7 @@ class ExportXLS{
             // echo $i.".".$out['type']."=",$out['x'].$out['txt'].":";     print_r($cols);echo "<hr>";
              $i++;
         }
-        
+       
         
         foreach($this->arraygrouphead as $out){
           //  print_r($out);echo "<hr>";
@@ -233,7 +238,21 @@ class ExportXLS{
             
             //print_r($cols);echo "<hr>";
         }
-        
+
+        foreach($this->arraysummary as $out){
+          //  print_r($out);echo "<hr>";
+            if($out['type']=="SetXY"){
+                $cols[]=intval($out['x']);
+            $cx=intval($out['x']);
+
+            }
+            if($out['type']=="Cell" ||$out['type']=="MultiCell"){
+                $cols[]=intval($out['width'] + $cx);
+               // echo $out['width']." + $cx <hr>";
+            }
+
+            //print_r($cols);echo "<hr>";
+        }
         
 //                print_r($cols);echo "<hr>";
         $cols=array_unique($cols);
@@ -274,7 +293,7 @@ class ExportXLS{
                     $rows=array_unique($rows);
 
                 sort($rows);
-         //             print_r($rows);echo "<hr>";
+//                   print_r($rows);echo "<hr>";
 
              $i=1;
              foreach($rows as $index => $yposition){
@@ -282,11 +301,11 @@ class ExportXLS{
                 
                 //if($nextyposition=="")
                   //  $nextyposition=30;
-                 $this->ws->getRowDimension($index+ $this->lastrow)->setRowHeight($this->vunitmultiply*($nextyposition-$yposition));
+//                 $this->ws->getRowDimension($index+ $this->lastrow)->setRowHeight($this->vunitmultiply*($nextyposition-$yposition)); tmp close this for standard row height
                  $this->rows=array_merge($this->rows, array("r".$yposition=>$i));
                  $i++;
              }
-             //echo "step2:";print_r($this->rows);
+//             echo "step2:";print_r($this->rows);
              $this->lastrow=$i+$this->lastrow;
              return ($i-2);
             
@@ -324,7 +343,7 @@ foreach($this->arraytitle as $out){
     
     public function detail(){
         $this->detailrowcount=$this->arrangeRows($this->arraydetail);
-       $this->groupheadrowcount=$this->arrangeRows($this->arraygrouphead);
+        $this->groupheadrowcount=$this->arrangeRows($this->arraygrouphead);
         $this->groupfootrowcount=$this->arrangeRows($this->arraygroupfoot);
 
         $i=0;
@@ -332,7 +351,7 @@ foreach($this->arraytitle as $out){
         $this->maxrow+=$this->groupheadrowcount;
         $isgroupfooterprinted=false;
         foreach($this->arraysqltable as $row){
-            
+
             $this->variable_calculation($i, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
             
             if($this->global_pointer>0&&
@@ -430,7 +449,7 @@ foreach($this->arraytitle as $out){
     public function pageFooter(){
         $this->footerrowcount=$this->arrangeRows($this->arraypageFooter);
         foreach($this->arraypageFooter as $out){
-            $this->display($out,$this->maxrow);
+            $this->display($out,$this->maxrow,false);
         }
         $this->maxrow+=$this->footerrowcount;
     }
@@ -451,13 +470,12 @@ foreach($this->arraylastPageFooter as $out){
     }
     public function summary(){
 
-
         $this->summaryrowcount=$this->arrangeRows($this->arraysummary);
         foreach($this->arraysummary as $out){
-            $this->display($out,$this->lastrow);
+            $this->display($out,$this->maxrow);
         }
        $this->maxrow+=$this->summaryrowcount;
-
+       $this->summaryexit=true;
     }
     
     public function display($arraydata,$rowpos,$debug){
@@ -492,8 +510,8 @@ foreach($this->arraylastPageFooter as $out){
                         );
               //  echo 'start3';
                $txt=$this->analyse_expression($arraydata['txt']);
-                //if($arraydata['pattern']!='pattern')
-                  // $txt= $this->formatText ($txt, $arraydata['pattern']);
+               if($arraydata['pattern']!='')
+                  $txt= ' '.$this->formatText ($txt, $arraydata['pattern']);
                 //echo 'start4';
                 $this->ws->setCellValueByColumnAndRow($this->relativex,
                        ($this->relativey+$rowpos),$txt);
@@ -581,30 +599,73 @@ foreach($this->arraylastPageFooter as $out){
         
     }
     
-    
+        public function formatText($txt,$pattern) {
+        if($pattern=="###0")
+            return number_format($txt,0,"","");
+        elseif($pattern=="#,##0")
+            return number_format($txt,0,".",",");
+        elseif($pattern=="###0.0")
+            return number_format($txt,1,".","");
+        elseif($pattern=="#,##0.0")
+            return number_format($txt,1,".",",");
+        elseif($pattern=="###0.00")
+            return number_format($txt,2,".","");
+        elseif($pattern=="#,##0.00")
+            return number_format($txt,2,".",",");
+        elseif($pattern=="###0.000")
+            return number_format($txt,3,".","");
+        elseif($pattern=="#,##0.000")
+            return number_format($txt,3,".",",");
+        elseif($pattern=="#,##0.0000")
+            return number_format($txt,4,".",",");
+        elseif($pattern=="###0.0000")
+            return number_format($txt,4,".","");
+        elseif($pattern=="dd/MM/yyyy" && $txt !="")
+            return date("d/m/Y",strtotime($txt));
+        elseif($pattern=="MM/dd/yyyy" && $txt !="")
+            return date("m/d/Y",strtotime($txt));
+        elseif($pattern=="yyyy/MM/dd" && $txt !="")
+            return date("Y/m/d",strtotime($txt));
+        elseif($pattern=="dd-MMM-yy" && $txt !="")
+            return date("d-M-Y",strtotime($txt));
+        elseif($pattern=="dd-MMM-yy" && $txt !="")
+            return date("d-M-Y",strtotime($txt));
+        elseif($pattern=="dd/MM/yyyy h.mm a" && $txt !="")
+            return date("d/m/Y h:i a",strtotime($txt));
+        elseif($pattern=="dd/MM/yyyy HH.mm.ss" && $txt !="")
+            return date("d-m-Y H:i:s",strtotime($txt));
+        else
+            return $txt;
+
+
+    }
     
         public function analyse_expression($data) {
             
+            if($data=='Page $this->PageNo() of' || trim($data)=='{nb}'){
+                $data='';
+            }
             $arrdata=explode("+",$data);
 
+            
         $i=0;
         
         foreach($arrdata as $num=>$out) {
             $i++;
             $arrdata[$num]=str_replace('"',"",$out);
             $this->arraysqltable[$this->global_pointer][substr($out,3,-1)];
-            if($out == 'new java.util.Date()'){
-                
-                        $arrdata[$num]=date("Y-m-d H:i:s");
-                
-            }
-            if(substr($out,0,3)=='$F{') {
-                
 
-                        $arrdata[$num]=$this->arraysqltable[$this->global_pointer][substr($out,3,-1)];
-                     
+            if($out == 1){ //for report_count
+               $arrdata[$num]=$this->report_count+1;
             }
-            elseif(substr($out,0,3)=='$V{') {
+
+            if($out == 'new java.util.Date()'){
+               $arrdata[$num]=date("Y-m-d H:i:s");
+            }
+
+            if(substr($out,0,3)=='$F{') {
+               $arrdata[$num]=$this->arraysqltable[$this->global_pointer][substr($out,3,-1)];     
+            }elseif(substr($out,0,3)=='$V{') {
 //###	A new function to handle iReport's "+-/*" expressions.
 // It works like a cheap calculator, without precedences, so 1+2*3 will be 9, NOT 7.
 			
