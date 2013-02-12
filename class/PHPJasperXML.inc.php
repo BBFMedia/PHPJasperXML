@@ -1,6 +1,6 @@
 <?php
 
-//version 0.8c
+//version 0.8d
 class PHPJasperXML {
     private $adjust=1.2;
     public $version=0.8;
@@ -16,12 +16,15 @@ class PHPJasperXML {
     private $groupno=0;
     private $footershowed=true;
     private $titleheight=0;
+    private $fontdir="";
+    public $bypassnofont=true;
 	private $report_count=1;		//### New declaration (variable exists in original too)
 	private $group_count = array(); //### New declaration
     public function PHPJasperXML($lang="en",$pdflib="TCPDF") {
         $this->lang=$lang;
-      error_reporting(0);
+        error_reporting(0);
         $this->pdflib=$pdflib;
+        $this->fontdir=dirname(__FILE__)."/tcpdf/fonts";
     }
 
     public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
@@ -374,8 +377,8 @@ class PHPJasperXML {
         if(isset($data->textElement["rotation"])) {
             $rotation=$data->textElement["rotation"];
         }
-        if(isset($data->textElement->font["pdfFontName"])) {
-            $font=$data->textElement->font["pdfFontName"];
+        if(isset($data->textElement->font["fontName"])) {
+            $font=$data->textElement->font["fontName"];
         }
         if(isset($data->textElement->font["size"])) {
             $fontsize=$data->textElement->font["size"];
@@ -398,8 +401,10 @@ class PHPJasperXML {
         $this->pointer[]=array("type"=>"SetFillColor",'backcolor'=>$data->reportElement["backcolor"].'',"r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
         $this->pointer[]=array("type"=>"SetFont","font"=>$font,"fontstyle"=>$fontstyle,"fontsize"=>$fontsize,"hidden_type"=>"font");
         //"height"=>$data->reportElement["height"]
+        
 //### UTF-8 characters, a must for me.	
-		$txtEnc=utf8_decode($data->text); 
+		$txtEnc=$data->text; 
+                
 		$this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>$txtEnc,"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"statictext","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"rotation"=>$rotation);
 //### End of modification, below is the original line		
 //        $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>$data->text,"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"statictext","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"rotation"=>$rotation);
@@ -534,8 +539,8 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
         if(isset($data->textElement["rotation"])) {
             $rotation=$data->textElement["rotation"];
         }
-        if(isset($data->textElement->font["pdfFontName"])) {
-            $font=$data->textElement->font["pdfFontName"];
+        if(isset($data->textElement->font["fontName"])) {
+            $font=$data->textElement->font["fontName"];
         }
         if(isset($data->textElement->font["size"])) {
             $fontsize=$data->textElement->font["size"];
@@ -919,23 +924,23 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
 
     public function outpage($out_method="I",$filename="") {
 		
-        if($this->lang=="cn") {
-            if($this->arrayPageSetting["orientation"]=="P") {
-                $this->pdf=new PDF_Unicode($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageWidth"],$this->arrayPageSetting["pageHeight"]));
-                $this->pdf->AddUniGBhwFont("uGB");
-            }
-            else {
-                $this->pdf=new PDF_Unicode($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageHeight"],$this->arrayPageSetting["pageWidth"]));
-                $this->pdf->AddUniGBhwFont("uGB");
-            }
-        }
-        else {
+//        if($this->lang=="cn") {
+//            if($this->arrayPageSetting["orientation"]=="P") {
+//                $this->pdf=new PDF_Unicode($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageWidth"],$this->arrayPageSetting["pageHeight"]));
+//                $this->pdf->AddUniGBhwFont("uGB");
+//            }
+//            else {
+//                $this->pdf=new PDF_Unicode($this->arrayPageSetting["orientation"],'pt',array($this->arrayPageSetting["pageHeight"],$this->arrayPageSetting["pageWidth"]));
+//                $this->pdf->AddUniGBhwFont("uGB");
+//            }
+//        }
+//        else {
 
             if($this->pdflib=="TCPDF") {
                 if($this->arrayPageSetting["orientation"]=="P")
-                    $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array(intval($this->arrayPageSetting["pageWidth"]),intval($this->arrayPageSetting["pageHeight"])));
+                    $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array(intval($this->arrayPageSetting["pageWidth"]),intval($this->arrayPageSetting["pageHeight"])),true);
                 else
-                    $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array( intval($this->arrayPageSetting["pageHeight"]),intval($this->arrayPageSetting["pageWidth"])));
+                    $this->pdf=new TCPDF($this->arrayPageSetting["orientation"],'pt',array( intval($this->arrayPageSetting["pageHeight"]),intval($this->arrayPageSetting["pageWidth"])),true);
                 $this->pdf->setPrintHeader(false);
                 $this->pdf->setPrintFooter(false);
                 
@@ -965,7 +970,7 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
                 $xls= new ExportXLS($this,$filename, 'Excel2007');
                 die;
             }
-        }
+     //   }
         //$this->arrayPageSetting["language"]=$xml_path["language"];
         $this->pdf->SetLeftMargin($this->arrayPageSetting["leftMargin"]);
         $this->pdf->SetRightMargin($this->arrayPageSetting["rightMargin"]);
@@ -1072,7 +1077,7 @@ public function element_pieChart($data){
          $x=$data->chart->reportElement["x"];
          $y=$data->chart->reportElement["y"];
           $charttitle['position']=$data->chart->chartTitle['position'];
-                    $titlefontname=$data->chart->chartTitle->font['pdfFontName'];
+                    $titlefontname=$data->chart->chartTitle->font['fontName'];
           $titlefontsize=$data->chart->chartTitle->font['size'];
            $charttitle['text']=$data->chart->chartTitle->titleExpression;
           $chartsubtitle['text']=$data->chart->chartSubTitle->subtitleExpression;
@@ -2568,7 +2573,15 @@ foreach($this->arrayVariable as $name=>$value){
 					$this->hideheader==true;
 					
 					$this->currentband='detail';  
-					$this->pdf->SetFont($fontfamily,$fontstyle,$fontsize);
+          
+                                        $fontfile=$this->fontdir.'/'.$fontfamily.'.php';
+                              if(file_exists($fontfile) || $this->bypassnofont==false)
+                $this->pdf->SetFont($fontfamily,$arraydata["fontstyle"],$arraydata["fontsize"],$fontfile);
+            else
+                $this->pdf->SetFont('helvetica',$arraydata["fontstyle"],$arraydata["fontsize"],$this->fontdir.'/helvetica.php');
+                                        
+					//$this->pdf->SetFont($fontfamily,$fontstyle,$fontsize,$this->fontdir.'/'.$fontfamily.'php');
+                                        
 					$this->pdf->SetTextColor($this->forcetextcolor_r,$this->forcetextcolor_g,$this->forcetextcolor_b);
 					//$this->pdf->SetTextColor(44,123,4);
 					$this->pdf->SetFillColor($this->forcefillcolor_r,$this->forcefillcolor_g,$this->forcefillcolor_b);
@@ -3247,7 +3260,18 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
             else
                 $this->pdf->isUnicode=false;
 
-            $this->pdf->SetFont($arraydata["font"],$arraydata["fontstyle"],$arraydata["fontsize"]);
+           
+            $arraydata["font"]=  strtolower($arraydata["font"]);
+             
+            $fontfile=$this->fontdir.'/'.$arraydata["font"].'.php';
+     if(file_exists($fontfile) || $this->bypassnofont==false)
+             
+                $this->pdf->SetFont($arraydata["font"],$arraydata["fontstyle"],$arraydata["fontsize"],$fontfile);
+            else
+                $this->pdf->SetFont('helvetica',$arraydata["fontstyle"],$arraydata["fontsize"],$this->fontdir.'/helvetica.php');
+    
+//              $this->pdf->SetFont('msungstdlight',$arraydata["fontstyle"],$arraydata["fontsize"]);
+              //$this->pdf->Cell(100,20,$arraydata["txt"]."-欢-");
 
         }
         elseif($arraydata["type"]=="subreport") {
@@ -3389,7 +3413,8 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
         return str_replace('$this->PageNo()', $this->pdf->PageNo(),$s);
     }
 
-    public function staticText($xml_path) {//$this->pointer[]=array("type"=>"SetXY","x"=>$xml_path->reportElement["x"],"y"=>$xml_path->reportElement["y"]);
+    public function staticText($xml_path) {
+//$this->pointer[]=array("type"=>"SetXY","x"=>$xml_path->reportElement["x"],"y"=>$xml_path->reportElement["y"]);
     }
     
 
