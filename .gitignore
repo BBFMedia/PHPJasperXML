@@ -3,3 +3,8 @@ config/database.php
 app/tmp/*
 app/config/database.php
 !empty
+class/tcpdf/fonts/.DS_Store
+
+class/.DS_Store
+
+class/tcpdf/.DS_Store
