@@ -18,6 +18,7 @@ class PHPJasperXML {
     private $titleheight=0;
     private $fontdir="";
     public $bypassnofont=true;
+    public $titlewithpagebreak=false;
 	private $report_count=1;		//### New declaration (variable exists in original too)
 	private $group_count = array(); //### New declaration
     public function PHPJasperXML($lang="en",$pdflib="TCPDF") {
@@ -147,10 +148,18 @@ class PHPJasperXML {
                         $this->detailbandheight=$object["height"]+0;
                         elseif($k=='pageHeader')
                         $this->headerbandheight=$object["height"]+0;
+                         elseif($k=='title'){
+                        $this->titlebandheight=$object["height"]+0;
+                        $this->orititlebandheight=$object["height"]+0;
+                         }
                         elseif($k=='pageFooter')
                         $this->footerbandheight=$object["height"]+0;
                         elseif($k=='lastPageFooter')
                         $this->lastfooterbandheight=$object["height"]+0;
+                        elseif($k=='columnHeader')
+                        $this->columnheaderbandheight=$object["height"]+0;
+                        elseif($k=='columnFooter')
+                        $this->columnfooterbandheight=$object["height"]+0;
                         elseif($k=='summary')
                         $this->summarybandheight=$object["height"]+0;
                         
@@ -326,6 +335,12 @@ class PHPJasperXML {
                 case "subreport":
                     $this->element_subReport($out);
                     break;
+                case "break":
+                    $this->element_break($out);
+                    break;
+                case "componentElement":
+                    $this->element_componentElement($out);
+                    break;
                 default:
                     break;
             }
@@ -365,11 +380,47 @@ class PHPJasperXML {
             $printoverflow="true";
             $stretchoverflow="false";
         }
-        if((isset($data->box))&&($data->box->pen["lineWidth"]>0)) {
-            $border=1;
-            if(isset($data->box->pen["lineColor"])) {
+          if(isset($data->box)) {
+            $borderset="";
+            if($data->box->topPen["lineWidth"]>0)
+                $borderset.="T";
+            if($data->box->leftPen["lineWidth"]>0)
+                $borderset.="L";
+            if($data->box->bottomPen["lineWidth"]>0)
+                $borderset.="B";
+            if($data->box->rightPen["lineWidth"]>0)
+                $borderset.="R";
+             if(isset($data->box->pen["lineColor"])) {
                 $drawcolor=array("r"=>hexdec(substr($data->box->pen["lineColor"],1,2)),"g"=>hexdec(substr($data->box->pen["lineColor"],3,2)),"b"=>hexdec(substr($data->box->pen["lineColor"],5,2)));
             }
+            
+            if(isset($data->box->pen["lineStyle"])) {
+                if($data->box->pen["lineStyle"]=="Dotted")
+                    $dash="0,1";
+                elseif($data->box->pen["lineStyle"]=="Dashed")
+                    $dash="4,2"; 
+                else
+                    $dash="";
+                //Dotted Dashed
+            }
+           
+            $border=array($borderset => array('width' => $data->box->pen["lineWidth"],
+                'cap' => 'butt', 
+                'join' => 'miter', 
+                'dash' =>$dash,
+                'phase'=>0,
+                'color' =>$drawcolor));
+            //array($borderset=>array('width'=>$data->box->pen["lineWidth"],
+                //'cap'=>'butt'(butt, round, square),'join'=>'miter' (miter, round,bevel),
+                //'dash'=>2 ("2,1","2"),
+              //  'colour'=>array(110,20,30)  ));
+            //&&$data->box->pen["lineWidth"]>0
+            //border can be array('LTRB' => array('width' => 2, 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => array(0, 0, 0))
+            
+            
+           
+            //elseif()
+            
         }
         if(isset($data->textElement["textAlignment"])) {
             $align=$this->get_first_value($data->textElement["textAlignment"]);
@@ -435,7 +486,103 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
                 break;
         }
     }
+    
+    public function element_componentElement($data) {
+//        $imagepath=$data->imageExpression;
+//        //$imagepath= substr($data->imageExpression, 1, -1);
+//        //$imagetype= substr($imagepath,-3);
+//        $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperlinkReferenceExpression);
 
+        $x=$data->reportElement["x"];
+        $y=$data->reportElement["y"];
+        $width=$data->reportElement["width"];
+        $height=$data->reportElement["height"];
+        
+               //simplexml_tree( $data);
+       // echo "<br/><br/>";
+       //simplexml_tree( $data->children('jr',true));
+        //echo "<br/><br/>";
+//SimpleXML object (1 item) [0] // ->codeExpression[0] ->attributes('xsi', true) ->schemaLocation ->attributes('', true) ->type ->drawText ->checksumRequired barbecue: 
+       foreach($data->children('jr',true) as $barcodetype =>$content){
+           
+           
+           $barcodemethod="";
+           $textposition="";
+            if($barcodetype=="barbecue"){
+                $barcodemethod=$data->children('jr',true)->attributes('', true) ->type;
+                $textposition="";
+                $checksum=$data->children('jr',true)->attributes('', true) ->checksumRequired;
+                $code=$content->codeExpression;
+                if($content->attributes('', true) ->drawText=='true')
+                        $textposition="bottom";
+                
+                $modulewidth=$content->attributes('', true) ->moduleWidth;
+                
+            }else{
+                
+                 $barcodemethod=$barcodetype;
+                 $textposition=$content->attributes('', true)->textPosition;
+                 //$data->children('jr',true)->textPosition;
+//$content['textPosition'];
+                  $code=$content->codeExpression;
+                $modulewidth=$content->attributes('', true)->moduleWidth;
+                 
+
+                
+            }
+            if($modulewidth=="")
+                $modulewidth=0.4;
+//                            echo "Barcode: $code,position: $textposition <br/><br/>";
+            $this->pointer[]=array("type"=>"Barcode","barcodetype"=>$barcodemethod,"x"=>$x,"y"=>$y,"width"=>$width,"height"=>$height,'textposition'=>$textposition,'code'=>$code,'modulewidth'=>$modulewidth);
+                            
+                    /*
+                     	<jr:barbecue xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" 
+                     * xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" 
+                     * type="2of7" drawText="false" checksumRequired="false">
+					<jr:codeExpression><![CDATA["1234"]]></jr:codeExpression>
+				</jr:barbecue>
+                     * <jr:Code128 xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" 
+                     * xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd"
+                     *  textPosition="bottom">
+					<jr:codeExpression><![CDATA[]]></jr:codeExpression>
+				</jr:Code128>
+                     */
+
+           
+       }
+       
+       
+        //if(isset(  $data->children('jr',true)->barbecue)){
+           
+       //}
+       //elseif(isset(  $data->children('jr',true)->barbecue))
+      // print_r( $data->children('jr',true));
+      // type="2of7" drawText="false" checksumRequired="false"
+       /*
+        * 				
+        * <jr:barbecue xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" type="2of7" drawText="false" checksumRequired="false">
+                    <jr:codeExpression><![CDATA["1234"]]></jr:codeExpression>
+		</jr:barbecue>
+
+        */
+        //die;                
+//        switch($data[scaleImage]) {
+//            case "FillFrame":
+//                $this->pointer[]=array("type"=>"Image","path"=>$imagepath,"x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0,"width"=>$data->reportElement["width"]+0,"height"=>$data->reportElement["height"]+0,"imgtype"=>$imagetype,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"hidden_type"=>"image");
+//                break;
+//            default:
+//                $this->pointer[]=array("type"=>"Image","path"=>$imagepath,"x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0,"width"=>$data->reportElement["width"]+0,"height"=>$data->reportElement["height"]+0,"imgtype"=>$imagetype,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"hidden_type"=>"image");
+//                break;
+//        }
+    }
+
+    
+    public function element_break($data) {
+                $this->pointer[]=array("type"=>"break","hidden_type"=>"break");//,"path"=>$imagepath,"x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0,"width"=>$data->reportElement["width"]+0,"height"=>$data->reportElement["height"]+0,"imgtype"=>$imagetype,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"hidden_type"=>"image");
+    }
+
+    
+    
     public function element_line($data) {	//default line width=0.567(no detect line width)
         $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
         $hidden_type="line";
@@ -496,34 +643,89 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
     public function element_rectangle($data) {
 		
 		$radius=$data['radius'];
-        $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
+        $drawcolor=array("r"=>255,"g"=>255,"b"=>255);
         
         $fillcolor=array("r"=>255,"g"=>255,"b"=>255);
-
+        $borderwidth=1;
+           
+           if(isset($data->graphicElement->pen["lineWidth"]))
+                 $borderwidth=$data->graphicElement->pen["lineWidth"];
+            
+             if(isset($data->graphicElement->pen["lineColor"]))
+                 $drawcolor=array("r"=>hexdec(substr($data->graphicElement->pen["lineColor"],1,2)),"g"=>hexdec(substr($data->graphicElement->pen["lineColor"],3,2)),"b"=>hexdec(substr($data->graphicElement->pen["lineColor"],5,2)));
+            
+            $dash="";
+                    if($data->graphicElement->pen["lineStyle"]=="Dotted")
+                    $dash="0,1";
+                elseif($data->graphicElement->pen["lineStyle"]=="Dashed")
+                    $dash="4,2"; 
+                elseif($data->graphicElement->pen["lineStyle"]=="Solid")
+                    $dash="";
+//echo "$borderwidth,";
+           
+            $border=array("LTRB" => array('width' => $borderwidth,'color' =>$drawcolor,'cap'=>'square',
+                            'join'=>'miter','dash'=>$dash));
+            
+            
+            //array($borderset=>array('width'=>$data->box->pen["lineWidth"],
+                //(butt, round, square),'join'=>'miter' (miter, round,bevel),
+                //'dash'=>2 ("2,1","2"),
+              //  'colour'=>array(110,20,30)  ));
+            //&&$data->box->pen["lineWidth"]>0
+            //border can be array('LTRB' => array('width' => 2, 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => array(0, 0, 0))
+            
+            
+           
+            //elseif()
+            
         
         if(isset($data->reportElement["forecolor"])) {
             $drawcolor=array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));			
         }
         
-        if(isset($data->reportElement["backcolor"]) ) {
+        if(isset($data->reportElement["backcolor"]) ) { 
             $fillcolor=array("r"=>hexdec(substr($data->reportElement["backcolor"],1,2)),"g"=>hexdec(substr($data->reportElement["backcolor"],3,2)),"b"=>hexdec(substr($data->reportElement["backcolor"],5,2)));			
         }
 
 
-        $this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
-        $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
+        //$this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
+       // $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
 		
         if($radius=='')
-        $this->pointer[]=array("type"=>"Rect","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"rect","drawcolor"=>$drawcolor,"fillcolor"=>$fillcolor,"mode"=>$data->reportElement["mode"]);
+        $this->pointer[]=array("type"=>"Rect","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"rect","fillcolor"=>$fillcolor,"mode"=>$data->reportElement["mode"],'border'=>0);
         else
-        $this->pointer[]=array("type"=>"RoundedRect","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"roundedrect","radius"=>$radius,"drawcolor"=>$drawcolor,"fillcolor"=>$fillcolor,"mode"=>$data->reportElement["mode"]);
-        $this->pointer[]=array("type"=>"SetDrawColor","r"=>0,"g"=>0,"b"=>0,"hidden_type"=>"drawcolor");
-        $this->pointer[]=array("type"=>"SetFillColor","r"=>255,"g"=>255,"b"=>255,"hidden_type"=>"fillcolor");
+        $this->pointer[]=array("type"=>"RoundedRect","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"roundedrect","radius"=>$radius,"fillcolor"=>$fillcolor,"mode"=>$data->reportElement["mode"],'border'=>0);
+        
+        
+//        $this->pointer[]=array("type"=>"SetDrawColor","r"=>0,"g"=>0,"b"=>0,"hidden_type"=>"drawcolor");
+  //      $this->pointer[]=array("type"=>"SetFillColor","r"=>255,"g"=>255,"b"=>255,"hidden_type"=>"fillcolor");
     }
 
   public function element_ellipse($data) {
         $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
         $fillcolor=array("r"=>255,"g"=>255,"b"=>255);
+         $width=1;
+           
+            
+                
+           if(isset($data->graphicElement->pen["lineWidth"]))
+                 $borderwidth=$data->graphicElement->pen["lineWidth"];
+            
+             if(isset($data->graphicElement->pen["lineColor"]))
+                 $drawcolor=array("r"=>hexdec(substr($data->graphicElement->pen["lineColor"],1,2)),"g"=>hexdec(substr($data->graphicElement->pen["lineColor"],3,2)),"b"=>hexdec(substr($data->graphicElement->pen["lineColor"],5,2)));
+            
+            $dash="";
+                    if($data->graphicElement->pen["lineStyle"]=="Dotted")
+                    $dash="0,1";
+                elseif($data->graphicElement->pen["lineStyle"]=="Dashed")
+                    $dash="4,2"; 
+                elseif($data->graphicElement->pen["lineStyle"]=="Solid")
+                    $dash="";
+//echo "$borderwidth,";
+           
+            $border=array("LTRB" => array('width' => $borderwidth,'color' =>$drawcolor,'cap'=>'square',
+                            'join'=>'miter','dash'=>$dash));
+           
         if(isset($data->reportElement["forecolor"])) {
             $drawcolor=array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));			
         }
@@ -534,7 +736,7 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
 		//$color=array("r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"]);
         $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
         $this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
-        $this->pointer[]=array("type"=>"Ellipse","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"ellipse","drawcolor"=>$drawcolor,"fillcolor"=>$fillcolor);
+        $this->pointer[]=array("type"=>"Ellipse","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"ellipse","drawcolor"=>$drawcolor,"fillcolor"=>$fillcolor,'border'=>$border);
         $this->pointer[]=array("type"=>"SetDrawColor","r"=>0,"g"=>0,"b"=>0,"hidden_type"=>"drawcolor");
         $this->pointer[]=array("type"=>"SetFillColor","r"=>255,"g"=>255,"b"=>255,"hidden_type"=>"fillcolor");
     }
@@ -1081,12 +1283,19 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
                     break;
                 case "pageHeader":
                     if(!$this->newPageGroup) {
-                        $headerY = $this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
+                        
+                        if($this->titlewithpagebreak==false)
+                        $headerY = $this->arrayPageSetting["topMargin"]+$this->titlebandheight;
+                        else 
+                        $headerY = $this->arrayPageSetting["topMargin"];
+                    
                         $this->pageHeader($headerY);
+                        $this->titlebandheight=0;
                     }else {
                         $this->pageHeaderNewPage();
                     }
                     break;
+              
                 case "detail":
                     if(!$this->newPageGroup) {
                         $this->detail();
@@ -2379,18 +2588,31 @@ foreach($this->arrayVariable as $name=>$value){
 
     public function pageHeader($headerY) {
         $this->currentband='pageHeader';// to know current where current band in!
-        $this->pdf->AddPage();
-        $this->background();
-        if(isset($this->arraypageHeader)) {
-            $this->arraypageHeader[0]["y_axis"]=$this->arrayPageSetting["topMargin"];
+        if($headerY==""){
+        //if($this->titlebandheight==0 || $this->titlebandheight=="" ){
+            $this->pdf->AddPage();
+            $this->background();
+                $this->arraypageHeader[0]["y_axis"]=$this->arrayPageSetting["topMargin"];      
+                $headerY=$this->arrayPageSetting["topMargin"];      
+                
         }
+        else{
+                    
+                    $this->arraypageHeader[0]["y_axis"]=$this->arrayPageSetting["topMargin"];
+        }
+        
+        
+        
+          
+        
+            
         foreach ($this->arraypageHeader as $out) {
             switch($out["hidden_type"]) {
                 case "field":
-                    $this->display($out,$this->arraypageHeader[0]["y_axis"],true);
+                    $this->display($out,$headerY,true);
                     break;
                 default:
-                    $this->display($out,$this->arraypageHeader[0]["y_axis"],false);
+                    $this->display($out,$headerY,false);
                     break;
             }
         }
@@ -2398,12 +2620,16 @@ foreach($this->arrayVariable as $name=>$value){
         $this->currentband='';
     }
 
+
+    
+    
     public function pageHeaderNewPage() {
         $this->currentband='pageHeader';
         $this->pdf->AddPage();
         $this->background();
         if(isset($this->arraypageHeader)) {
-            $this->arraypageHeader[0]["y_axis"]=$this->arrayPageSetting["topMargin"];
+               //$headerY = $this->arrayPageSetting["topMargin"]+$this->titlebandheight+$this->arraypageHeader[0]["height"];
+            $this->arraypageHeader[0]["y_axis"]=$this->arrayPageSetting["topMargin"]+$this->titlebandheight;
         }
         foreach ($this->arraypageHeader as $out) {
             switch($out["hidden_type"]) {
@@ -2419,6 +2645,55 @@ foreach($this->arrayVariable as $name=>$value){
     }
 
 
+      public function columnHeader($y) {
+        //$this->pdf->AddPage();
+        //$this->background();
+            $this->currentband='columnHeader';
+            //$this->titlesummary=$this->arraycolumnHeader[0]["height"];
+            if($this->titlewithpagebreak==false && $this->pdf->getPage() ==1)
+                $y=$this->titleheight+$this->headerbandheight+$this->arrayPageSetting["topMargin"];
+                else
+            $y=$this->arrayPageSetting["topMargin"]+$this->headerbandheight;
+            //print_r($this->arraytitle);die;
+
+        foreach ($this->arraycolumnHeader as $out) {
+
+            switch($out["hidden_type"]) {
+                case "field":
+                    $this->display($out,$y,true);
+                    break;
+                default:
+                    $this->display($out,$y,false);
+                    break;
+            }
+        }
+
+                $this->currentband='';
+    }
+  public function columnFooter() {
+        //$this->pdf->AddPage();
+        //$this->background();
+            $this->currentband='columnFooter';
+            //$this->titlesummary=$this->arraycolumnHeader[0]["height"];
+
+            //print_r($this->arraytitle);die;
+        $y= $this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"]-$this->columnfooterbandheight;
+       foreach ($this->arraycolumnFooter as $out) {
+
+            switch($out["hidden_type"]) {
+                case "field":
+                    $this->display($out,$y,true);
+                    break;
+                default:
+                    $this->display($out,$y,false);
+                    break;
+            }
+        }
+
+                $this->currentband='';
+    }
+
+    
     public function title() {
                 $this->currentband='title';
         $this->pdf->AddPage();
@@ -2436,6 +2711,12 @@ foreach($this->arrayVariable as $name=>$value){
             switch($out["hidden_type"]) {
                 case "field":
                     $this->display($out,$this->arraytitle[0]["y_axis"],true);
+                    break;
+                case "break":
+               
+                     $this->pdf->AddPage();
+                    //  $this->background();                  
+                      $this->titlewithpagebreak=true;
                     break;
                 default:
                     $this->display($out,$this->arraytitle[0]["y_axis"],false);
@@ -2469,6 +2750,8 @@ foreach($this->arrayVariable as $name=>$value){
                 $this->currentband='';
     }
 
+    
+    
     public function group($headerY) {
 
 
@@ -2658,9 +2941,10 @@ foreach($this->arrayVariable as $name=>$value){
 
 	public function printlongtext($fontfamily,$fontstyle,$fontsize){
 					//$this->gotTextOverPage=false;
-						
-							$this->pageFooter();
+						$this->columnFooter();
+						$this->pageFooter();
 						$this->pageHeader();
+                                                $this->columnHeader();
 					$this->hideheader==true;
 					
 					$this->currentband='detail';  
@@ -2678,18 +2962,18 @@ foreach($this->arrayVariable as $name=>$value){
 					$this->pdf->SetFillColor($this->forcefillcolor_r,$this->forcefillcolor_g,$this->forcefillcolor_b);
 
 					$bltxt=$this->continuenextpageText; 
-					$this->pdf->SetY($this->arraypageHeader[0]["height"]+15);
+					$this->pdf->SetY($this->arraypageHeader[0]["height"]+$this->columnheaderbandheight+$this->arrayPageSetting["topMargin"]);
 					$this->pdf->SetX($bltxt['x']);
 					$maxheight=$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->pdf->GetY()-$bltxt['height'];
 
-					$this->pdf->MultiCell($bltxt['width'],$bltxt['height'],"???".$bltxt['txt'],
+					$this->pdf->MultiCell($bltxt['width'],$bltxt['height'],$bltxt['txt'],
 								$bltxt['border'],
 								$bltxt['align'],$bltxt['fill'],$bltxt['ln'],'','',$bltxt['reset'],
 								$bltxt['streth'],$bltxt['ishtml'],$bltxt['autopadding'],$maxheight-$bltxt['height'],$bltxt['valign']);
 							
 					   if($this->pdf->balancetext!=''){
 							$this->continuenextpageText=array('width'=>$bltxt["width"], 'height'=>$bltxt["height"], 
-								'txt'=>"??-??".$this->pdf->balancetext,	'border'=>$bltxt["border"] ,'align'=>$bltxt["align"], 'fill'=>$bltxt["fill"],'ln'=>1,
+								'txt'=>$this->pdf->balancetext,	'border'=>$bltxt["border"] ,'align'=>$bltxt["align"], 'fill'=>$bltxt["fill"],'ln'=>1,
 										'x'=>$bltxt['x'],'y'=>'','reset'=>true,'streth'=>0,'ishtml'=>false,'autopadding'=>true,'valign'=>$bltxt['valign']);
 								$this->pdf->balancetext='';
 								$this->printlongtext($fontfamily,$fontstyle,$fontsize);
@@ -2713,21 +2997,37 @@ foreach($this->arrayVariable as $name=>$value){
 		$this->maxpagey=array();
         $this->currentband='detail';
    
-        $this->arraydetail[0]["y_axis"]=$this->arraydetail[0]["y_axis"]- $this->titleheight;
+        $this->arraydetail[0]["y_axis"]=$this->arraydetail[0]["y_axis"];//- $this->titleheight;
         $field_pos_y=$this->arraydetail[0]["y_axis"];
         $biggestY=0;
         $tempY=$this->arraydetail[0]["y_axis"];
         
-        if(isset($this->SubReportCheckPoint))
-			$checkpoint=$this->SubReportCheckPoint;
-
-			$checkpoint=$this->arraydetail[0]["y_axis"];
+       if(isset($this->SubReportCheckPoint))
+		$checkpoint=$this->SubReportCheckPoint;
 
 
-	    $gheader=$this->showGroupHeader($this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]);
+             $colheader=$this->columnHeader($this->arrayPageSetting["topMargin"]+$this->titlebandheight+$this->arraypageHeader[0]["height"]);           
+	    //if($this->pdf->getPage()>1)
+                if($this->pdf->getPage()>1){
+                              $gheader=$this->showGroupHeader($this->arrayPageSetting["topMargin"]+$this->titlebandheight+$this->arraypageHeader[0]["height"]+$this->columnheaderbandheight);
+                              $checkpoint=$this->arrayPageSetting["topMargin"]+$this->titlebandheight+$this->arraypageHeader[0]["height"]+
+                            $this->columnheaderbandheight+$gheader;
+                }
+                 else      {
+                     $gheader=$this->showGroupHeader($this->arrayPageSetting["topMargin"]+$this->orititlebandheight+$this->arraypageHeader[0]["height"]+$this->columnheaderbandheight);
+                     $checkpoint=$this->arrayPageSetting["topMargin"]+$this->orititlebandheight+$this->arraypageHeader[0]["height"]+
+                            $this->columnheaderbandheight+$gheader;
+                 }
+                
+            
+            if($this->pdf->getPage()>1)
+              $this->titlebandheight=0;
+            
 		$isgroupfooterprinted=false;
-
+            if($this->titlewithpagebreak==false)
 		$this->maxpagey=array('page_0'=>$checkpoint);
+            else
+                $this->maxpagey=array('page_1'=>$checkpoint);
         $rownum=0; 
         
         if($this->arraysqltable) {
@@ -2752,30 +3052,84 @@ foreach($this->arrayVariable as $name=>$value){
 		$detailheight=$this->detailbandheight;
 		
 		//if content near page footer
-		if($checkpoint>= $pageheight- $footerheight -$bottommargin- $detailheight-1){
+
+//    
+//                        if(($checkpoint>= $pageheight- $footerheight -$bottommargin-$this->columnfooterbandheight-1) && 
+//                                        $this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer]){
+//                                                $this->columnFooter();
+//						$this->pageFooter();
+//						$this->pageHeader($this->arrayPageSetting["topMargin"]);
+//                                                 $colheader=$this->columnHeader($this->arrayPageSetting["topMargin"]+$this->titlebandheight+$this->arraypageHeader[0]["height"]);           
+//						$currentpage= $this->pdf->getNumPages();
+//						$checkpoint=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]+$this->titlebandheight+$this->columnheaderbandheight;//$this->arraydetail[0]["y_axis"]- $this->titleheight;
+//						$this->maxpagey[($this->pdf->getPage()-1)]=$checkpoint;
+//			}
+//                        
+                
+                        
+                
+                //check detail band will over current page footer
+                if($checkpoint>= $pageheight- $footerheight -$bottommargin- $detailheight-$this->columnfooterbandheight){
+                    
+                                                $this->columnFooter();
 						$this->pageFooter();
 						$this->pageHeader();
+                                                 $colheader=$this->columnHeader($this->arrayPageSetting["topMargin"]+$this->titlebandheight+$this->arraypageHeader[0]["height"]);           
 						$currentpage= $this->pdf->getNumPages();
-						$checkpoint=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];//$this->arraydetail[0]["y_axis"]- $this->titleheight;
+						$checkpoint=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]+$this->titlebandheight+$this->columnheaderbandheight;//$this->arraydetail[0]["y_axis"]- $this->titleheight;
 						$this->maxpagey[($this->pdf->getPage()-1)]=$checkpoint;
 			}
-
-				if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
-                    $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
+			if(isset($this->arrayVariable))	//if self define variable existing, go to do the calculation
+                                    $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
                 
-		if(isset($this->arraygroup)&&($this->global_pointer>0)&&
-                        ($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])){	//check the group's groupExpression existed and same or not
+                 
+               if(isset($this->arraygroup)&&($this->global_pointer>0)&&
+                            ($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])){	//check the group's groupExpression existed and same or not
 
-					if($isgroupfooterprinted==true){
+					if($isgroupfooterprinted==true)
 						$gfoot=0;
-					}
-					
-                   $ghheight=$this->showGroupHeader($checkpoint+$gfoot);
-                   $isgroupfooterprinted=false;
-					$checkpoint=$checkpoint+$gfoot+$ghheight;//after group header add height band, so detail no crash with group header.	
-                   $this->footershowed=true;
+                                        
+                                $newcheckpoint=$checkpoint+$gheader;
+                                $limitheight=$pageheight- $footerheight -$bottommargin-$this->columnfooterbandheight-1;
+                                
+//                         echo $this->arraysqltable[$this->global_pointer][$this->group_pointer]."/".$this->arraysqltable[$this->global_pointer-1][$this->group_pointer] .
+//                                    " group header $checkpoint+$gheader=>".($newcheckpoint)." >=(".($limitheight).
+//                                  ")<br/>";
+
+                         //check group header band will over current page footer
+                        if($newcheckpoint>=$limitheight){
+                            //echo "<b>&nbsp; next page group</b>";
+                                                $this->columnFooter();
+						$this->pageFooter();
+						$this->pageHeader();
+                                                 $colheader=$this->columnHeader($this->arrayPageSetting["topMargin"]+$this->titlebandheight+$this->arraypageHeader[0]["height"]);           
+						$currentpage= $this->pdf->getNumPages();
+						$checkpoint=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]+$this->titlebandheight+$this->columnheaderbandheight;//$this->arraydetail[0]["y_axis"]- $this->titleheight;
+						$this->maxpagey[($this->pdf->getPage()-1)]=$checkpoint;
+                                                $ghheight=$this->showGroupHeader($checkpoint);
+                                                $checkpoint=$checkpoint+$ghheight;//after group header add height band, so detail no crash with group header.	
+			}			
+                        else{
+                            $ghheight=$this->showGroupHeader($checkpoint+$gfoot);
+                            $checkpoint=$checkpoint+$gfoot+$ghheight;//after group header add height band, so detail no crash with group header.	
+                            if($checkpoint>= $pageheight- $footerheight -$bottommargin- $detailheight-$this->columnfooterbandheight){
+                    
+                                                $this->columnFooter();
+						$this->pageFooter();
+						$this->pageHeader();
+                                                 $colheader=$this->columnHeader($this->arrayPageSetting["topMargin"]+$this->titlebandheight+$this->arraypageHeader[0]["height"]);           
+						$currentpage= $this->pdf->getNumPages();
+						$checkpoint=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]+$this->titlebandheight+$this->columnheaderbandheight;//$this->arraydetail[0]["y_axis"]- $this->titleheight;
+						$this->maxpagey[($this->pdf->getPage()-1)]=$checkpoint;
+			}
+                        }
+                        
+                                
+                        
+                    $isgroupfooterprinted=false;
+                    $this->footershowed=true;
                     $this->pdf->SetY($checkpoint); 
-         			$this->group_count["$this->group_name"]=1;	// We're on the first row of the group.				 
+                    $this->group_count["$this->group_name"]=1;	// We're on the first row of the group.				 
 		
                 }
 
@@ -2792,7 +3146,7 @@ foreach($this->arrayVariable as $name=>$value){
                         case "field":
                      //        $txt=$this->analyse_expression($compare["txt"]);
 
-							$maxheight=$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->pdf->GetY()-15;
+		         $maxheight=$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->pdf->GetY()+2-$this->columnheaderbandheight-$this->columnfooterbandheight;
                             $this->prepare_print_array=array("type"=>"MultiCell","width"=>$out["width"],"height"=>$out["height"],"txt"=>$out["txt"],
 									"border"=>$out["border"],"align"=>$out["align"],"fill"=>$out["fill"],"hidden_type"=>$out["hidden_type"],
 									"printWhenExpression"=>$out["printWhenExpression"],"soverflow"=>$out["soverflow"],"poverflow"=>$out["poverflow"],"link"=>$out["link"],
@@ -2811,7 +3165,7 @@ foreach($this->arrayVariable as $name=>$value){
                         default:
 							//echo $out["hidden_type"]."=".print_r($out,true)."<br/><br/>";
                             $this->display($out,$checkpoint);
-							$maxheight=$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->pdf->GetY()-15;
+			   $maxheight=$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->pdf->GetY()+2-$this->columnfooterbandheight;
 				//				$checkpoint=$this->arraydetail[0]["y_axis"];
 
                             //$checkpoint=$this->pdf->GetY();
@@ -2843,22 +3197,46 @@ foreach($this->arrayVariable as $name=>$value){
 		$gfootheight=$this->arraygroupfoot[0]['height'];
 		$currentY=$this->maxpagey['page_'.($this->pdf->getNumPages()-1)];
 		
-		if(($currentY+$gfootheight) < ($pageheight-$bottommargin-$footerheight)){
-                         
+                
+                //    
+//                        if(($checkpoint>= $pageheight- $footerheight -$bottommargin-$this->columnfooterbandheight-1) && 
+//                                        $this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer]){
+//                                                $this->columnFooter();
+//						$this->pageFooter();
+//						$this->pageHeader($this->arrayPageSetting["topMargin"]);
+//                                                 $colheader=$this->columnHeader($this->arrayPageSetting["topMargin"]+$this->titlebandheight+$this->arraypageHeader[0]["height"]);           
+//						$currentpage= $this->pdf->getNumPages();
+//						$checkpoint=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]+$this->titlebandheight+$this->columnheaderbandheight;//$this->arraydetail[0]["y_axis"]- $this->titleheight;
+//						$this->maxpagey[($this->pdf->getPage()-1)]=$checkpoint;
+//			}
+//                        
+
+                
+                
+		if(($currentY+$gfootheight) < ($pageheight-$bottommargin-$footerheight-$this->columnfooterbandheight)){
+                                           // echo "<br/>".$this->arraysqltable[$this->global_pointer][$this->group_pointer].",currentY:$currentY,gfootheight:$gfootheight($currentY):".
+                                           //   ($pageheight-$bottommargin-$footerheight-$this->columnfooterbandheight);
+
 							$gfoot= $this->showGroupFooter($this->maxpagey['page_'.($this->pdf->getPage()-1)]);
-							$checkpoint=$this->maxpagey['page_'.($this->pdf->getNumPages()-1)]+$gfoot;
+							$checkpoint=$currentY//$this->maxpagey['page_'.($this->pdf->getNumPages()-1)]
+                                                        +$gfootheight;
+                                                        
+                        
 						  				      
-						}else{
-						$this->pageFooter();
-						$hhead=	$this->pageHeader($this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]);
-	//					  $checkpoint=$this->maxpagey['page_'.($this->pdf->getNumPages()-1)]+$gfoot;						      
-                         $gfoot= $this->showGroupFooter($headerheight+$this->arrayPageSetting["topMargin"]);
-                         $isgroupfooterprinted=true;
-						//	$this->pdf->Cell(100,30,"New pages footer",1);
-						  $checkpoint=$gfoot+$headerheight+$this->arrayPageSetting["topMargin"];//$hhead+$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]+$gfoot;						      
+		}else{
+                                                        $this->columnFooter();
+                                                        $this->pageFooter();
+                                                        $hhead=	$this->pageHeader();
+                                                        $colheader=$this->columnHeader($this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]);           
+                                                        $gfoot= $this->showGroupFooter($headerheight+$this->arrayPageSetting["topMargin"]+$this->columnheaderbandheight);
+                                                        $isgroupfooterprinted=true;
+                                                        $checkpoint=$gfoot+$headerheight+$this->arrayPageSetting["topMargin"]+$this->columnheaderbandheight;
+                                //$hhead+$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"]+$gfoot;						      
 							$this->maxpagey['page_'.($this->pdf->getNumPages()-1)]=	$checkpoint;
 						
-							}  
+		}  
+                
+                
                         $this->currentband='detail';
    			            }
 
@@ -2868,8 +3246,9 @@ foreach($this->arrayVariable as $name=>$value){
 				$this->report_count++;
 				
                 $this->global_pointer++;
-                   $rownum++;			   
-				  $this->pdf->lastpage();
+                   $rownum++;			
+                                // $this->columnFooter();
+				//  $this->pdf->lastpage();
 				  $headerY=$checkpoint;            
             
             }
@@ -2895,10 +3274,14 @@ foreach($this->arrayVariable as $name=>$value){
            }
 
  
-        if(isset($this->arraylastPageFooter))
+        if(isset($this->arraylastPageFooter)){
+            $this->columnFooter();
             $this->lastPageFooter();
-        else
+        }
+        else{
+            $this->columnFooter();
              $this->pageFooter();
+        }
        
         $this->currentband='';
         
@@ -3373,22 +3756,24 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 		$style='';
 		else
 		$style='FD';
-		
+          //      $this->pdf->SetLineStyle($arraydata['border']);
 			$this->pdf->Rect($arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis,$arraydata["width"],$arraydata["height"],
-			$style);
+			$style,$arraydata['border'],$arraydata['fillcolor']);
                 }
         elseif($arraydata["type"]=="RoundedRect"){
 			if($arraydata['mode']=='Transparent')
 				$style='';
 			else
 			$style='FD';
-			
+			//
+                //        $this->pdf->SetLineStyle($arraydata['border']);
 			 $this->pdf->RoundedRect($arraydata["x"]+$this->arrayPageSetting["leftMargin"], $arraydata["y"]+$y_axis, $arraydata["width"],$arraydata["height"], $arraydata["radius"], '1111', 
-			$style,array('color'=>$arraydata['drawcolor']),$arraydata['fillcolor']);
+			$style,$arraydata['border'],$arraydata['fillcolor']);
 			}
         elseif($arraydata["type"]=="Ellipse"){
+            //$this->pdf->SetLineStyle($arraydata['border']);
 			 $this->pdf->Ellipse($arraydata["x"]+$arraydata["width"]/2+$this->arrayPageSetting["leftMargin"], $arraydata["y"]+$y_axis+$arraydata["height"]/2, $arraydata["width"]/2,$arraydata["height"]/2,
-				0,0,360,'FD',array('color'=>$arraydata['drawcolor']),$arraydata['fillcolor']);
+				0,0,360,'FD',$arraydata['border'],$arraydata['fillcolor']);
 			}
         elseif($arraydata["type"]=="Image") {
             $path=$this->analyse_expression($arraydata["path"]);
@@ -3446,6 +3831,10 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
         elseif($arraydata["type"]=="SetLineWidth") {
             $this->pdf->SetLineWidth($arraydata["width"]);
         }
+        elseif($arraydata["type"]=="break"){
+      
+          
+        }
         elseif($arraydata["type"]=="Line") {
             $this->pdf->Line($arraydata["x1"]+$this->arrayPageSetting["leftMargin"],$arraydata["y1"]+$y_axis,$arraydata["x2"]+$this->arrayPageSetting["leftMargin"],$arraydata["y2"]+$y_axis,$arraydata["style"]);
         }
@@ -3471,9 +3860,109 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 
             $this->showAreaChart($arraydata, $y_axis,$arraydata["type"]);
         }
+        elseif($arraydata["type"]=="Barcode"){
+            
+            $this->showBarcode($arraydata, $y_axis);
+        }
 
     }
 
+    
+    public function showBarcode($data,$y){
+        $type=  strtoupper($data['barcodetype']);
+        $height=$data['height'];
+        $width=$data['width'];
+        $x=$data['x'];
+        $y=$data['y']+$y;
+        $textposition=$data['textposition'];
+        $code=$data['code'];
+        $code=$this->analyse_expression($code);
+        $modulewidth=$data['modulewidth'];
+        if($textposition=="" || $textposition=="none")
+         $withtext = false;
+        else
+            $withtext = true;
+     $style = array(
+    'border' => false,
+    'vpadding' => 'auto',
+    'hpadding' => 'auto',
+         'text'=>$withtext,
+    'fgcolor' => array(0,0,0),
+    'bgcolor' => false, //array(255,255,255)
+    'module_width' => 1, // width of a single module in points
+    'module_height' => 1 // height of a single module in points
+);
+
+        
+//[2D barcode section]        
+//DATAMATRIX
+//QRCODE,H or Q or M or L (H=high level correction, L=low level correction)
+// -------------------------------------------------------------------
+// PDF417 (ISO/IEC 15438:2006)
+
+/*
+
+ The $type parameter can be simple 'PDF417' or 'PDF417' followed by a
+ number of comma-separated options:
+
+ 'PDF417,a,e,t,s,f,o0,o1,o2,o3,o4,o5,o6'
+
+ Possible options are:
+
+     a  = aspect ratio (width/height);
+     e  = error correction level (0-8);
+
+     Macro Control Block options:
+
+     t  = total number of macro segments;
+     s  = macro segment index (0-99998);
+     f  = file ID;
+     o0 = File Name (text);
+     o1 = Segment Count (numeric);
+     o2 = Time Stamp (numeric);
+     o3 = Sender (text);
+     o4 = Addressee (text);
+     o5 = File Size (numeric);
+     o6 = Checksum (numeric).
+
+ Parameters t, s and f are required for a Macro Control Block, all other parametrs are optional.
+ To use a comma character ',' on text options, replace it with the character 255: "\xff".
+
+*/ 
+        switch($type){
+          case "PDF417":
+               $this->pdf->write2DBarcode($code, 'PDF417', $x, $y, $width, $height, $style, 'N');
+              break;
+          case "DATAMATRIX":
+              //$this->pdf->Cell( $width,10,$code);
+              if(left($code,3)=="QR:"){
+              $code=  right($code,strlen($code)-3);
+              $this->pdf->write2DBarcode($code, 'QRCODE', $x, $y, $width, $height, $style, 'N');
+              }
+              else
+                  $this->pdf->write2DBarcode($code, 'DATAMATRIX', $x, $y, $width, $height, $style, 'N');
+              break;
+            case "CODE128":
+                $this->pdf->write1DBarcode($code, 'C128',  $x, $y, $width, $height, $modulewidth, $style, 'N');
+
+              // $this->pdf->write1DBarcode($code, 'C128', $x, $y, $width, $height,"", $style, 'N');
+              break;
+          case  "EAN8":
+                 $this->pdf->write1DBarcode($code, 'EAN8', $x, $y, $width, $height, $modulewidth,$style, 'N');
+              break;
+          case  "EAN13":
+                 $this->pdf->write1DBarcode($code, 'EAN13', $x, $y, $width, $height, $modulewidth,$style, 'N');
+              break;
+          case  "CODE39":
+                 $this->pdf->write1DBarcode($code, 'C39', $x, $y, $width, $height, $modulewidth,$style, 'N');
+              break;
+           case  "CODE93":
+                 $this->pdf->write1DBarcode($code, 'C93', $x, $y, $width, $height, $modulewidth,$style, 'N');
+              break;
+        }
+        
+
+    }
     public function relativebottomline($path,$y) {
         $extra=$y-$path["y1"];
         $this->display($path,$extra);
@@ -3513,26 +4002,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 				}
             
             }
-            elseif($arraydata["poverflow"]=="true"&&$arraydata["soverflow"]=="false") {
-           
-                            if($arraydata["valign"]=="M")
-                                    $arraydata["valign"]="C";
-                                if($arraydata["valign"]=="")
-                                    $arraydata["valign"]="T"; 
-                                
-                $this->pdf->Cell($arraydata["width"], $arraydata["height"],  $this->formatText($txt, $arraydata["pattern"]),$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"],0,true,"T",
-                                $arraydata["valign"]);
-				$this->pdf->Ln();
-					if($this->currentband=='detail'){
-					if($this->maxpagey['page_'.($this->pdf->getPage()-1)]=='')
-						$this->maxpagey['page_'.($this->pdf->getPage()-1)]=$this->pdf->GetY();
-					else{
-						if($this->maxpagey['page_'.($this->pdf->getPage()-1)]<$this->pdf->GetY())
-							$this->maxpagey['page_'.($this->pdf->getPage()-1)]=$this->pdf->GetY();
-					}
-				}
             
-            }
             elseif($arraydata["poverflow"]=="false"&&$arraydata["soverflow"]=="false") {
                             if($arraydata["valign"]=="M")
                                     $arraydata["valign"]="C";
@@ -3556,7 +4026,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
 				}
 		
             }
-            elseif($arraydata["poverflow"]=="false"&&$arraydata["soverflow"]=="true") {
+             elseif($arraydata["soverflow"]=="true") {
 				if($arraydata["valign"]=="C")
                                     $arraydata["valign"]="M";
                                 if($arraydata["valign"]=="")
@@ -3564,7 +4034,7 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
                                 
 				$x=$this->pdf->GetX();
 		        $this->pdf->MultiCell($arraydata["width"], $arraydata["height"], $this->formatText($txt, $arraydata["pattern"]),$arraydata["border"] 
-       							,$arraydata["align"], $arraydata["fill"],1,'','',true,0,false,true,0,$arraydata["valign"]);
+       							,$arraydata["align"], $arraydata["fill"],1,'','',true,0,false,true,$maxheight);//,$arraydata["valign"]);
 		
 				if( $this->pdf->balancetext=='' && $this->currentband=='detail'){
 					if($this->maxpagey['page_'.($this->pdf->getPage()-1)]=='')
@@ -3596,6 +4066,27 @@ if(isset($this->arraygroup)&&($this->global_pointer>0)&&($this->arraysqltable[$t
          
 
             }
+            elseif($arraydata["poverflow"]=="true") {
+           
+                            if($arraydata["valign"]=="M")
+                                    $arraydata["valign"]="C";
+                                if($arraydata["valign"]=="")
+                                    $arraydata["valign"]="T"; 
+                                
+                $this->pdf->Cell($arraydata["width"], $arraydata["height"],  $this->formatText($txt, $arraydata["pattern"]),$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"],0,true,"T",
+                                $arraydata["valign"]);
+				$this->pdf->Ln();
+					if($this->currentband=='detail'){
+					if($this->maxpagey['page_'.($this->pdf->getPage()-1)]=='')
+						$this->maxpagey['page_'.($this->pdf->getPage()-1)]=$this->pdf->GetY();
+					else{
+						if($this->maxpagey['page_'.($this->pdf->getPage()-1)]<$this->pdf->GetY())
+							$this->maxpagey['page_'.($this->pdf->getPage()-1)]=$this->pdf->GetY();
+					}
+				}
+            
+            }
+           
             else {
 				//MultiCell($w, $h, $txt, $border=0, $align='J', $fill=0, $ln=1, $x='', $y='', $reseth=true, $stretch=0, $ishtml=false, $autopadding=true, $maxh=0) {	
                 $this->pdf->MultiCell($arraydata["width"], $arraydata["height"], $this->formatText($txt, $arraydata["pattern"]), $arraydata["border"], 
