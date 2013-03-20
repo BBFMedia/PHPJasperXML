@@ -436,7 +436,7 @@ class TCPDF {
 	 * Current font info.
 	 * @protected
 	 */
-	protected $CurrentFont;
+	public $CurrentFont;
 
 	/**
 	 * Current font size in points.
@@ -452,7 +452,7 @@ class TCPDF {
 	 * Current font size in user unit.
 	 * @protected
 	 */
-	protected $FontSize;
+	public $FontSize;
 
 	/**
 	 * Commands for drawing color.
