@@ -17,10 +17,11 @@ $PHPJasperXML = new PHPJasperXML();
 $PHPJasperXML->arrayParameter=array("parameter1"=>1);
 $PHPJasperXML->xml_dismantle($xml);
 
-//$PHPJasperXML->transferDBtoArray($server,$user,$pass,$db); * use this line if you want to connect with mysql
+$PHPJasperXML->transferDBtoArray($server,$user,$pass,$db); //* use this line if you want to connect with mysql
 
 //if you want to use universal odbc connection, please create a dsn connection in odbc first
-$PHPJasperXML->transferDBtoArray($server,"postgres","postgres","phpjasperxml","odbc"); //odbc = connect to odbc
+//$PHPJasperXML->transferDBtoArray($server,"odbcuser","odbcpass","phpjasperxml","odbc"); //odbc = connect to odbc
+//$PHPJasperXML->transferDBtoArray($server,"psqluser","psqlpass","phpjasperxml","psql"); //odbc = connect to potgresql
 $PHPJasperXML->outpage("I");    //page output method I:standard output  D:Download file
 
 

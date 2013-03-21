@@ -19,7 +19,7 @@ $PHPJasperXML->arrayParameter=array();
 $PHPJasperXML->xml_dismantle($xml);
 
 $PHPJasperXML->transferDBtoArray($server,$user,$pass,$db);
-$PHPJasperXML->outpage("F","tmp/$filename"); //page output method I:standard output D:Download file, F =save as filename and submit 2nd parameter as destinate file name 
+$PHPJasperXML->outpage("I"); //page output method I:standard output D:Download file, F =save as filename and submit 2nd parameter as destinate file name 
 //$PHPJasperXML->outpage("I");    //page output method I:standard output  D:Download file
 
 

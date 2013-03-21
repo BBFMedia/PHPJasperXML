@@ -1,260 +1,188 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report name" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report name" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="dc3d4581-fc29-4980-bc8a-00ac2a6e9c17">
 	<property name="ireport.zoom" value="1.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.y" value="317"/>
 	<parameter name="parameter1" class="java.lang.Integer">
 		<defaultValueExpression><![CDATA[new java.lang.Integer(0)]]></defaultValueExpression>
 	</parameter>
 	<queryString>
-		<![CDATA[SELECT
-     sample2.date AS sample2_date,
-     sample2.docno AS sample2_docno,
-     sample2.companyname AS sample2_companyname,
-     sample2.amount AS sample2_amount,
-     sample2.terms AS sample2_terms,
-     sample2.address AS sample2_address,
-     sample2line.amount AS sample2line_amount,
-     sample2line.uom AS sample2line_uom,
-     sample2line.unitprice AS sample2line_unitprice,
-     sample2line.qty AS sample2line_qty,
-     sample2line.itemname AS sample2line_itemname,
-     sample2line.no AS sample2line_no
-FROM
-     sample2line sample2line INNER JOIN sample2 sample2 ON sample2line.headerid = sample2.id
-	where sample2.id=$P{parameter1} ]]>
+		<![CDATA[SELECT "x" as name,    10 as qty1,   20 as qty2,  15 as qty3,  29 as qty4
+UNION ALL
+SELECT "y" ,30,   16,  20 ,  8
+UNION ALL
+SELECT "z" ,20,   8,  2 , 20
+
+]]>
 	</queryString>
-	<field name="sample2_date" class="java.sql.Date"/>
-	<field name="sample2_docno" class="java.lang.String"/>
-	<field name="sample2_companyname" class="java.lang.String"/>
-	<field name="sample2_amount" class="java.math.BigDecimal"/>
-	<field name="sample2_terms" class="java.lang.String"/>
-	<field name="sample2_address" class="java.lang.String"/>
-	<field name="sample2line_amount" class="java.math.BigDecimal"/>
-	<field name="sample2line_uom" class="java.lang.String"/>
-	<field name="sample2line_unitprice" class="java.math.BigDecimal"/>
-	<field name="sample2line_qty" class="java.lang.Integer"/>
-	<field name="sample2line_itemname" class="java.lang.String"/>
-	<field name="sample2line_no" class="java.lang.Integer"/>
-	<variable name="total" class="java.math.BigDecimal" incrementType="Report" calculation="Sum">
-		<variableExpression><![CDATA[$F{sample2line_amount}]]></variableExpression>
-	</variable>
+	<field name="name" class="java.lang.String"/>
+	<field name="qty1" class="java.lang.Long"/>
+	<field name="qty2" class="java.lang.Long"/>
+	<field name="qty3" class="java.lang.Long"/>
+	<field name="qty4" class="java.lang.Long"/>
 	<background>
-		<band height="802" splitType="Stretch">
-			<rectangle>
-				<reportElement x="1" y="157" width="542" height="488"/>
-			</rectangle>
-			<line>
-				<reportElement x="22" y="157" width="1" height="488"/>
-			</line>
-			<line>
-				<reportElement x="280" y="157" width="1" height="488"/>
-			</line>
-			<line>
-				<reportElement x="439" y="157" width="1" height="488"/>
-			</line>
-			<line>
-				<reportElement x="352" y="157" width="1" height="488"/>
-			</line>
-			<line>
-				<reportElement x="1" y="176" width="542" height="1"/>
-			</line>
-		</band>
+		<band splitType="Stretch"/>
 	</background>
 	<title>
 		<band splitType="Stretch"/>
 	</title>
 	<pageHeader>
-		<band height="177" splitType="Stretch">
-			<textField>
-				<reportElement x="478" y="98" width="69" height="20"/>
-				<textElement/>
-				<textFieldExpression class="java.util.Date"><![CDATA[$F{sample2_date}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="478" y="78" width="69" height="20"/>
-				<textElement>
-					<font isBold="true"/>
-				</textElement>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2_docno}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="5" y="78" width="238" height="20"/>
-				<textElement>
-					<font size="12" isBold="true"/>
-				</textElement>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2_companyname}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="5" y="98" width="238" height="20"/>
-				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2_address}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="478" y="118" width="69" height="20"/>
-				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2_terms}]]></textFieldExpression>
-			</textField>
-			<staticText>
-				<reportElement x="243" y="78" width="52" height="20"/>
-				<textElement/>
-				<text><![CDATA[PO No :]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="423" y="98" width="52" height="20"/>
-				<textElement/>
-				<text><![CDATA[PO Date :]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="423" y="118" width="52" height="20"/>
-				<textElement/>
-				<text><![CDATA[Terms :]]></text>
-			</staticText>
-			<image>
-				<reportElement x="2" y="0" width="65" height="65"/>
-				<imageExpression class="java.lang.String"><![CDATA["./simitlogo.jpg"]]></imageExpression>
-			</image>
-			<staticText>
-				<reportElement x="204" y="118" width="185" height="20"/>
-				<textElement textAlignment="Center">
-					<font size="14" isBold="true" isUnderline="true"/>
-				</textElement>
-				<text><![CDATA[Purchase Order]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="74" y="5" width="288" height="19" forecolor="#D6D6D6"/>
-				<textElement>
-					<font size="12" isBold="true"/>
-				</textElement>
-				<text><![CDATA[Sim IT Sdn Bhd]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="74" y="24" width="325" height="19"/>
-				<textElement/>
-				<text><![CDATA[10B-1, Jalan Mawar 4, 81900 Kota Tinggi, Johor, Malaysia]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="74" y="43" width="473" height="20"/>
-				<textElement/>
-				<text><![CDATA[Tel: 078835330, Fax: 078835330 Website: http://www.simit.com.my Email: sales@simit.com.my]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="0" y="157" width="22" height="20"/>
-				<textElement textAlignment="Center">
-					<font size="12" isBold="true" isUnderline="true"/>
-				</textElement>
-				<text><![CDATA[No]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="22" y="157" width="258" height="20"/>
-				<textElement textAlignment="Center">
-					<font size="12" isBold="true" isUnderline="true"/>
-				</textElement>
-				<text><![CDATA[Item]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="352" y="157" width="87" height="20"/>
-				<textElement textAlignment="Center">
-					<font size="12" isBold="true" isUnderline="true"/>
-				</textElement>
-				<text><![CDATA[Qty]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="439" y="157" width="100" height="20"/>
-				<textElement textAlignment="Center">
-					<font size="12" isBold="true" isUnderline="true"/>
-				</textElement>
-				<text><![CDATA[Amount]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="280" y="157" width="72" height="20"/>
-				<textElement textAlignment="Center">
-					<font size="12" isBold="true" isUnderline="true"/>
-				</textElement>
-				<text><![CDATA[Unit Price]]></text>
-			</staticText>
-			<textField>
-				<reportElement x="343" y="66" width="100" height="20"/>
-				<textElement/>
-				<textFieldExpression class="java.util.Date"><![CDATA[$F{sample2_date}]]></textFieldExpression>
-			</textField>
-		</band>
+		<band splitType="Stretch"/>
 	</pageHeader>
 	<columnHeader>
 		<band splitType="Stretch"/>
 	</columnHeader>
 	<detail>
-		<band height="21" splitType="Stretch">
-			<textField pattern="###0.0">
-				<reportElement x="352" y="0" width="47" height="20"/>
-				<textElement textAlignment="Right"/>
-				<textFieldExpression class="java.lang.Integer"><![CDATA[$F{sample2line_qty}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="22" y="0" width="258" height="20"/>
-				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2line_itemname}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="0" y="0" width="22" height="20"/>
-				<textElement textAlignment="Center"/>
-				<textFieldExpression class="java.lang.Integer"><![CDATA[$F{sample2line_no}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="399" y="0" width="40" height="20"/>
-				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2line_uom}]]></textFieldExpression>
-			</textField>
-			<textField pattern="###0.0000">
-				<reportElement x="280" y="0" width="72" height="20"/>
-				<textElement textAlignment="Right"/>
-				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{sample2line_unitprice}]]></textFieldExpression>
-			</textField>
-			<textField pattern="###0.00">
-				<reportElement x="439" y="1" width="100" height="20"/>
-				<textElement textAlignment="Right"/>
-				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{sample2line_amount}]]></textFieldExpression>
-			</textField>
-		</band>
+		<band splitType="Stretch"/>
 	</detail>
 	<columnFooter>
 		<band splitType="Stretch"/>
 	</columnFooter>
 	<pageFooter>
-		<band height="133" splitType="Stretch">
-			<staticText>
-				<reportElement x="352" y="10" width="87" height="20"/>
-				<textElement/>
-				<text><![CDATA[Total :]]></text>
-			</staticText>
-			<textField>
-				<reportElement x="447" y="10" width="100" height="20"/>
-				<textElement textAlignment="Right">
-					<font isBold="true"/>
-				</textElement>
-				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{total}]]></textFieldExpression>
-			</textField>
-			<staticText>
-				<reportElement x="5" y="30" width="505" height="18"/>
-				<textElement/>
-				<text><![CDATA[* Electronic generated copy, no signature required]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="5" y="48" width="505" height="20"/>
-				<textElement/>
-				<text><![CDATA[* Please chop sign and return a copy for confirmation]]></text>
-			</staticText>
-			<line>
-				<reportElement x="419" y="108" width="100" height="1"/>
-			</line>
-			<staticText>
-				<reportElement x="418" y="112" width="100" height="20"/>
-				<textElement/>
-				<text><![CDATA[Confirm By]]></text>
-			</staticText>
-		</band>
+		<band splitType="Stretch"/>
 	</pageFooter>
 	<summary>
-		<band splitType="Stretch"/>
+		<band height="802" splitType="Stretch">
+			<pie3DChart>
+				<chart>
+					<reportElement uuid="902351f3-a848-47d9-8836-7798e2ad6546" x="289" y="606" width="266" height="196"/>
+					<chartTitle/>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<pieDataset>
+					<keyExpression><![CDATA[$F{sample1_itemname}]]></keyExpression>
+					<valueExpression><![CDATA[$F{sample1_qty}]]></valueExpression>
+					<labelExpression><![CDATA[$F{sample1_itemname}]]></labelExpression>
+				</pieDataset>
+				<pie3DPlot>
+					<plot/>
+					<itemLabel/>
+				</pie3DPlot>
+			</pie3DChart>
+			<lineChart>
+				<chart>
+					<reportElement uuid="b8971683-d367-463e-ae97-e2a536ab506b" x="0" y="0" width="555" height="176"/>
+					<chartTitle>
+						<titleExpression><![CDATA["Line Chart"]]></titleExpression>
+					</chartTitle>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<categoryDataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{name}]]></seriesExpression>
+						<categoryExpression><![CDATA["qty1"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{qty1}]]></valueExpression>
+						<labelExpression><![CDATA[$F{name}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{name}]]></seriesExpression>
+						<categoryExpression><![CDATA["qty2"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{qty2}]]></valueExpression>
+						<labelExpression><![CDATA[$F{name}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{name}]]></seriesExpression>
+						<categoryExpression><![CDATA["qty3"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{qty3}]]></valueExpression>
+						<labelExpression><![CDATA[$F{name}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{name}]]></seriesExpression>
+						<categoryExpression><![CDATA["qty4"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{qty4}]]></valueExpression>
+						<labelExpression><![CDATA[$F{name}]]></labelExpression>
+					</categorySeries>
+				</categoryDataset>
+				<linePlot>
+					<plot/>
+				</linePlot>
+			</lineChart>
+			<stackedAreaChart>
+				<chart>
+					<reportElement uuid="21445d25-2585-4d9b-bea8-ea0a2e0e657f" x="0" y="196" width="555" height="148"/>
+					<chartTitle>
+						<titleExpression><![CDATA["Stacked Chart"]]></titleExpression>
+					</chartTitle>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<categoryDataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{name}]]></seriesExpression>
+						<categoryExpression><![CDATA["qty1"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{qty1}]]></valueExpression>
+						<labelExpression><![CDATA[$F{name}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{name}]]></seriesExpression>
+						<categoryExpression><![CDATA["qty2"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{qty2}]]></valueExpression>
+						<labelExpression><![CDATA[$F{name}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{name}]]></seriesExpression>
+						<categoryExpression><![CDATA["qty3"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{qty3}]]></valueExpression>
+						<labelExpression><![CDATA[$F{name}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{name}]]></seriesExpression>
+						<categoryExpression><![CDATA["qty4"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{qty4}]]></valueExpression>
+						<labelExpression><![CDATA[$F{name}]]></labelExpression>
+					</categorySeries>
+				</categoryDataset>
+				<areaPlot>
+					<plot/>
+				</areaPlot>
+			</stackedAreaChart>
+			<barChart>
+				<chart>
+					<reportElement uuid="67b2c5d7-93ee-4686-8c67-c68ec8f8afcb" x="0" y="358" width="555" height="222"/>
+					<chartTitle>
+						<titleExpression><![CDATA["Barchart2"]]></titleExpression>
+					</chartTitle>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<categoryDataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{name}]]></seriesExpression>
+						<categoryExpression><![CDATA["qty1"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{qty1}]]></valueExpression>
+						<labelExpression><![CDATA[$F{name}]]></labelExpression>
+					</categorySeries>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{name}]]></seriesExpression>
+						<categoryExpression><![CDATA["qty2"]]></categoryExpression>
+						<valueExpression><![CDATA[$F{qty2}]]></valueExpression>
+						<labelExpression><![CDATA[$F{name}]]></labelExpression>
+					</categorySeries>
+				</categoryDataset>
+				<barPlot>
+					<plot/>
+					<itemLabel/>
+				</barPlot>
+			</barChart>
+			<pieChart>
+				<chart>
+					<reportElement uuid="eba31fb0-ebd3-4e95-a988-a22a8d456d38" x="0" y="606" width="230" height="196"/>
+					<chartTitle/>
+					<chartSubtitle/>
+					<chartLegend/>
+				</chart>
+				<pieDataset>
+					<keyExpression><![CDATA[$F{sample1_itemname}]]></keyExpression>
+					<valueExpression><![CDATA[$F{sample1_qty}]]></valueExpression>
+					<labelExpression><![CDATA[$F{sample1_itemname}]]></labelExpression>
+				</pieDataset>
+				<piePlot>
+					<plot/>
+					<itemLabel/>
+				</piePlot>
+			</pieChart>
+		</band>
 	</summary>
 </jasperReport>

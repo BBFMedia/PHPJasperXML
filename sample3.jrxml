@@ -1,193 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report name" pageWidth="595" pageHeight="421" orientation="Landscape" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report name" pageWidth="595" pageHeight="421" orientation="Landscape" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="64db675b-2d9c-46af-81df-4734d340e7b6">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
 	<parameter name="parameter1" class="java.lang.Integer">
 		<defaultValueExpression><![CDATA[new java.lang.Integer(0)]]></defaultValueExpression>
 	</parameter>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["/Applications/XAMPP/xamppfiles/htdocs/simbiz/modules/simantz/class/PHPJasperXML/"]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[SELECT
-     sample2.`date` AS sample2_date,
-     sample2.`docno` AS sample2_docno,
-     sample2.`companyname` AS sample2_companyname,
-     sample2.`amount` AS sample2_amount,
-     sample2.`terms` AS sample2_terms,
-     sample2.`address` AS sample2_address,
-     sample2line.`amount` AS sample2line_amount,
-     sample2line.`uom` AS sample2line_uom,
-     sample2line.`unitprice` AS sample2line_unitprice,
-     sample2line.`qty` AS sample2line_qty,
-     sample2line.`itemname` AS sample2line_itemname,
-     sample2line.`no` AS sample2line_no,
-     sample2line.`linedesc` AS sample2line_linedesc
+     sample1.`no` AS sample1_no,
+     sample1.`date` AS sample1_date,
+     sample1.`itemname` AS sample1_itemname,
+     sample1.`qty` AS sample1_qty,
+     sample1.`uom` AS sample1_uom
 FROM
-     `sample2line` sample2line INNER JOIN `sample2` sample2 ON sample2line.`headerid` = sample2.`id`
-	where sample2.`id`=$P{parameter1}]]>
+     `sample1` sample1  ]]>
 	</queryString>
-	<field name="sample2_date" class="java.sql.Date">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2_docno" class="java.lang.String">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2_companyname" class="java.lang.String">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2_amount" class="java.math.BigDecimal">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2_terms" class="java.lang.String">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2_address" class="java.lang.String">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2line_amount" class="java.math.BigDecimal">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2line_uom" class="java.lang.String">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2line_unitprice" class="java.math.BigDecimal">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2line_qty" class="java.lang.Integer">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2line_itemname" class="java.lang.String">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2line_no" class="java.lang.Integer">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<field name="sample2line_linedesc" class="java.lang.String">
-		<fieldDescription><![CDATA[]]></fieldDescription>
-	</field>
-	<variable name="total" class="java.math.BigDecimal" incrementType="Report" calculation="Sum">
-		<variableExpression><![CDATA[$F{sample2line_amount}]]></variableExpression>
-	</variable>
+	<field name="sample1_no" class="java.lang.Integer"/>
+	<field name="sample1_date" class="java.sql.Date"/>
+	<field name="sample1_itemname" class="java.lang.String"/>
+	<field name="sample1_qty" class="java.lang.Integer"/>
+	<field name="sample1_uom" class="java.lang.String"/>
 	<background>
-		<band height="381" splitType="Stretch">
-			<rectangle>
-				<reportElement x="1" y="157" width="542" height="171"/>
-			</rectangle>
-			<line>
-				<reportElement x="22" y="157" width="1" height="171"/>
-			</line>
-			<line>
-				<reportElement x="280" y="157" width="1" height="171"/>
-			</line>
-			<line>
-				<reportElement x="439" y="157" width="1" height="171"/>
-			</line>
-			<line>
-				<reportElement x="352" y="157" width="1" height="171"/>
-			</line>
-			<line>
-				<reportElement x="1" y="176" width="542" height="1"/>
-			</line>
-		</band>
+		<band splitType="Stretch"/>
 	</background>
 	<title>
 		<band splitType="Stretch"/>
 	</title>
 	<pageHeader>
 		<band height="177" splitType="Stretch">
-			<textField>
-				<reportElement x="478" y="98" width="69" height="20"/>
-				<textElement/>
-				<textFieldExpression class="java.util.Date"><![CDATA[$F{sample2_date}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="478" y="78" width="69" height="20"/>
-				<textElement>
-					<font isBold="true"/>
-				</textElement>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2_docno}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="5" y="78" width="238" height="20"/>
-				<textElement>
-					<font size="12" isBold="true"/>
-				</textElement>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2_companyname}]]></textFieldExpression>
-			</textField>
-			<textField isStretchWithOverflow="true">
-				<reportElement x="5" y="98" width="238" height="20"/>
-				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2_address}]]></textFieldExpression>
-			</textField>
 			<staticText>
-				<reportElement x="399" y="78" width="76" height="20"/>
-				<textElement/>
-				<text><![CDATA[Receipt No :]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="399" y="98" width="76" height="20"/>
-				<textElement/>
-				<text><![CDATA[Receipt Date :]]></text>
-			</staticText>
-			<image>
-				<reportElement x="2" y="0" width="65" height="65"/>
-				<imageExpression class="java.lang.String"><![CDATA["./simitlogo.jpg"]]></imageExpression>
-			</image>
-			<staticText>
-				<reportElement x="214" y="118" width="185" height="20"/>
-				<textElement textAlignment="Center">
-					<font size="14" isBold="true" isUnderline="true"/>
-				</textElement>
-				<text><![CDATA[Receipt]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="74" y="5" width="288" height="19" forecolor="#0201A0"/>
-				<textElement>
-					<font size="12" isBold="true"/>
-				</textElement>
-				<text><![CDATA[Sim IT Sdn Bhd]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="74" y="24" width="325" height="19"/>
-				<textElement/>
-				<text><![CDATA[10B-1, Jalan Mawar 4, 81900 Kota Tinggi, Johor, Malaysia]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="74" y="43" width="473" height="20"/>
-				<textElement/>
-				<text><![CDATA[Tel: 078835330, Fax: 078835330 Website: http://www.simit.com.my Email: sales@simit.com.my]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="0" y="157" width="22" height="20"/>
+				<reportElement uuid="4a604248-1da0-4cd4-9684-6e53d05b6fbd" x="0" y="157" width="22" height="20"/>
 				<textElement textAlignment="Center">
 					<font size="12" isBold="true" isUnderline="true"/>
 				</textElement>
 				<text><![CDATA[No]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="22" y="157" width="258" height="20"/>
+				<reportElement uuid="1fd6addc-db94-48db-b41f-66bbc4314c71" x="22" y="157" width="305" height="20"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true" isUnderline="true"/>
+					<font fontName="msungstdlight" size="12" isBold="true" isUnderline="true"/>
 				</textElement>
-				<text><![CDATA[Item]]></text>
+				<text><![CDATA[Item / 名字]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="352" y="157" width="87" height="20"/>
+				<reportElement uuid="4815fdb8-b19d-4099-b90b-4d07f6fae1a2" x="327" y="157" width="87" height="20"/>
 				<textElement textAlignment="Center">
 					<font size="12" isBold="true" isUnderline="true"/>
 				</textElement>
 				<text><![CDATA[Qty]]></text>
 			</staticText>
-			<staticText>
-				<reportElement x="439" y="157" width="100" height="20"/>
-				<textElement textAlignment="Center">
-					<font size="12" isBold="true" isUnderline="true"/>
-				</textElement>
-				<text><![CDATA[Amount]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="280" y="157" width="72" height="20"/>
-				<textElement textAlignment="Center">
-					<font size="12" isBold="true" isUnderline="true"/>
-				</textElement>
-				<text><![CDATA[Unit Price]]></text>
-			</staticText>
+			<subreport>
+				<reportElement uuid="3ce2f044-6ab7-456d-8de5-1732a6906c35" x="0" y="0" width="555" height="133"/>
+				<subreportParameter name="no"/>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "sample8_subreport1.jasper"]]></subreportExpression>
+			</subreport>
 		</band>
 	</pageHeader>
 	<columnHeader>
@@ -196,41 +67,26 @@ FROM
 	<detail>
 		<band height="43" splitType="Stretch">
 			<textField>
-				<reportElement x="352" y="0" width="47" height="20" forecolor="#FF0404"/>
+				<reportElement uuid="48422acf-4dce-40f9-82cb-88dcc390bae7" x="327" y="0" width="47" height="20" forecolor="#FF0404"/>
 				<textElement textAlignment="Right"/>
-				<textFieldExpression class="java.lang.Integer"><![CDATA[$F{sample2line_qty}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$F{sample1_qty}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="22" y="0" width="245" height="20"/>
+				<reportElement uuid="dc07405f-3a48-420b-b999-4dcaa2ca1246" x="22" y="0" width="305" height="20"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="msungstdlight" isBold="true"/>
 				</textElement>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2line_itemname}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$F{sample1_itemname}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="0" y="0" width="22" height="20"/>
+				<reportElement uuid="fa38fd81-7715-4136-93bd-e466d5824239" x="0" y="0" width="22" height="20"/>
 				<textElement textAlignment="Center"/>
-				<textFieldExpression class="java.lang.Integer"><![CDATA[$F{sample2line_no}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$F{sample1_no}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="399" y="0" width="40" height="20"/>
+				<reportElement uuid="d4da3ed9-0328-4495-a829-16521dd0c898" x="374" y="0" width="40" height="20"/>
 				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2line_uom}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="280" y="1" width="72" height="20"/>
-				<textElement textAlignment="Right"/>
-				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{sample2line_unitprice}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="439" y="1" width="100" height="20"/>
-				<textElement textAlignment="Right"/>
-				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{sample2line_amount}]]></textFieldExpression>
-			</textField>
-			<textField isStretchWithOverflow="true">
-				<reportElement x="22" y="21" width="257" height="13"/>
-				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{sample2line_linedesc}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$F{sample1_uom}]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>
@@ -238,30 +94,7 @@ FROM
 		<band splitType="Stretch"/>
 	</columnFooter>
 	<pageFooter>
-		<band height="51" splitType="Stretch">
-			<staticText>
-				<reportElement x="352" y="2" width="87" height="20"/>
-				<textElement/>
-				<text><![CDATA[Total :]]></text>
-			</staticText>
-			<textField>
-				<reportElement x="447" y="2" width="100" height="20"/>
-				<textElement textAlignment="Right">
-					<font isBold="true"/>
-				</textElement>
-				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{total}]]></textFieldExpression>
-			</textField>
-			<staticText>
-				<reportElement x="5" y="4" width="505" height="18"/>
-				<textElement/>
-				<text><![CDATA[* Electronic generated copy, no signature required]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="5" y="22" width="505" height="20"/>
-				<textElement/>
-				<text><![CDATA[* Please chop sign and return a copy for confirmation]]></text>
-			</staticText>
-		</band>
+		<band splitType="Stretch"/>
 	</pageFooter>
 	<summary>
 		<band splitType="Stretch"/>

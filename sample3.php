@@ -12,7 +12,6 @@ include_once ('setting.php');
 
 $xml =  simplexml_load_file("sample3.jrxml");
 
-
 $PHPJasperXML = new PHPJasperXML();
 $PHPJasperXML->debugsql=false;
 $PHPJasperXML->arrayParameter=array("parameter1"=>1);

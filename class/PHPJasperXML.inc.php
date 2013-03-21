@@ -24,6 +24,7 @@ class PHPJasperXML {
 	private $group_count = array(); //### New declaration
     public function PHPJasperXML($lang="en",$pdflib="TCPDF") {
         $this->lang=$lang;
+        
         error_reporting(0);
         $this->pdflib=$pdflib;
         $this->fontdir=dirname(__FILE__)."/tcpdf/fonts";
@@ -112,7 +113,10 @@ class PHPJasperXML {
 
     public function xml_dismantle($xml) {	
         $this->page_setting($xml);
+        $i=0;
+       // echo $i++."<br/>";
         foreach ($xml as $k=>$out) {
+            //echo $i++."$k<br/>";
             switch($k) {
                 case "parameter":
                     $this->parameter_handler($out);
@@ -164,15 +168,17 @@ class PHPJasperXML {
                         elseif($k=='summary')
                         $this->summarybandheight=$object["height"]+0;
                         
-//                        echo "Band=$k=> ".$this->detailallowtill . "=".$this->arrayPageSetting["pageHeight"]."-".$this->footerbandheight."-".$this->arrayPageSetting["bottomMargin"]."-".$this->columnfooterbandheight."<br/>";
+//                       echo "Band=$k=> ".$this->detailallowtill . "=".$this->arrayPageSetting["pageHeight"]."-".$this->footerbandheight."-".$this->arrayPageSetting["bottomMargin"]."-".$this->columnfooterbandheight."<br/>";
                         
                         $this->pointer[]=array("type"=>"band","height"=>$object["height"],"splitType"=>$object["splitType"],"y_axis"=>$this->y_axis);
                         $this->default_handler($object);
+                        
                     }
+                    
                     $this->y_axis=$this->y_axis+$out->band["height"];	//after handle , then adjust y axis
                         $this->detailallowtill=$this->arrayPageSetting["pageHeight"]-$this->footerbandheight-$this->arrayPageSetting["bottomMargin"]-$this->columnfooterbandheight;
 
-                            
+                          
                     break;
 
             }
@@ -309,8 +315,8 @@ class PHPJasperXML {
 //                case "barChart":
 //                    $this->element_barChart($out,'BarChart');
 //                    break;
-//                case "pieChart":
-//                    $this->element_pieChart($out);
+           //     case "pieChart":
+             //       $this->element_pieChart($out);
 //                    break;
 //                case "pie3DChart":
 //                    $this->element_pie3DChart($out);
@@ -875,15 +881,18 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
                 $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'Page $this->PageNo() of',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
                 break;
             case '$V{PAGE_NUMBER}':
+                
+                // $this->pdf->getAliasNbPages();
                 if(isset($data["evaluationTime"])&&$data["evaluationTime"]=="Report") {
-                    $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>$this->pdf->getAliasNbPages(),"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
+                    $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'{:ptp:}',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
                 }
                 else {
                     $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'$this->PageNo()',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
                 }
                 break;
             case '" " + $V{PAGE_NUMBER}':
-                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>' '.$this->pdf->getAliasNbPages(),"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"nb","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
+                echo 1;
+                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>' {:ptp:}',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"nb","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
                 break;
             case '$V{REPORT_COUNT}':
 //###                $this->report_count=0;	
@@ -896,9 +905,10 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
                 $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>&$this->group_count["$this->gnam"],"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"group_count","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
                 break;
             default:
-                $writeHTML=false;
-                if($data->reportElement->property["name"]=="writeHTML")
-                    $writeHTML=$data->reportElement->property["value"];
+                $writeHTML=false;//
+               
+                if($data->reportElement->property["name"]=="writeHTML" || $data->textElement['markup']=='html')
+                    $writeHTML=1;
                 if(isset($data->reportElement["isPrintRepeatedValues"]))
                     $isPrintRepeatedValues=$data->reportElement["isPrintRepeatedValues"];
 
@@ -972,6 +982,7 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
             }
         }
         else {
+             @mysql_query("set names 'utf8'");
             $result = @mysql_query($this->sql); //query from db
 
             while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
@@ -981,7 +992,7 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
                 $this->m++;
             }
         }
-
+//print_r(   $this->arraysqltable);die;
        	//close connection to db
 
     }
@@ -1791,7 +1802,7 @@ $titlefontname=strtolower($titlefontname);
 	  $photofile="$tmpchartfolder/chart$randomchartno.png";
 
              $this->chart->Render($photofile);
-			
+
              if(file_exists($photofile)){
                 $this->pdf->Image($photofile,$x+$this->arrayPageSetting["leftMargin"],$y_axis+$y1,$w,$h,"PNG");
                 unlink($photofile);
@@ -2105,6 +2116,14 @@ $titlefontname=strtolower($titlefontname);
                 $this->pdf->Image($photofile,$x+$this->arrayPageSetting["leftMargin"],$y_axis+$y1,$w,$h,"PNG");
                 unlink($photofile);
              }
+
+
+}
+
+
+
+public function showPieChart($data,$y_axis){
+     
 
 
 }
@@ -3312,6 +3331,10 @@ foreach($this->arrayVariable as $name=>$value){
 
             $this->showBarChart($arraydata, $y_axis,'barChart');
         }
+      elseif($arraydata["type"]=="pieChart") {
+
+            $this->showPieChart($arraydata, $y_axis);
+        }
       elseif($arraydata["type"]=="stackedBarChart") {
 
             $this->showBarChart($arraydata, $y_axis,'stackedBarChart');
@@ -3329,6 +3352,7 @@ foreach($this->arrayVariable as $name=>$value){
 
     
     public function showBarcode($data,$y){
+        
         $type=  strtoupper($data['barcodetype']);
         $height=$data['height'];
         $width=$data['width'];
@@ -3342,6 +3366,7 @@ foreach($this->arrayVariable as $name=>$value){
          $withtext = false;
         else
             $withtext = true;
+        
      $style = array(
     'border' => false,
     'vpadding' => 'auto',
@@ -3394,9 +3419,13 @@ foreach($this->arrayVariable as $name=>$value){
                $this->pdf->write2DBarcode($code, 'PDF417', $x, $y, $width, $height, $style, 'N');
               break;
           case "DATAMATRIX":
+              
               //$this->pdf->Cell( $width,10,$code);
-              if(left($code,3)=="QR:"){
-              $code=  right($code,strlen($code)-3);
+              //echo $this->left($code,3);
+              if($this->left($code,3)=="QR:"){
+                  
+              $code=  $this->right($code,strlen($code)-3);
+              
               $this->pdf->write2DBarcode($code, 'QRCODE', $x, $y, $width, $height, $style, 'N');
               }
               else
@@ -3651,7 +3680,9 @@ foreach($this->arrayVariable as $name=>$value){
 						else $opr="";
 						$p1=strpos($out,'$V{',$p1)+3;
 						$p2=strpos($out,"}",$p1);
-						if ($p2!==false){ $nbr=&$this->arrayVariable[substr($out,$p1,$p2-$p1)]["ans"];
+						if ($p2!==false){
+                                                        
+                                                        $nbr=&$this->arrayVariable[substr($out,$p1,$p2-$p1)]["ans"];
 							switch ($opr){
 								case "+": $total+=$nbr;
 										  break;

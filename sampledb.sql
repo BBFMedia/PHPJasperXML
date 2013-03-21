@@ -1,14 +1,13 @@
 -- phpMyAdmin SQL Dump
--- version 3.1.3.1
+-- version 3.2.4
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Mar 14, 2010 at 12:01 AM
--- Server version: 5.1.33
--- PHP Version: 5.2.9
+-- Generation Time: Mar 21, 2013 at 10:45 PM
+-- Server version: 5.1.44
+-- PHP Version: 5.3.1
 
 SET FOREIGN_KEY_CHECKS=0;
-
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 
 
@@ -30,11 +29,11 @@ SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 CREATE TABLE IF NOT EXISTS `sample1` (
   `no` int(11) NOT NULL AUTO_INCREMENT,
   `date` date NOT NULL,
-  `itemname` varchar(30) NOT NULL,
+  `itemname` varchar(100) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `qty` int(11) NOT NULL,
   `uom` varchar(10) NOT NULL,
   PRIMARY KEY (`no`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=7 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=8 ;
 
 --
 -- Dumping data for table `sample1`
@@ -42,10 +41,11 @@ CREATE TABLE IF NOT EXISTS `sample1` (
 
 INSERT INTO `sample1` (`no`, `date`, `itemname`, `qty`, `uom`) VALUES
 (1, '2009-08-11', 'Sample 1', 10, 'PCS'),
-(2, '2009-08-26', '???', 2, 'PCS'),
+(2, '2009-08-26', '滑鼠', 2, 'PCS'),
 (3, '2009-08-15', 'LCD Monitor', 1, 'PCS'),
-(4, '2009-08-11', 'test item 3', 3, 'pcs'),
-(6, '2009-08-11', 'Again, sample data', 8, 'day');
+(4, '2009-08-11', 'test item 3', 3, 'PCS'),
+(6, '2009-08-11', 'Again, sample data', 8, 'day'),
+(7, '2013-03-13', 'Dell Computer With Keyboard Mouse', 20, 'PCS');
 
 -- --------------------------------------------------------
 
@@ -99,5 +99,4 @@ INSERT INTO `sample2line` (`no`, `itemname`, `qty`, `unitprice`, `uom`, `amount`
 (1, 'LCD Monitor', 3, 300.00, 'PCS', 900.00, 1, 1, '* Samsung (SN:12345)\r\n* HP (SN: 2323434)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* Samsung (SN:12345)\r\n* HP (SN: 2323434)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* Samsung (SN:12345)\r\n* HP (SN: 2323434)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* Samsung (SN:12345)\r\n* HP (SN: 2323434)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* Samsung (SN:12345)\r\n* HP (SN: 2323434)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* Samsung (SN:12345)\r\n* HP (SN: 2323434)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)\r\n* ACER (SN:xxxxx)'),
 (2, 'Optical Mouse', 4, 1.00, 'PCS', 4.00, 1, 2, '* 2nd hand'),
 (1, 'Notebook', 1, 1000.00, 'PCS', 1000.00, 2, 3, '');
-
 SET FOREIGN_KEY_CHECKS=1;
