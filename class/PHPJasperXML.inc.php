@@ -33,7 +33,6 @@ class PHPJasperXML {
     public function PHPJasperXML($lang="en",$pdflib="TCPDF") {
         $this->lang=$lang;
         
-        error_reporting(0);
         $this->pdflib=$pdflib;
         $this->fontdir=dirname(__FILE__)."/tcpdf/fonts";
     }
@@ -988,6 +987,32 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
                         "subreportparameterarray"=>$b,"connectionExpression"=>$data->connectionExpression,
                         "subreportExpression"=>$subreportExpression,"hidden_type"=>"subreport");
     }
+    
+
+    /**
+     * Retrieve data from database 
+     * 
+     * @param mixed $object
+     */
+    public function retrieveData($object) {
+    	// Verify connection type
+    	if(strpos(get_class($object), "Zend_") !== FALSE) {
+    		$this->arraysqltable = $this->retrieveZendData($object);
+    	}
+    
+    }
+    
+    /**
+     * Retrieve data from Zend connections
+     * 
+     * @param Zend_Db_Adapter $object
+     * @return array
+     */
+    public function retrieveZendData($object) {
+    	$result = $object->query($this->sql);
+    	$list = $result->fetchAll();
+    	return $list;
+    }
 
     public function transferDBtoArray($host,$user,$password,$db_or_dsn_name,$cndriver="mysql") {
         $this->m=0;
@@ -1369,7 +1394,6 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
         if($filename=="")
             $filename=$this->arrayPageSetting["name"].".pdf";
 
-         $this->disconnect($this->cndriver);
          $this->pdf->SetXY(10,10);
          //$this->pdf->IncludeJS($this->createJS());
          //($name, $w, $h, $caption, $action, $prop=array(), $opt=array(), $x='', $y='', $js=false)
