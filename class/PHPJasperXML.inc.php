@@ -22,6 +22,14 @@ class PHPJasperXML {
     private $detailallowtill=0;
 	private $report_count=1;		//### New declaration (variable exists in original too)
 	private $group_count = array(); //### New declaration
+	
+	/**
+	 * Save styles
+	 * 
+	 * @var array
+	 */
+	private $arrayStyles = array();
+	
     public function PHPJasperXML($lang="en",$pdflib="TCPDF") {
         $this->lang=$lang;
         
@@ -121,6 +129,9 @@ class PHPJasperXML {
                 case "parameter":
                     $this->parameter_handler($out);
                     break;
+                case "style":
+                    $this->style_handler($out);
+                    break;
                 case "queryString":
                     $this->queryString_handler($out);
                     break;
@@ -188,6 +199,20 @@ class PHPJasperXML {
         }
     }
 
+	/**
+	 * Parse style section
+	 * 
+	 * @param SimpleXMLElement $xml_path
+	 */
+	public function style_handler($xml_path) {
+		$styleName = (string)$xml_path['name'];
+		
+		$a = (array)$xml_path->attributes();
+		unset($a['@attributes']['name']);
+		$this->arrayStyles[$styleName] = $a['@attributes'];
+	}
+	
+	
     public function subDataset_handler($data){
     $this->subdataset[$data['name'].'']= $data->queryString;
 
@@ -376,6 +401,15 @@ class PHPJasperXML {
         $stretchoverflow="true";
         $printoverflow="false";
         $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperlinkReferenceExpression);
+        
+        if($data->reportElement["style"]) {
+			$styleName = (string)$data->reportElement["style"];
+			
+			foreach($this->arrayStyles[$styleName] as $property => $value) {
+				$data->reportElement[$property] = $value;
+			}
+		}
+		
         if(isset($data->reportElement["forecolor"])) {
             
             $textcolor = array('forecolor'=>$data->reportElement["forecolor"],"r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
@@ -699,7 +733,7 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
         if(isset($data->reportElement["backcolor"]) ) { 
             $fillcolor=array("r"=>hexdec(substr($data->reportElement["backcolor"],1,2)),"g"=>hexdec(substr($data->reportElement["backcolor"],3,2)),"b"=>hexdec(substr($data->reportElement["backcolor"],5,2)));			
         }
-
+ 
 
         //$this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
        // $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
@@ -769,6 +803,15 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
         $height=$data->reportElement["height"];
         $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
         $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperlinkReferenceExpression)." ";
+        
+        if($data->reportElement["style"]) {
+			$styleName = (string)$data->reportElement["style"];
+			
+			foreach($this->arrayStyles[$styleName] as $property => $value) {
+				$data->reportElement[$property] = $value;
+			}
+		}
+        
         if(isset($data->reportElement["forecolor"])) {
             $textcolor = array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
         }
