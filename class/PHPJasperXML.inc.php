@@ -1394,6 +1394,10 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
         if($filename=="")
             $filename=$this->arrayPageSetting["name"].".pdf";
 
+        if(!is_null($this->cndriver)) {
+        	$this->disconnect($this->cndriver);
+        }
+        
          $this->pdf->SetXY(10,10);
          //$this->pdf->IncludeJS($this->createJS());
          //($name, $w, $h, $caption, $action, $prop=array(), $opt=array(), $x='', $y='', $js=false)
