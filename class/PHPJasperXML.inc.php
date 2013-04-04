@@ -915,8 +915,9 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
 
         switch ($data->textFieldExpression) {
             case 'new java.util.Date()':
+            case 'new Date()':
 //### New: =>date("Y.m.d.",....
-                $this->pointer[]=array ("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>date("Y-m-d H:i:s"),"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"date","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"valign"=>$valign);
+                $this->pointer[]=array ("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>date("Y-m-d H:i:s"),"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"date","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
 //### End of modification				
                 break;
             case '"Page "+$V{PAGE_NUMBER}+" of"':
