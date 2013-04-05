@@ -22,12 +22,23 @@ class PHPJasperXML {
     private $detailallowtill=0;
 	private $report_count=1;		//### New declaration (variable exists in original too)
 	private $group_count = array(); //### New declaration
+	
+	/**
+	 * Save styles
+	 * 
+	 * @var array
+	 */
+	private $arrayStyles = array();
+	
     public function PHPJasperXML($lang="en",$pdflib="TCPDF") {
         $this->lang=$lang;
         
-        error_reporting(0);
         $this->pdflib=$pdflib;
         $this->fontdir=dirname(__FILE__)."/tcpdf/fonts";
+    }
+    
+    public function setBasePath($path) {
+    	$this->basePath = $path;
     }
 
     public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
@@ -121,6 +132,9 @@ class PHPJasperXML {
                 case "parameter":
                     $this->parameter_handler($out);
                     break;
+                case "style":
+                    $this->style_handler($out);
+                    break;
                 case "queryString":
                     $this->queryString_handler($out);
                     break;
@@ -139,9 +153,8 @@ class PHPJasperXML {
                 case "background":
                     $this->pointer=&$this->arraybackground;
                     $this->pointer[]=array("height"=>$out->band["height"],"splitType"=>$out->band["splitType"]);
-                    foreach ($out as $bg) {
-                        $this->default_handler($bg);
-
+                    foreach($out as $bg) {
+                    	$this->default_handler($bg);
                     }
                     break;
                 default:
@@ -188,6 +201,20 @@ class PHPJasperXML {
         }
     }
 
+	/**
+	 * Parse style section
+	 * 
+	 * @param SimpleXMLElement $xml_path
+	 */
+	public function style_handler($xml_path) {
+		$styleName = (string)$xml_path['name'];
+		
+		$a = (array)$xml_path->attributes();
+		unset($a['@attributes']['name']);
+		$this->arrayStyles[$styleName] = $a['@attributes'];
+	}
+	
+	
     public function subDataset_handler($data){
     $this->subdataset[$data['name'].'']= $data->queryString;
 
@@ -376,6 +403,15 @@ class PHPJasperXML {
         $stretchoverflow="true";
         $printoverflow="false";
         $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperlinkReferenceExpression);
+        
+        if($data->reportElement["style"]) {
+			$styleName = (string)$data->reportElement["style"];
+			
+			foreach($this->arrayStyles[$styleName] as $property => $value) {
+				$data->reportElement[$property] = $value;
+			}
+		}
+		
         if(isset($data->reportElement["forecolor"])) {
             
             $textcolor = array('forecolor'=>$data->reportElement["forecolor"],"r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
@@ -699,7 +735,7 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
         if(isset($data->reportElement["backcolor"]) ) { 
             $fillcolor=array("r"=>hexdec(substr($data->reportElement["backcolor"],1,2)),"g"=>hexdec(substr($data->reportElement["backcolor"],3,2)),"b"=>hexdec(substr($data->reportElement["backcolor"],5,2)));			
         }
-
+ 
 
         //$this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
        // $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
@@ -769,6 +805,15 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
         $height=$data->reportElement["height"];
         $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
         $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperlinkReferenceExpression)." ";
+        
+        if($data->reportElement["style"]) {
+			$styleName = (string)$data->reportElement["style"];
+			
+			foreach($this->arrayStyles[$styleName] as $property => $value) {
+				$data->reportElement[$property] = $value;
+			}
+		}
+        
         if(isset($data->reportElement["forecolor"])) {
             $textcolor = array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));
         }
@@ -870,11 +915,11 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
          //$data->hyperlinkReferenceExpression=$this->analyse_expression($data->hyperlinkReferenceExpression);
         //if( $data->hyperlinkReferenceExpression!=''){echo "$data->hyperlinkReferenceExpression";die;}
 
-
         switch ($data->textFieldExpression) {
             case 'new java.util.Date()':
+            case 'new Date()':
 //### New: =>date("Y.m.d.",....
-                $this->pointer[]=array ("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>date("Y-m-d H:i:s"),"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"date","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"valign"=>$valign);
+                $this->pointer[]=array ("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>date("Y-m-d H:i:s"),"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"date","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"pattern"=>$data["pattern"],"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"valign"=>$valign);
 //### End of modification				
                 break;
             case '"Page "+$V{PAGE_NUMBER}+" of"':
@@ -944,6 +989,32 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
                         "width"=>$data->reportElement["width"], "height"=>$data->reportElement["height"],
                         "subreportparameterarray"=>$b,"connectionExpression"=>$data->connectionExpression,
                         "subreportExpression"=>$subreportExpression,"hidden_type"=>"subreport");
+    }
+    
+
+    /**
+     * Retrieve data from database 
+     * 
+     * @param mixed $object
+     */
+    public function retrieveData($object) {
+    	// Verify connection type
+    	if(strpos(get_class($object), "Zend_") !== FALSE) {
+    		$this->arraysqltable = $this->retrieveZendData($object);
+    	}
+    
+    }
+    
+    /**
+     * Retrieve data from Zend connections
+     * 
+     * @param Zend_Db_Adapter $object
+     * @return array
+     */
+    public function retrieveZendData($object) {
+    	$result = $object->query($this->sql);
+    	$list = $result->fetchAll();
+    	return $list;
     }
 
     public function transferDBtoArray($host,$user,$password,$db_or_dsn_name,$cndriver="mysql") {
@@ -1326,7 +1397,10 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
         if($filename=="")
             $filename=$this->arrayPageSetting["name"].".pdf";
 
-         $this->disconnect($this->cndriver);
+        if(!is_null($this->cndriver)) {
+        	$this->disconnect($this->cndriver);
+        }
+        
          $this->pdf->SetXY(10,10);
          //$this->pdf->IncludeJS($this->createJS());
          //($name, $w, $h, $caption, $action, $prop=array(), $opt=array(), $x='', $y='', $js=false)
@@ -3288,6 +3362,27 @@ foreach($this->arrayVariable as $name=>$value){
     
             
         }
+        else {
+        	$filename = $this->basePath . "/" . $path;
+        	if(file_exists($filename)) {
+        		
+        		$info = getimagesize($filename);
+        		$mime = $info['mime'];
+        		switch($mime) {
+        			case "image/png":
+        			default:
+        				$imgtype = "PNG";
+        				
+        			case "image/jpeg":
+        				case "image/jpeg":
+        			default:
+        				$imgtype = "JPEG";
+        		}
+        		
+        		$imgdata = file_get_contents($filename);
+        		$this->pdf->Image('@'.$imgdata,$arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis, $arraydata["width"],$arraydata["height"]);
+        	}
+        }
 
         }
 
@@ -3502,7 +3597,7 @@ foreach($this->arrayVariable as $name=>$value){
                     if($txt!=$this->pdf->getAliasNbPages() && $txt!=' '.$this->pdf->getAliasNbPages())
                     $txt=substr_replace($txt,"",-1);
                 }
-                            
+                
                 $this->pdf->Cell($arraydata["width"], $arraydata["height"],$this->formatText($txt, $arraydata["pattern"]),
 						$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"],0,true,"T",$arraydata["valign"]);
 				$this->pdf->Ln();
@@ -3950,4 +4045,11 @@ private function Rotate($type, $x=-1, $y=-1)
     }
 }
 
+}
+
+function right($string, $size) {
+	return substr($string, strlen($string) - $size);
+}
+function left($string, $size) {
+	return substr($string, 0, $size);
 }
