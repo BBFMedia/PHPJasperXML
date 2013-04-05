@@ -36,6 +36,10 @@ class PHPJasperXML {
         $this->pdflib=$pdflib;
         $this->fontdir=dirname(__FILE__)."/tcpdf/fonts";
     }
+    
+    public function setBasePath($path) {
+    	$this->basePath = $path;
+    }
 
     public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
     $this->db_host=$db_host;
@@ -149,9 +153,8 @@ class PHPJasperXML {
                 case "background":
                     $this->pointer=&$this->arraybackground;
                     $this->pointer[]=array("height"=>$out->band["height"],"splitType"=>$out->band["splitType"]);
-                    foreach ($out as $bg) {
-                        $this->default_handler($bg);
-
+                    foreach($out as $bg) {
+                    	$this->default_handler($bg);
                     }
                     break;
                 default:
@@ -912,12 +915,11 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
          //$data->hyperlinkReferenceExpression=$this->analyse_expression($data->hyperlinkReferenceExpression);
         //if( $data->hyperlinkReferenceExpression!=''){echo "$data->hyperlinkReferenceExpression";die;}
 
-
         switch ($data->textFieldExpression) {
             case 'new java.util.Date()':
             case 'new Date()':
 //### New: =>date("Y.m.d.",....
-                $this->pointer[]=array ("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>date("Y-m-d H:i:s"),"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"date","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
+                $this->pointer[]=array ("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>date("Y-m-d H:i:s"),"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"date","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"pattern"=>$data["pattern"],"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"valign"=>$valign);
 //### End of modification				
                 break;
             case '"Page "+$V{PAGE_NUMBER}+" of"':
@@ -3360,6 +3362,27 @@ foreach($this->arrayVariable as $name=>$value){
     
             
         }
+        else {
+        	$filename = $this->basePath . "/" . $path;
+        	if(file_exists($filename)) {
+        		
+        		$info = getimagesize($filename);
+        		$mime = $info['mime'];
+        		switch($mime) {
+        			case "image/png":
+        			default:
+        				$imgtype = "PNG";
+        				
+        			case "image/jpeg":
+        				case "image/jpeg":
+        			default:
+        				$imgtype = "JPEG";
+        		}
+        		
+        		$imgdata = file_get_contents($filename);
+        		$this->pdf->Image('@'.$imgdata,$arraydata["x"]+$this->arrayPageSetting["leftMargin"],$arraydata["y"]+$y_axis, $arraydata["width"],$arraydata["height"]);
+        	}
+        }
 
         }
 
@@ -3574,7 +3597,7 @@ foreach($this->arrayVariable as $name=>$value){
                     if($txt!=$this->pdf->getAliasNbPages() && $txt!=' '.$this->pdf->getAliasNbPages())
                     $txt=substr_replace($txt,"",-1);
                 }
-                            
+                
                 $this->pdf->Cell($arraydata["width"], $arraydata["height"],$this->formatText($txt, $arraydata["pattern"]),
 						$arraydata["border"],"",$arraydata["align"],$arraydata["fill"],$arraydata["link"],0,true,"T",$arraydata["valign"]);
 				$this->pdf->Ln();
@@ -4022,4 +4045,11 @@ private function Rotate($type, $x=-1, $y=-1)
     }
 }
 
+}
+
+function right($string, $size) {
+	return substr($string, strlen($string) - $size);
+}
+function left($string, $size) {
+	return substr($string, 0, $size);
 }
