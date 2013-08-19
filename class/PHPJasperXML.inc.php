@@ -8,6 +8,8 @@ class PHPJasperXML {
     private $lang;
     private $previousarraydata;
     public $debugsql=false;
+    public $tempchartfolder;
+    public $pchartfolder;
     private $myconn;
     private $con;
     public $group_name;
@@ -22,6 +24,7 @@ class PHPJasperXML {
     private $detailallowtill=0;
 	private $report_count=1;		//### New declaration (variable exists in original too)
 	private $group_count = array(); //### New declaration
+
     public function PHPJasperXML($lang="en",$pdflib="TCPDF") {
         $this->lang=$lang;
         
@@ -946,6 +949,26 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
                         "subreportExpression"=>$subreportExpression,"hidden_type"=>"subreport");
     }
 
+    public function transferFieldtoArray($array_fields) {
+
+        $this->arraysqltable = $array_fields;
+        $this->m = count($this->arraysqltable) - 1;
+    }
+
+    public function transferPDOtoArray($conn) {
+
+        error_log("hello");
+        if ($this->debugsql == true) {
+            echo $this->sql;
+            die;
+        }
+
+        $stmt = $conn->prepare($this->sql);
+        $stmt->execute();
+        $this->arraysqltable = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $this->m = count($this->arraysqltable) - 1;
+    }
+
     public function transferDBtoArray($host,$user,$password,$db_or_dsn_name,$cndriver="mysql") {
         $this->m=0;
 
@@ -984,7 +1007,7 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
         else {
              @mysql_query("set names 'utf8'");
             $result = @mysql_query($this->sql); //query from db
-
+            
             while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
                 foreach($this->arrayfield as $out) {
                     $this->arraysqltable[$this->m]["$out"]=$row["$out"];
@@ -1326,7 +1349,10 @@ $data->hyperlinkReferenceExpression=" ".$this->analyse_expression($data->hyperli
         if($filename=="")
             $filename=$this->arrayPageSetting["name"].".pdf";
 
-         $this->disconnect($this->cndriver);
+         if ($this->cndriver != null) {
+            $this->disconnect($this->cndriver);
+         }
+         // $this->disconnect($this->cndriver);
          $this->pdf->SetXY(10,10);
          //$this->pdf->IncludeJS($this->createJS());
          //($name, $w, $h, $caption, $action, $prop=array(), $opt=array(), $x='', $y='', $js=false)
@@ -1505,17 +1531,33 @@ $this->chart->setColorPalette($k,33,250,70);$k++;
 public function showLineChart($data,$y_axis){
     global $tmpchartfolder,$pchartfolder;
 
+   if( isset($this->pchartfolder) )
+        $pchartfolder= $this->pchartfolder;
 
-    if($pchartfolder=="")
-        $pchartfolder="./pchart2";
+   if($pchartfolder == NULL || $pchartfolder == "")
+        $pchartfolder= "./pchart2";
+
+   if (!is_dir($pchartfolder)) {
+     error_log($pchartfolder . " does not exists");
+     return;
+   }
+     
 //echo "$pchartfolder/class/pData.class.php";die;
 
         include_once("$pchartfolder/class/pData.class.php");
         include_once("$pchartfolder/class/pDraw.class.php");
         include_once("$pchartfolder/class/pImage.class.php");
 
+    if( isset($this->tmpchartfolder) )
+        $tmpchartfolder= $this->tmpchartfolder;
+
     if($tmpchartfolder=="")
          $tmpchartfolder=$pchartfolder."/cache";
+
+     if (!is_dir($tmpchartfolder)) {
+        error_log($tmpchartfolder . " does not exists");
+        return;
+     }
 
      $w=$data['width']+0;
      $h=$data['height']+0;
@@ -1574,13 +1616,14 @@ public function showLineChart($data,$y_axis){
     else
         $sql=$this->sql;
 
-    $result = @mysql_query($sql); //query from db
+    // $result = @mysql_query($sql); //query from db
+    $result = $this->arraysqltable;
     $chartdata=array();
     $i=0;
 //echo $sql."<br/><br/>";
     $seriesname=array();
-    while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-
+    // while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+    foreach ($result as $row) {
                 $j=0;
                 foreach($row as $key => $value){
                     //$chartdata[$j][$i]=$value;
@@ -1816,16 +1859,33 @@ public function showBarChart($data,$y_axis,$type='barChart'){
       global $tmpchartfolder,$pchartfolder;
 
 
-    if($pchartfolder=="")
-        $pchartfolder="./pchart2";
+   if( isset($this->pchartfolder) )
+        $pchartfolder= $this->pchartfolder;
+
+   if($pchartfolder == NULL || $pchartfolder == "")
+        $pchartfolder= "./pchart2";
+
+   if (!is_dir($pchartfolder)) {
+     error_log($pchartfolder . " does not exists");
+     return;
+   }
+     
 //echo "$pchartfolder/class/pData.class.php";die;
 
         include_once("$pchartfolder/class/pData.class.php");
         include_once("$pchartfolder/class/pDraw.class.php");
         include_once("$pchartfolder/class/pImage.class.php");
 
+    if( isset($this->tmpchartfolder) )
+        $tmpchartfolder= $this->tmpchartfolder;
+
     if($tmpchartfolder=="")
          $tmpchartfolder=$pchartfolder."/cache";
+
+     if (!is_dir($tmpchartfolder)) {
+        error_log($tmpchartfolder . " does not exists");
+        return;
+     }
 
      $w=$data['width']+0;
      $h=$data['height']+0;
@@ -1883,13 +1943,14 @@ public function showBarChart($data,$y_axis,$type='barChart'){
     else
         $sql=$this->sql;
 
-    $result = @mysql_query($sql); //query from db
+    // $result = @mysql_query($sql); //query from db
+    $result = $this->arraysqltable;
     $chartdata=array();
     $i=0;
 //echo $sql."<br/><br/>";
     $seriesname=array();
-    while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-
+    // while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+    foreach ($result as $row) {
                 $j=0;
                 foreach($row as $key => $value){
                     //$chartdata[$j][$i]=$value;
@@ -2135,16 +2196,33 @@ public function showAreaChart($data,$y_axis,$type){
     global $tmpchartfolder,$pchartfolder;
 
 
-    if($pchartfolder=="")
-        $pchartfolder="./pchart2";
+   if( isset($this->pchartfolder) )
+        $pchartfolder= $this->pchartfolder;
+
+   if($pchartfolder == NULL || $pchartfolder == "")
+        $pchartfolder= "./pchart2";
+
+   if (!is_dir($pchartfolder)) {
+     error_log($pchartfolder . " does not exists");
+     return;
+   }
+     
 //echo "$pchartfolder/class/pData.class.php";die;
 
         include_once("$pchartfolder/class/pData.class.php");
         include_once("$pchartfolder/class/pDraw.class.php");
         include_once("$pchartfolder/class/pImage.class.php");
 
+    if( isset($this->tmpchartfolder) )
+        $tmpchartfolder= $this->tmpchartfolder;
+
     if($tmpchartfolder=="")
          $tmpchartfolder=$pchartfolder."/cache";
+
+     if (!is_dir($tmpchartfolder)) {
+        error_log($tmpchartfolder . " does not exists");
+        return;
+     }
 
      $w=$data['width']+0;
      $h=$data['height']+0;
@@ -2203,13 +2281,14 @@ public function showAreaChart($data,$y_axis,$type){
     else
         $sql=$this->sql;
 
-    $result = @mysql_query($sql); //query from db
+    // $result = @mysql_query($sql); //query from db
+    $result = $this->arraysqltable;
     $chartdata=array();
     $i=0;
 //echo $sql."<br/><br/>";
     $seriesname=array();
-    while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-
+    // while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+    foreach ($result as $row) {
                 $j=0;
                 foreach($row as $key => $value){
                     //$chartdata[$j][$i]=$value;
