@@ -1,9 +1,9 @@
 <?php
 
-//version 0.8d
+//version 0.9b
 class PHPJasperXML {
     private $adjust=1.2;
-    public $version=0.8;
+    public $version="0.9b";
     private $pdflib;
     private $lang;
     private $previousarraydata;
@@ -13,9 +13,9 @@ class PHPJasperXML {
     public $group_name;
     public $newPageGroup = false;
     private $curgroup=0;
-    private $grouplist=array();
+    public $grouplist=array();
     private $groupno=0;
-    private $totalgroup=0;
+    public $totalgroup=0;
     private $footershowed=true;
     private $groupnochange=0; //use for detect record change till which level of grouping (grouping support multilevel)
     private $titleheight=0;
@@ -25,15 +25,22 @@ class PHPJasperXML {
     private $detailallowtill=0;
     private $offsetposition=0;
     private $detailbandqty=0;
+    public $arraysqltable=array();
 	private $report_count=0;		//### New declaration (variable exists in original too)
 	private $group_count = array(); //### New declaration
+        public $generatestatus=false;
     public function PHPJasperXML($lang="en",$pdflib="TCPDF") {
         $this->lang=$lang;
+        $this->setErrorReport(0);
         
-        error_reporting(0);
         $this->pdflib=$pdflib;
         if($this->fontdir=="")
         $this->fontdir=dirname(__FILE__)."/tcpdf/fonts";
+    }
+    
+    public function setErrorReport($error_report=0){
+        
+        error_reporting($error_report);
     }
 
     public function connect($db_host,$db_user,$db_pass,$db_or_dsn_name,$cndriver="mysql") {
@@ -298,7 +305,7 @@ class PHPJasperXML {
 					$this->gnam=$xml_path["name"]."";
 //                                         $this->group_count[$this->grouplist[$this->groupnochange+1]["name"]]++;
 
-				$this->group_count[$gnam]=1; // Count rows of groups, we're on the first row of the group.
+                                    $this->group_count[$gnam]=1; // Count rows of groups, we're on the first row of the group.
                                 
 
 
@@ -598,7 +605,7 @@ class PHPJasperXML {
         if(isset($data->reportElement["key"])) {
             $height=$fontsize*$this->adjust;
         }
-        $this->pointer[]=array("type"=>"SetXY","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"hidden_type"=>"SetXY");
+        $this->pointer[]=array("type"=>"SetXY","x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0,"hidden_type"=>"SetXY");
         $this->pointer[]=array("type"=>"SetTextColor",'forecolor'=>$data->reportElement["forecolor"].'',"r"=>$textcolor["r"],"g"=>$textcolor["g"],"b"=>$textcolor["b"],"hidden_type"=>"textcolor");
         $this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
         $this->pointer[]=array("type"=>"SetFillColor",'backcolor'=>$data->reportElement["backcolor"].'',"r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
@@ -610,7 +617,8 @@ class PHPJasperXML {
                 
 		$this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,
                     "txt"=>$txtEnc,"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"statictext",
-                    "soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"rotation"=>$rotation,"valign"=>$valign);
+                    "soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"rotation"=>$rotation,"valign"=>$valign,
+                    "x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0);
 //### End of modification, below is the original line		
 //        $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>$data->text,"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"statictext","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"rotation"=>$rotation);
 
@@ -778,11 +786,15 @@ $data->hyperlinkReferenceExpression=trim(str_replace(array(" ",'"'),"",$data->hy
         
         if($data->reportElement["width"][0]+0 > $data->reportElement["height"][0]+0)	//width > height means horizontal line
         {
-            $this->pointer[]=array("type"=>"Line", "x1"=>$data->reportElement["x"],"y1"=>$data->reportElement["y"],"x2"=>$data->reportElement["x"]+$data->reportElement["width"],"y2"=>$data->reportElement["y"]+$data->reportElement["height"]-1,"hidden_type"=>$hidden_type,"style"=>$style);
+            $this->pointer[]=array("type"=>"Line", "x1"=>$data->reportElement["x"]+0,"y1"=>$data->reportElement["y"]+0,
+                "x2"=>$data->reportElement["x"]+$data->reportElement["width"],"y2"=>$data->reportElement["y"]+$data->reportElement["height"]-1,
+                "hidden_type"=>$hidden_type,"style"=>$style,"forecolor"=>$data->reportElement["forecolor"]."");
         }
         elseif($data->reportElement["height"][0]+0>$data->reportElement["width"][0]+0)		//vertical line
         {
-            $this->pointer[]=array("type"=>"Line", "x1"=>$data->reportElement["x"],"y1"=>$data->reportElement["y"],"x2"=>$data->reportElement["x"]+$data->reportElement["width"]-1,"y2"=>$data->reportElement["y"]+$data->reportElement["height"],"hidden_type"=>$hidden_type,"style"=>$style);
+            $this->pointer[]=array("type"=>"Line", "x1"=>$data->reportElement["x"],"y1"=>$data->reportElement["y"],
+                "x2"=>$data->reportElement["x"]+$data->reportElement["width"]-1,"y2"=>$data->reportElement["y"]+$data->reportElement["height"],"hidden_type"=>$hidden_type,"style"=>$style,
+                "forecolor"=>$data->reportElement["forecolor"]."");
         }
         
         
@@ -792,10 +804,11 @@ $data->hyperlinkReferenceExpression=trim(str_replace(array(" ",'"'),"",$data->hy
 
     public function element_rectangle($data) {
 		
-		$radius=$data['radius'];
-        $drawcolor=array("r"=>255,"g"=>255,"b"=>255);
-        
-        $fillcolor=array("r"=>255,"g"=>255,"b"=>255);
+		$radius=$data['radius']+0;
+                $mode=$data->reportElement["mode"]."";
+        $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
+       // if($data['mode']=='Opaque')
+     //   $fillcolor=array("r"=>255,"g"=>255,"b"=>255);
         $borderwidth=1;
            
            if(isset($data->graphicElement->pen["lineWidth"]))
@@ -833,18 +846,27 @@ $data->hyperlinkReferenceExpression=trim(str_replace(array(" ",'"'),"",$data->hy
             $drawcolor=array("r"=>hexdec(substr($data->reportElement["forecolor"],1,2)),"g"=>hexdec(substr($data->reportElement["forecolor"],3,2)),"b"=>hexdec(substr($data->reportElement["forecolor"],5,2)));			
         }
         
-        if(isset($data->reportElement["backcolor"]) ) { 
+        if(isset($data->reportElement["backcolor"])  && ($mode=='Opaque'|| $mode=='')) { 
+           
             $fillcolor=array("r"=>hexdec(substr($data->reportElement["backcolor"],1,2)),"g"=>hexdec(substr($data->reportElement["backcolor"],3,2)),"b"=>hexdec(substr($data->reportElement["backcolor"],5,2)));			
         }
+        else
+               $fillcolor=array("r"=>255,"g"=>255,"b"=>255);
 
 
         //$this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
        // $this->pointer[]=array("type"=>"SetFillColor","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
 		
-        if($radius=='')
-        $this->pointer[]=array("type"=>"Rect","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"rect","fillcolor"=>$fillcolor,"mode"=>$data->reportElement["mode"],'border'=>0);
-        else
-        $this->pointer[]=array("type"=>"RoundedRect","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"width"=>$data->reportElement["width"],"height"=>$data->reportElement["height"],"hidden_type"=>"roundedrect","radius"=>$radius,"fillcolor"=>$fillcolor,"mode"=>$data->reportElement["mode"],'border'=>0);
+//       if($radius=='')
+//        $this->pointer[]=array("type"=>"Rect","x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0,"width"=>$data->reportElement["width"]+0,
+//                "height"=>$data->reportElement["height"]+0,"hidden_type"=>"rect",
+//                "fillcolor"=>$fillcolor."","mode"=>$data->reportElement["mode"]."",'border'=>0);
+//        else
+        $this->pointer[]=array("type"=>"RoundedRect","x"=>$data->reportElement["x"]+0,
+                "y"=>$data->reportElement["y"]+0,"width"=>$data->reportElement["width"]+0,
+            "height"=>$data->reportElement["height"]+0,"hidden_type"=>"roundedrect","radius"=>$radius,
+                "fillcolor"=>$fillcolor,
+                "mode"=>$mode,'border'=>0);
         
         
 //        $this->pointer[]=array("type"=>"SetDrawColor","r"=>0,"g"=>0,"b"=>0,"hidden_type"=>"drawcolor");
@@ -950,7 +972,7 @@ $data->hyperlinkReferenceExpression=trim(str_replace(array(" ",'"'),"",$data->hy
                 //Dotted Dashed
             }
            
-            $border=array($borderset => array('width' => $data->box->pen["lineWidth"],
+            $border=array($borderset => array('width' => $data->box->pen["lineWidth"]+0,
                 'cap' => 'butt', 
                 'join' => 'miter', 
                 'dash' =>$dash,
@@ -1008,12 +1030,12 @@ $font=$data->textElement->font["fontName"];
         }
         
         
-        $this->pointer[]=array("type"=>"SetXY","x"=>$data->reportElement["x"],"y"=>$data->reportElement["y"],"hidden_type"=>"SetXY");
+        $this->pointer[]=array("type"=>"SetXY","x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0,"hidden_type"=>"SetXY");
         $this->pointer[]=array("type"=>"SetTextColor","forecolor"=>$data->reportElement["forecolor"],"r"=>$textcolor["r"],"g"=>$textcolor["g"],"b"=>$textcolor["b"],"hidden_type"=>"textcolor");
         $this->pointer[]=array("type"=>"SetDrawColor","r"=>$drawcolor["r"],"g"=>$drawcolor["g"],"b"=>$drawcolor["b"],"hidden_type"=>"drawcolor");
-        $this->pointer[]=array("type"=>"SetFillColor","backcolor"=>$data->reportElement["backcolor"],"r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor");
-        $this->pointer[]=array("type"=>"SetFont","font"=>$font,
-            "pdfFontName"=>$data->textElement->font["pdfFontName"],"fontstyle"=>$fontstyle,"fontsize"=>$fontsize,"hidden_type"=>"font");
+        $this->pointer[]=array("type"=>"SetFillColor","backcolor"=>$data->reportElement["backcolor"]."","r"=>$fillcolor["r"],"g"=>$fillcolor["g"],"b"=>$fillcolor["b"],"hidden_type"=>"fillcolor","fill"=>$fill);
+        $this->pointer[]=array("type"=>"SetFont","font"=>$font."",
+            "pdfFontName"=>$data->textElement->font["pdfFontName"]."","fontstyle"=>$fontstyle."","fontsize"=>$fontsize+0,"hidden_type"=>"font");
          //$data->hyperlinkReferenceExpression=$this->analyse_expression($data->hyperlinkReferenceExpression);
         //if( $data->hyperlinkReferenceExpression!=''){echo "$data->hyperlinkReferenceExpression";die;}
 
@@ -1030,45 +1052,34 @@ $font=$data->textElement->font["fontName"];
         switch ($data->textFieldExpression) {
             case 'new java.util.Date()':
 //### New: =>date("Y.m.d.",....
-                $this->pointer[]=array ("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>date("Y-m-d H:i:s"),"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"date","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>$data->hyperlinkReferenceExpression,"valign"=>$valign);
+                $this->pointer[]=array ("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>date("Y-m-d H:i:s"),"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"date","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>$data->hyperlinkReferenceExpression,"valign"=>$valign,
+                    "x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0);
 //### End of modification				
                 break;
             case '"Page "+$V{PAGE_NUMBER}+" of"':
-                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'Page $this->PageNo() of',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>$data->hyperlinkReferenceExpression,"pattern"=>$data["pattern"],"valign"=>$valign);
+                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'Page $this->PageNo() of',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>$data->hyperlinkReferenceExpression,"pattern"=>$data["pattern"],"valign"=>$valign,
+                    "x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0);
                 break;
             case '$V{PAGE_NUMBER}':
                 
                 // $this->pdf->getAliasNbPages();
                 if(isset($data["evaluationTime"])&&$data["evaluationTime"]=="Report") {
-                    $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'{{:ptp:}}',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>$data->hyperlinkReferenceExpression,"pattern"=>$data["pattern"],"valign"=>$valign);
+                    $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'{{:ptp:}}',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>$data->hyperlinkReferenceExpression,"pattern"=>$data["pattern"],"valign"=>$valign,
+                        "x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0);
                 }
                 else {
-                    $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'$this->PageNo()',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>$data->hyperlinkReferenceExpression,"pattern"=>$data["pattern"],"valign"=>$valign);
+                    $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>'$this->PageNo()',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"pageno","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>$data->hyperlinkReferenceExpression,"pattern"=>$data["pattern"],"valign"=>$valign,
+                        "x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0);
                 }
                 break;
             case '" " + $V{PAGE_NUMBER}':
-//                echo 1;
-                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>' {{:ptp:}}',"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"nb","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>$data->hyperlinkReferenceExpression,"pattern"=>$data["pattern"],"valign"=>$valign);
+                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>' {{:ptp:}}',
+                    "border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"nb","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>$data->hyperlinkReferenceExpression,"pattern"=>$data["pattern"],"valign"=>$valign,
+                    "x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0);
                 break;
-//            
-//            case '$V{'.$this->grouplist[0]["name"].'_COUNT}':
-//		 $gnam=$this->arrayband[0][$this->grouplist[0]["name"]];																
-//                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>&$this->group_count[$this->grouplist[0]["name"]],"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"group_count","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
-//                break;
-//            case '$V{'.$this->grouplist[1]["name"].'_COUNT}':
-//		$gnam=$this->arrayband[0][$this->grouplist[1]["name"]];																
-//                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>&$this->group_count[$this->grouplist[1]["name"]],"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"group_count","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
-//                break;
-//            case '$V{'.$this->grouplist[2]["name"].'_COUNT}':
-//		$gnam=$this->arrayband[0][$this->grouplist[2]["name"]];																
-//                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>&$this->group_count[$this->grouplist[2]["name"]],"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"group_count","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
-//                break;
-//            case '$V{'.$this->grouplist[3]["name"].'_COUNT}':
-//		$gnam=$this->arrayband[0][$this->grouplist[3]["name"]];																
-//                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>&$this->group_count[$this->grouplist[3]["name"]],"border"=>$border,"align"=>$align,"fill"=>$fill,"hidden_type"=>"group_count","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"pattern"=>$data["pattern"],"valign"=>$valign);
-//                break;
+
             default:
-                $writeHTML=false;//
+                $writeHTML=false;
                
                 if($data->reportElement->property["name"]=="writeHTML" || $data->textElement['markup']=='html')
                     $writeHTML=1;
@@ -1076,12 +1087,13 @@ $font=$data->textElement->font["fontName"];
                     $isPrintRepeatedValues=$data->reportElement["isPrintRepeatedValues"];
 
                
-                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"],"height"=>$height,"txt"=>$data->textFieldExpression,
+                $this->pointer[]=array("type"=>"MultiCell","width"=>$data->reportElement["width"]+0,"height"=>$height+0,"txt"=>$data->textFieldExpression."",
                         "border"=>$border,"align"=>$align,"fill"=>$fill,
                         "hidden_type"=>"field","soverflow"=>$stretchoverflow,"poverflow"=>$printoverflow,
-                        "printWhenExpression"=>$data->reportElement->printWhenExpression,
-                        "link"=>$data->hyperlinkReferenceExpression,"pattern"=>$data["pattern"],"linktarget"=>$data["hyperlinkTarget"]."",
-                        "writeHTML"=>$writeHTML,"isPrintRepeatedValues"=>$isPrintRepeatedValues,"rotation"=>$rotation,"valign"=>$valign);
+                        "printWhenExpression"=>$data->reportElement->printWhenExpression."",
+                        "link"=>$data->hyperlinkReferenceExpression."","pattern"=>$data["pattern"],"linktarget"=>$data["hyperlinkTarget"]."",
+                        "writeHTML"=>$writeHTML,"isPrintRepeatedValues"=>$isPrintRepeatedValues,"rotation"=>$rotation,"valign"=>$valign,
+                    "x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0);
                 
                 
                 break;
@@ -1277,10 +1289,10 @@ $font=$data->textElement->font["fontName"];
 
 
         foreach($this->arrayVariable as $k=>$out) {
-            
+
             if($out["calculation"]!=""){
-                      $out['target']=left($out['target'],  (strlen($out['target'])-1) ); 
-                      $out['target']=right($out['target'], (strlen($out['target'])-3) );
+                      $out['target']=str_replace(array('$F{','}'),'',$out['target']);//,  (strlen($out['target'])-1) ); 
+
                 
             }
                 
@@ -1288,10 +1300,10 @@ $font=$data->textElement->font["fontName"];
             switch($out["calculation"]) {
                 case "Sum":
 
-                         $value=$this->arrayVariable[$k]["ans"];
+                        $value=$this->arrayVariable[$k]["ans"];
                     
                     
-                    if($out['resetType']==''){
+                    if($out['resetType']=='' || $out['resetType']=='None' ){
                             if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
                             //    foreach($this->arraysqltable as $table) {
                                     $value=$this->time_to_sec($value);
@@ -1316,7 +1328,7 @@ $font=$data->textElement->font["fontName"];
                     }// finisish resettype=''
                     elseif($out['resetType']=='Group') //reset type='group'
                     {
-                     
+                  
                         
 //                       print_r($this->grouplist);
 //                       echo "<br/>";
@@ -1342,6 +1354,7 @@ $font=$data->textElement->font["fontName"];
                                 $value=$this->sec_to_time($value);
                                  }
                                 else {
+                                    
                                       $value+=$this->arraysqltable[$rowno]["$out[target]"];
                                                            
  
@@ -1355,42 +1368,77 @@ $font=$data->textElement->font["fontName"];
               //      echo ",$value<br/>";
                     break;
                 case "Average":
-
-                    $sum=0;
+    $value=$this->arrayVariable[$k]["ans"];
                     
-                    if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
-                        $m=0;
-                        //$value=$this->arrayVariable[$k]["ans"];
-                        //$value=$this->time_to_sec($value);
-                        //$value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
+                    
+                    if($out['resetType']==''|| $out['resetType']=='None' ){
+                            if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
+                            //    foreach($this->arraysqltable as $table) {
+                                    $value=$this->time_to_sec($value);
 
-                        foreach($this->arraysqltable as $table) {
-                            $m++;
-
-                             $sum=$sum+$this->time_to_sec($table["$out[target]"]);
-                           // echo ",".$table["$out[target]"]."<br/>";
-
-                        }
-
-
-                        $sum=$this->sec_to_time($sum/$m);
-                     // echo "Total:".$sum."<br/>";
-                         $this->arrayVariable[$k]["ans"]=$sum;
-
-
+                                    $value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
+                                    //$sum=$sum+substr($table["$out[target]"],0,2)*3600+substr($table["$out[target]"],3,2)*60+substr($table["$out[target]"],6,2);
+                               // }
+                                //$sum= floor($sum / 3600).":".floor($sum%3600 / 60);
+                                //if($sum=="0:0"){$sum="00:00";}
+                                $value=$this->sec_to_time($value);
+                            }
+                            else {
+                                //resetGroup
+                               // foreach($this->arraysqltable as $table) {
+                              
+                                         $value=($value*($this->report_count-1)+$this->arraysqltable[$rowno]["$out[target]"])/$this->report_count;
+                                        //echo "k=$k, $value<br/>";
+                              //      $table[$out["target"]];
+                             //   }
+                            }
+                         
+                    }// finisish resettype=''
+                    elseif($out['resetType']=='Group') //reset type='group'
+                    {
+                  
+                        
+//                       print_r($this->grouplist);
+//                       echo "<br/>";
+//                       echo $out['resetGroup'] ."<br/>";
+//                       //                        if( $this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])
+//                        if( $this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])
+  //                           $value=0;
+  //            
+                       if($this->groupnochange>=0){
+                            
+                            
+                       //     for($g=$this->groupnochange;$g<4;$g++){
+                         //        $value=0;    
+//                                  $this->arrayVariable[$k]["ans"]=0;
+  //                                echo $this->grouplist[$g]["name"].":".$this->groupnochange."<br/>";
+                           // }
+                       }
+                      //    echo $this->global_pointer.",".$this->group_pointer.",".$this->arraysqltable[$this->global_pointer][$this->group_pointer].",".$this->arraysqltable[$this->global_pointer-1][$this->group_pointer].",".$this->arraysqltable[$rowno]["$out[target]"];
+                                 if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
+                                      $value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
+                                //$sum= floor($sum / 3600).":".floor($sum%3600 / 60);
+                                //if($sum=="0:0"){$sum="00:00";}
+                                $value=$this->sec_to_time($value);
+                                 }
+                                else {
+                                    $previousgroupcount=$this->group_count[$out['resetGroup']]-2;
+                                    $newgroupcount=$this->group_count[$out['resetGroup']]-1;
+                                    $previoustotal=$value*$previousgroupcount;
+                                    $newtotal=$previoustotal+$this->arraysqltable[$rowno]["$out[target]"];
+                                    
+                                    //echo "value= ($newtotal)/$newgroupcount <br/>";
+                                    $value=($newtotal)/$newgroupcount;
+                                    //echo "($value + " .($this->arraysqltable[$rowno]["$out[target]"]*($this->group_count[$out['resetGroup']]-2)).") / ".($this->group_count[$out['resetGroup']]-1)."<br/>";
+                                      
+                                                           
+ 
+                                }
+                                  
                     }
-                    else {
-                       // $this->arrayVariable[$k]["ans"]=$sum;
-                        $m=0;
-                        foreach($this->arraysqltable as $table) {
-                            $m++;
-                            $sum=$sum+$table["$out[target]"];
-                        }
-                        $this->arrayVariable[$k]["ans"]=$sum/$m;
 
-
-                    }
-
+                        
+                    $this->arrayVariable[$k]["ans"]=$value;
 
                     break;
                 case "DistinctCount":
@@ -1459,19 +1507,19 @@ $font=$data->textElement->font["fontName"];
 
             
                  include dirname(__FILE__)."/ExportXLS.inc.php";
-                $xls= new ExportXLS($this,$filename, 'Excel5');
+                $xls= new ExportXLS($this,$filename, 'Excel5',$out_method);
                 die;
 
 
             }elseif($this->pdflib == 'CSV'){
                 
                  include dirname(__FILE__)."/ExportXLS.inc.php";
-                $xls= new ExportXLS($this,$filename, 'CSV');
+                $xls= new ExportXLS($this,$filename, 'CSV',$out_method);
                 die;
             }elseif($this->pdflib == 'XLST' || $this->pdflib == 'XLSX'){
                 
                 include dirname(__FILE__)."/ExportXLS.inc.php";
-                $xls= new ExportXLS($this,$filename, 'Excel2007');
+                $xls= new ExportXLS($this,$filename, 'Excel2007',$out_method);
                 die;
             }
      //   }
@@ -2888,8 +2936,6 @@ foreach($this->arrayVariable as $name=>$value){
     
     
     public function group($headerY) {
-
-
         $gname=$this->arrayband[0]["gname"]."";
         if(isset($this->arraypageHeader)) {
             $this->arraygroup[$gname]["groupHeader"][0]["y_axis"]=$headerY;
@@ -2908,7 +2954,6 @@ foreach($this->arrayVariable as $name=>$value){
 
                 switch($name) {
                     case "groupHeader":
-//###                        $this->group_count=0;
                         foreach($out as $path) { 
                             switch($path["hidden_type"]) {
                                 case "field":
@@ -2940,55 +2985,7 @@ foreach($this->arrayVariable as $name=>$value){
             }
         }
     }
-//
-//
-//    public function groupNewPage() {
-//        $gname=$this->arrayband[0]["gname"]."";
-//
-//        if(isset($this->arraypageHeader)) {
-//            $this->arraygroup[$gname]["groupHeader"][0]["y_axis"]=$this->arrayPageSetting["topMargin"]+$this->arraypageHeader[0]["height"];
-//        }
-//        if(isset($this->arraypageFooter)) {
-//            $this->arraygroup[$gname]["groupFooter"][0]["y_axis"]=$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->arrayPageSetting["bottomMargin"]-$this->arraygroup[$gname]["groupFooter"][0]["height"];
-//        }
-//        else {
-//            $this->arraygroup[$gname]["groupFooter"][0]["y_axis"]=$this->arrayPageSetting["pageHeight"]-$this->arrayPageSetting["bottomMargin"]-$this->arraygroup[$gname]["groupFooter"][0]["height"];
-//        }
-//
-//        if(isset($this->arraygroup)) {
-//            foreach($this->arraygroup[$gname] as $name=>$out) {
-//                switch($name) {
-//                    case "groupHeader":
-//                        foreach($out as $path) {
-//                            switch($path["hidden_type"]) {
-//                                case "field":
-//                                    $this->display($path,$this->arraygroup[$gname]["groupHeader"][0]["y_axis"],true);
-//                                    break;
-//                                default:
-//
-//                                    $this->display($path,$this->arraygroup[$gname]["groupHeader"][0]["y_axis"],false);
-//                                    break;
-//                            }
-//                        }
-//                        break;
-//                    case "groupFooter":
-//                        foreach($out as $path) {
-//                            switch($path["hidden_type"]) {
-//                                case "field":
-//                                    $this->display($path,$this->arraygroup[$gname]["groupFooter"][0]["y_axis"],true);
-//                                    break;
-//                                default:
-//                                    $this->display($path,$this->arraygroup[$gname]["groupFooter"][0]["y_axis"],false);
-//                                    break;
-//                            }
-//                        }
-//                        break;
-//                    default:
-//                        break;
-//                }
-//            }
-//        }
-//    }
+
 
     public function pageFooter() {
         $this->currentband='pageFooter';
@@ -3156,7 +3153,7 @@ foreach($this->arrayVariable as $name=>$value){
 		$currentpage= $this->pdf->getNumPages();
 		$this->maxpagey=array();
         $this->currentband='detail';
-   
+
         $this->arraydetail[0][0]["y_axis"]=$this->arraydetail[0]["y_axis"];//- $this->titleheight;
         $field_pos_y=$this->arraydetail[0][0]["y_axis"];
         $biggestY=0;
@@ -3222,7 +3219,7 @@ foreach($this->arrayVariable as $name=>$value){
 		
 	
         //print_r( $this->arrayVariable);
- //echo $g["name"]."<br/>";
+//echo $g["name"]."<br/>";
          	if($this->checkSwitchGroup("header") ){		
                       
                                 $checkpoint=$this->showGroupHeader($checkpoint,true);
@@ -3278,7 +3275,7 @@ foreach($this->arrayVariable as $name=>$value){
                     switch ($out["hidden_type"]) {
                         case "field":
                      //        $txt=$this->analyse_expression($compare["txt"]);
-                         $out["txt"].":".print_r($out,true)."<br/>";
+                       //  $out["txt"].":".print_r($out,true)."<br/>";
 		         $maxheight=$this->detailallowtill-$checkpoint;//$this->arrayPageSetting["pageHeight"]-$this->arraypageFooter[0]["height"]-$this->pdf->GetY()+2-$this->columnheaderbandheight-$this->columnfooterbandheight;
                             $this->prepare_print_array=array("type"=>"MultiCell","width"=>$out["width"],"height"=>$out["height"],"txt"=>$out["txt"],
 									"border"=>$out["border"],"align"=>$out["align"],"fill"=>$out["fill"],"hidden_type"=>$out["hidden_type"],
@@ -3323,47 +3320,12 @@ foreach($this->arrayVariable as $name=>$value){
                 
             }//end loop detail band[]
              $this->pdf->setPage($this->pdf->getNumPages());
-				//$this->pdf->lastPage();
-								
-//                if($this->SubReportCheckPoint>0)
-	//				$biggestY=$this->SubReportCheckPoint;
-		//			$this->SubReportCheckPoint=0; //if subreport return position
-
-     //   if(isset($this->arraygroup)&&
-       //    ($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer+1][$this->group_pointer])){
-//if($this->checkSwitchGroup() ){
-//
-//                //$totalgroupheight=0;
-//                  //  for($i=0;$i<$this->totalgroup;$i++){
-//                    //            $checkpoint=$this->showGroupHeader($i,$checkpoint+$totalgroupheight,true);
-//                      //          $totalgroupheight+=$this->grouplist[$i]["groupheadheight"];
-//                    //}
-//
-//		$pageheight=$this->arrayPageSetting["pageHeight"];
-//		$footerheight=$this->footerbandheight;
-//		$headerheight=$this->headerbandheight;
-//		$topmargin=$this->arrayPageSetting["topMargin"];
-//		$bottommargin=$this->arrayPageSetting["bottomMargin"];
-//		$detailheight=$this->detailbandheight;
-//		$gfootheight=$this->arraygroupfoot[0]['height'];
-//		$currentY=$this->maxpagey['page_'.($this->pdf->getPage()-1)];
-//	//	 echo $this->report_count.$this->grouplist[0]["name"].":".$this->grouplist[1]["name"].":".
-//          //                  $this->grouplist[2]["name"].":".$this->grouplist[3]["name"].":".$this->groupnochange."<br/>";                    
-//       
-//
-//                        $this->currentband='detail';
-//
-//
-//                        }
-
-					
+				
 				
 				
 				
                 $this->global_pointer++;
                    $rownum++;			
-                                // $this->columnFooter();
-				//  $this->pdf->lastpage();
 				  $headerY=$checkpoint;      
             
             
@@ -3385,6 +3347,7 @@ foreach($this->arrayVariable as $name=>$value){
         $totalgroupheight=0;
   
         $this->report_count++;
+  $this->global_pointer++;      
             $checkpoint=$this->showGroupFooter($totalgroupheight+$this->maxpagey['page_'.($this->pdf->getNumPages()-1)]);
               $totalgroupheight+=$this->grouplist[$i]["groupfootheight"];
   
@@ -3398,18 +3361,14 @@ foreach($this->arrayVariable as $name=>$value){
 
 
     public function showGroupHeader($y,$printgroupfooter=false) {
-         //for($groupno=$this->totalgroup;$groupno  >$this->groupnochange;$i--)
-      //  return $y;
             $atnewpage=0;
         $groupno=$this->groupnochange;
-         //$this->group_count[$this->grouplist[$this->groupnochange+1]["name"]]++;
          
 
        
         if($printgroupfooter==true){
             
             $y=$this->showGroupFooter($y);
-              //$this->grouplist[$this->groupcount]=array("name"=>$xml_path["name"]."","newpage"=>$newPageGroup);
             if($isnewpage==true){
                 $this->columnFooter();
 		$this->pageFooter();
@@ -3421,8 +3380,6 @@ foreach($this->arrayVariable as $name=>$value){
             $this->groupnochange=-1;
             
         }
-     //        $bandheight=$this->grouplist[$groupno]["groupfootheight"];
-       //      $yplusbandheight=$y+$bandheight;
             
         
         $this->currentband='groupHeader';
@@ -3477,11 +3434,12 @@ foreach($this->arrayVariable as $name=>$value){
           $this->report_count++;
         return $y;//+$bandheight;
     }
+    
     public function showGroupFooter($y) {
        // return $y;
       // for($i=0;$i<$this->totalgroup;$i++){
      $this->report_count--;
-                $this->offsetposition=-1;
+     $this->offsetposition=-1;
         $this->currentband='groupFooter';
        
         //
@@ -3519,7 +3477,6 @@ foreach($this->arrayVariable as $name=>$value){
          for($i=$this->groupnochange+1;$i<$this->totalgroup; $i++){
                              $this->group_count[$this->grouplist[$i]["name"]]=1;
                         }
-        
       
         return $y;
 
@@ -4204,22 +4161,27 @@ foreach($this->arrayVariable as $name=>$value){
 //        }
 //    }
    public function analyse_expression($data,$isPrintRepeatedValue="true") {
-       
+       //echo $data."<br/>";
        $tmpplussymbol='/````/';
         $pointerposition=$this->global_pointer+$this->offsetposition;
         $i=0;
+        $backcurl='___';
        $fm=str_replace('{',"_",$data);
-       $fm=str_replace('}',"",$fm);
+       $fm=str_replace('}',$backcurl,$fm);
        
         //$fm=str_replace('$V_REPORT_COUNT',$this->report_count,$fm);
        $isstring=false;
        
         
-        
+//        if($this->report_count>10 && $data=='$F{qty}' || $data=='$V{qty2}')  {
+//               echo "$data =  $fm<br/>";
+//             }
        foreach($this->arrayVariable as $vv=>$av){
             $i++;
             $vv=str_replace('$V{',"",$vv);
-            $vv=str_replace('}',"",$vv);
+            $vv=str_replace('}',$backcurl,$vv);
+           //if(strpos($fm,'REPORT_COUNT')){
+             //      echo $fm;die;}
             //echo $vv.' to become '.$this->grouplist[1]["name"]."_COUNT <br/  >";
 //           if($vv==$this->grouplist[0]["name"]."_COUNT" ){
 //               
@@ -4237,39 +4199,41 @@ foreach($this->arrayVariable as $name=>$value){
 //               $fm=str_replace('$V_'.$vv."_COUNT",$this->group_count[$this->grouplist[3]["name"]],$fm1);
 //           }
              if(strpos($fm,'_COUNT')!==false){
-                 $fm=str_replace('$V_'.$this->grouplist[0]["name"].'_COUNT',($this->group_count[$this->grouplist[0]["name"]]-1),$fm);
-                 $fm=str_replace('$V_'.$this->grouplist[1]["name"].'_COUNT',($this->group_count[$this->grouplist[1]["name"]]-1),$fm);
-                 $fm=str_replace('$V_'.$this->grouplist[2]["name"].'_COUNT',($this->group_count[$this->grouplist[2]["name"]]-1),$fm);
-                 $fm=str_replace('$V_'.$this->grouplist[3]["name"].'_COUNT',($this->group_count[$this->grouplist[3]["name"]]-1),$fm);
-          
-                 $fm=str_replace('$V_REPORT_COUNT',$this->report_count,$fm);
+                 $fm=str_replace('$V_'.$this->grouplist[0]["name"].'_COUNT'.$backcurl,($this->group_count[$this->grouplist[0]["name"]]-1),$fm);
+                 $fm=str_replace('$V_'.$this->grouplist[1]["name"].'_COUNT'.$backcurl,($this->group_count[$this->grouplist[1]["name"]]-1),$fm);
+                 $fm=str_replace('$V_'.$this->grouplist[2]["name"].'_COUNT'.$backcurl,($this->group_count[$this->grouplist[2]["name"]]-1),$fm);
+                 $fm=str_replace('$V_'.$this->grouplist[3]["name"].'_COUNT'.$backcurl,($this->group_count[$this->grouplist[3]["name"]]-1),$fm);
+                 
                  
              }
            else{
                
             if($av["ans"]!="" && is_numeric($av["ans"])){
                  $av["ans"]=str_replace("+",$tmpplussymbol,$av["ans"]);
-                 $fm=str_replace('$V_'.$vv,$av["ans"],$fm);
+                 $fm=str_replace('$V_'.$vv.$backcurl,$av["ans"],$fm);
             }
             else{
                 $av["ans"]=str_replace("+",$tmpplussymbol,$av["ans"]);
-                 $fm=str_replace('$V_'.$vv,"'".$av["ans"]."'",$fm);
+                 $fm=str_replace('$V_'.$vv.$backcurl,"'".$av["ans"]."'",$fm);
             $isstring=true;
             }
                 
+            
+            
+
            }
        }
       
        
-     
+     $fm=str_replace('$V_REPORT_COUNT'.$backcurl,$this->report_count,$fm);
        foreach($this->arrayParameter as  $pv => $ap) {
            $ap=str_replace("+",$tmpplussymbol,$ap);
            
            if(is_numeric($ap)&&$ap!=''){
-                  $fm = str_replace('$P_'.$pv, $ap,$fm);
+                  $fm = str_replace('$P_'.$pv.$backcurl, $ap,$fm);
            }
            else{
-            $fm = str_replace('$P_'.$pv, "'".$ap."'",$fm);
+            $fm = str_replace('$P_'.$pv.$backcurl, "'".$ap."'",$fm);
                $isstring=true;
            }
         }
@@ -4279,18 +4243,15 @@ foreach($this->arrayVariable as $name=>$value){
            $tmpfieldvalue=str_replace("+",$tmpplussymbol,$this->arraysqltable[$pointerposition][$af[0].""]);
            
            if(is_numeric($tmpfieldvalue) && $tmpfieldvalue!=""){
-            $fm =str_replace('$F_'.$af[0]."",$tmpfieldvalue,$fm);
+            $fm =str_replace('$F_'.$af[0].$backcurl,$tmpfieldvalue,$fm);
             
            }
            else{
-               $fm =str_replace('$F_'.$af[0]."","'".$tmpfieldvalue."'",$fm);
+               $fm =str_replace('$F_'.$af[0].$backcurl,"'".$tmpfieldvalue."'",$fm);
             $isstring=true;
            }
            
        }
-       //echo "$fm =>strpos \"= " . strpos($fm,'"') .", ";
-     
-         //  echo "<br/>data:$data => fm:$fm =>";
        
        if($fm=='')
            return "";
@@ -4308,11 +4269,15 @@ foreach($this->arrayVariable as $name=>$value){
             $fm=str_replace('+'," . ",$fm);
           if(strpos($fm, "'")!==false)
             $fm=str_replace('+'," . ",$fm);
+     $fm=str_replace('$this->PageNo()',"''",$fm);
 
       eval("\$result= ".$fm.";");
+         
+ 
+          
       
      //if($this->debughyperlink==true) 
-    // echo "result:$result => $fm;<br/><br/>";
+    
       return $result;
       
        }
@@ -4320,6 +4285,8 @@ foreach($this->arrayVariable as $name=>$value){
       
       
     }
+  
+    
     public function formatText($txt,$pattern) {
         if($pattern=="###0")
             return number_format($txt,0,"","");
@@ -4549,7 +4516,7 @@ private function Rotate($type, $x=-1, $y=-1)
 
 
 private function checkSwitchGroup($type="header"){
-    
+
     
     /*
      * 1. loop record
@@ -4560,7 +4527,7 @@ private function checkSwitchGroup($type="header"){
      * 3. print all new group header start from i to totalgroup
      */
      $this->groupnochange=-1;
-   
+//       echo sizeof($this->grouplist).",$this->global_pointer,$type<br/>";
       if(sizeof($this->grouplist)>0 && ($this->global_pointer>0)){
   
           $i=-1;
@@ -4568,8 +4535,11 @@ private function checkSwitchGroup($type="header"){
           foreach($this->grouplist as $g){
              
               if($type=="header"){
-                 if($this->arraysqltable[$this->global_pointer][$g["name"]] != 
-                    $this->arraysqltable[$this->global_pointer-1][$g["name"]] ){
+                  
+                  //echo ->groupExpression."<br/>";
+                  
+                 if($this->arraysqltable[$this->global_pointer][$g['headercontent'][0]["groupExpression"]] != 
+                    $this->arraysqltable[$this->global_pointer-1][$g['headercontent'][0]["groupExpression"]] ){
                      
                     
                              //   if($this->groupnochange=="")
@@ -4579,7 +4549,8 @@ private function checkSwitchGroup($type="header"){
                      
                      
                                    
-               $this->groupnochange=$i;
+             $this->groupnochange=$i;
+             
             //  echo  $this->arraysqltable[$this->global_pointer][$g["name"]] ." match ". $this->arraysqltable[$this->global_pointer-1][$g["name"]] .":".$this->groupnochange."<br/>"; 
                                return true;
                  

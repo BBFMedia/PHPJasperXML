@@ -18,23 +18,26 @@ class ExportXLS{
     public $pageWidth;
     public $cols=array();
     public $rows=array();
-    public $vunitmultiply=1;
+    public $vunitmultiply=0.15;
     public $hunitmultiply=0.15;
     public $headerbandheight;
     public $arraysqltable;
     public $global_pointer;
     public $detailrowcount;
+    public $groupnochange=0;
     public $headerrowcount;
     public $arrayVariable;
     public $arrayParameter;
     public $arraygroupfoot;
+    public $report_count=0;
+    public  $offsetposition=0;
     public $arraygrouphead;
-    public function ExportXLS($raw,$filename, $type='Excel5'){
+    public $rowswithdata=array();
+    public function ExportXLS($raw,$filename, $type='Excel5',$out_method='I'){
         
         	include dirname(__FILE__)."/PHPExcel.php";
                 $this->wb  = new PHPExcel();
                 $this->ws=$this->wb->getActiveSheet(0);
-              //$this->ws->getStyleByColumnAndRow($pColumn, $pRow)->getFill()->getStartColor()
                 
                 $this->arrayband=$raw->arrayband;
                 $this->arraypageHeader=$raw->arraypageHeader;
@@ -53,93 +56,113 @@ class ExportXLS{
                 $this->pageHeight=$raw->pageHeight; 
                 $this->arrayVariable=$raw->arrayVariable;
                 $this->arrayParameter=$raw->arrayParameter;
-                
+                $this->arrayfield=$raw->arrayfield;
+                $this->grouplist=$raw->grouplist;
                 $this->arraygroupfoot=$raw->arraygroupfoot;
                 $this->arraygrouphead=$raw->arraygrouphead;
-
+                $this->totalgroup=$raw->totalgroup;
                 $this->summaryexit=false;
-               /*
-                
-                
-                
-                $this->xls =& $this->workbook->addWorksheet('Sheet1');
-                $this->xls->setMarginLeft($raw->arrayPageSetting["leftMargin"]);
-                $this->xls->setMarginRight($raw->arrayPageSetting["rightMargin"]);
-                $this->xls->setMarginTop($raw->arrayPageSetting["topMargin"]);
-                $this->xls->setMarginBottom($raw->arrayPageSetting["bottomMargin"]);
-                */
+  
     
         $this->global_pointer=0;
           $this->arrangeColumn();
+          $printeddetail=false;
+          $printsummary=false;
+          
         foreach ($raw->arrayband as $band) {
-//            $this->currentband=$band["name"]; // to know current where current band in!
-            switch($band["name"]) {
-                case "title":
-                                      
+          
+          
+            if($band["name"]== "title"){
                   if($raw->arraytitle[0]["height"]>0){
                             $this->title();
-                            //          echo "end title<br/><br/>";
                   }
-                    break;
-                case "pageHeader":
+            }
+                 elseif($band["name"]== "pageHeader"){
                     
                     
                   if($raw->arraypageHeader[0]["height"]>0){
                         $this->pageHeader();
-                                     //   echo "end header<hr>";
                   }
-
-                    break;
-                case "detail":
-                     if($raw->arraydetail[0]["height"]>0){
+                 }
+                 elseif($band["name"]== "detail"){
+                
+                     
+                     if($raw->arraydetail[0][0]["height"]>0 && $printeddetail==false){
+                        
                         $this->detail();
-                                    //    echo "end detail<br/><br/>";
+                        $printeddetail=true;
+           
                      }
-                    break;
-                case "pageFooter":
+                                      
+                 }
+                 elseif($band["name"]== "pageFooter"){
+                
                      if($raw->arraylastPageFooter[0]["height"]==0 && $raw->arraypageFooter[0]["height"]>0){
                         $this->pageFooter();
-                                    //    echo "end detail<br/><br/>";
                      }
-                    break;
-                case "lastPageFooter":
+                 }
+                 elseif(($band["name"]== "lastPageFooter" || $band["name"]== "summary" ) && $printsummary==false){
+           
                      if($raw->arraysummary[0]["height"]>0){
                         $this->summary();
                      }
                      if($raw->arraylastPageFooter[0]["height"]>0){
                         $this->lastPageFooter();
-                                    //    echo "end detail<br/><br/>";
                      }
-                    break;
-                case "summary":
-//                     if($raw->arraysummary[0]["height"]>0){
-//                        $this->summary();
-//                                    //    echo "end detail<br/><br/>";
-//                     }
-                    break;
-                case "group":
-                        $this->group_pointer=$band["groupExpression"];
-                         $this->group_name=$band["gname"];
-                    break;
+                     $printsummary=true;
 
-                default:
-                break;
-
-            }
+                 }
+                elseif($band["name"]== "group"){
+                  }
 
         }
-                           //  die;
+                       
+         for($l=1;$l<$this->maxrow;$l++)
+             $this->ws->getRowDimension($l)->setRowHeight(1);
+         sort($this->rowswithdata);
+         $this->rowswithdata=array_unique($this->rowswithdata);
+           
+         foreach($this->rowswithdata as $index =>$r){
+             $this->ws->getRowDimension($r)->setRowHeight(-1);
+         }
 
-        // Redirect output to a client’s web browser (Excel2007)
-        if($filename=='')
-            $filename="report.xls";
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition:attachment;filename="'.$filename.'"');
-        header('Cache-Control: max-age=0');
+         
+         
+         
+ 
+
+
+
+         if($filename=='')
+             if($type=='XLS' || $type=='xls')
+                    $filename="report.xls";
+             if($type=='XLST'|| $type=='XLSX' || $type=='xlsx')
+                $filename="report.xlsx";
+         
+         
+       if($out_method=='F' || $out_method=='f'){
+          
+       
+        $objWriter = PHPExcel_IOFactory::createWriter($this->wb, $type);
+           $objWriter->save($filename);
+          $raw->generatestatus=true;
+       
+       }
+       else{
+
+        //ob_end_clean();
+//ob_end_clean();
+//        header('Content-Type: application/vnd.ms-excel');
+        header('Content-Disposition: attachment;filename="$filename"');
+    //    header('Cache-Control: max-age=0');
 
         $objWriter = PHPExcel_IOFactory::createWriter($this->wb, $type);
-        $objWriter->save('php://output');
-
+                //$this->wb->disconnectWorksheets();
+$objWriter->save('php://output');
+//ob_end_clean();
+        
+       }
+          // die;
 
     }
 
@@ -163,7 +186,10 @@ class ExportXLS{
             //print_r($cols);echo "<hr>";
         }
             $i=0;
-        foreach($this->arraydetail as $out){
+       foreach($this->arraydetail as $detailband){
+          
+        foreach($detailband as $out){
+            
             if($out['type']=="SetXY"){
                 $cols[]=intval($out['x']);
                 $cx=intval($out['x']);
@@ -178,8 +204,35 @@ class ExportXLS{
              $i++;
         }
        
+       }
+       
+       /*                $this->grouplist[$this->totalgroup]=array(
+                        "name"=>$xml_path["name"]."",
+                        "isnewpage"=>$newPageGroup,
+                        "groupheadheight"=>$groupheadheight,
+                        "groupfootheight"=> $groupfootheight,
+                        "headercontent"=>$headercontent,
+                        "footercontent"=>$footercontent
+             
+            );
+*/
+
+    foreach($this->grouplist[0]['headercontent'] as $out){
+          //  print_r($out);echo "<hr>";
+            if($out['type']=="SetXY"){
+                $cols[]=intval($out['x']);
+            $cx=intval($out['x']);
+            
+            }
+            if($out['type']=="Cell" ||$out['type']=="MultiCell"){
+                $cols[]=intval($out['width'] + $cx);
+               // echo $out['width']." + $cx <hr>";
+            }
+            
+        }
         
-        foreach($this->arraygrouphead as $out){
+        
+       foreach($this->grouplist[0]['footercontent'] as $out){
           //  print_r($out);echo "<hr>";
             if($out['type']=="SetXY"){
                 $cols[]=intval($out['x']);
@@ -194,7 +247,22 @@ class ExportXLS{
             //print_r($cols);echo "<hr>";
         }
         
-        foreach($this->arraygroupfooter as $out){
+    foreach($this->grouplist[1]['headercontent'] as $out){
+          //  print_r($out);echo "<hr>";
+            if($out['type']=="SetXY"){
+                $cols[]=intval($out['x']);
+            $cx=intval($out['x']);
+            
+            }
+            if($out['type']=="Cell" ||$out['type']=="MultiCell"){
+                $cols[]=intval($out['width'] + $cx);
+               // echo $out['width']." + $cx <hr>";
+            }
+            
+        }
+        
+        
+       foreach($this->grouplist[1]['footercontent'] as $out){
           //  print_r($out);echo "<hr>";
             if($out['type']=="SetXY"){
                 $cols[]=intval($out['x']);
@@ -208,9 +276,72 @@ class ExportXLS{
             
             //print_r($cols);echo "<hr>";
         }
+        
+   
+        foreach($this->grouplist[2]['headercontent'] as $out){
+          //  print_r($out);echo "<hr>";
+            if($out['type']=="SetXY"){
+                $cols[]=intval($out['x']);
+            $cx=intval($out['x']);
+            
+            }
+            if($out['type']=="Cell" ||$out['type']=="MultiCell"){
+                $cols[]=intval($out['width'] + $cx);
+               // echo $out['width']." + $cx <hr>";
+            }
+            
+        }
+        
+        
+       foreach($this->grouplist[2]['footercontent'] as $out){
+          //  print_r($out);echo "<hr>";
+            if($out['type']=="SetXY"){
+                $cols[]=intval($out['x']);
+            $cx=intval($out['x']);
+            
+            }
+            if($out['type']=="Cell" ||$out['type']=="MultiCell"){
+                $cols[]=intval($out['width'] + $cx);
+               // echo $out['width']." + $cx <hr>";
+            }
+            
+            //print_r($cols);echo "<hr>";
+        }
+        
+     foreach($this->grouplist[3]['headercontent'] as $out){
+          //  print_r($out);echo "<hr>";
+            if($out['type']=="SetXY"){
+                $cols[]=intval($out['x']);
+            $cx=intval($out['x']);
+            
+            }
+            if($out['type']=="Cell" ||$out['type']=="MultiCell"){
+                $cols[]=intval($out['width'] + $cx);
+               // echo $out['width']." + $cx <hr>";
+            }
+            
+        }
+        
+        
+       foreach($this->grouplist[3]['footercontent'] as $out){
+          //  print_r($out);echo "<hr>";
+            if($out['type']=="SetXY"){
+                $cols[]=intval($out['x']);
+            $cx=intval($out['x']);
+            
+            }
+            if($out['type']=="Cell" ||$out['type']=="MultiCell"){
+                $cols[]=intval($out['width'] + $cx);
+               // echo $out['width']." + $cx <hr>";
+            }
+            
+            //print_r($cols);echo "<hr>";
+        }
+        
+   
     
             foreach($this->arraypageFooter as $out){
-          //  print_r($out);echo "<hr>";
+          
             if($out['type']=="SetXY"){
                 $cols[]=intval($out['x']);
             $cx=intval($out['x']);
@@ -218,10 +349,9 @@ class ExportXLS{
             }
             if($out['type']=="Cell" ||$out['type']=="MultiCell"){
                 $cols[]=intval($out['width'] + $cx);
-               // echo $out['width']." + $cx <hr>";
+          
             }
             
-            //print_r($cols);echo "<hr>";
         }
     
             foreach($this->arraylastPageFooter as $out){
@@ -271,47 +401,91 @@ class ExportXLS{
                  $this->cols=array_merge($this->cols, array("c".$xposition=>$i));
                  $i++;
              }
+             
+             
         
     }
     
-    public function arrangeRows($myband,$debug){
+//      
+    public function arrangeRows($myband,$debug=false,$changeheight=true){
         $this->rows=array();
-        $rows=array();
-        $ch=0;
+        $beginrow=$this->maxrow;
+        $rows=array(); //(y, height, type, rowno)
+        $pos=array();
+        $emptyrowheight=0.01;
         foreach($myband as $out){
-          // print_r($out);echo "<hr>";
-            if($out['type']=="SetXY"){
-                $rows[]=intval($out['y']);
-                $ch=intval($out['y']);
-            }
-              if($out['type']=="Cell" ||$out['type']=="MultiCell"){
-                $rows[]=intval($out['height'] + $ch);
-              }
-        }
-    
-                  $rows[]=intval($myband[0]['height']);
-                    $rows=array_unique($rows);
-
-                sort($rows);
-//                   print_r($rows);echo "<hr>";
-
-             $i=1;
-             foreach($rows as $index => $yposition){
-                $nextyposition=$rows[($i+1)];
+            if($out['type']=="Cell" || $out['type']=="MultiCell"){
+            $y=$out['y']+0;
+            $height=$out['height']+0;
+            
+         //   if($y%2 >0)
+          //      $y--;
+//            
+           // if($height%2 >0)
+             //   $height--;
                 
-                //if($nextyposition=="")
-                  //  $nextyposition=30;
-//                 $this->ws->getRowDimension($index+ $this->lastrow)->setRowHeight($this->vunitmultiply*($nextyposition-$yposition)); tmp close this for standard row height
-                 $this->rows=array_merge($this->rows, array("r".$yposition=>$i));
-                 $i++;
+                $pos[]=$y;
+                $pos[]=$y+$height;
+                $rows[]=array($y,$height,"field");
+            
+              }
+              
+              
+        }
+                        $pos[]=0;
+                        $pos[]=$myband[0]['height']+0;
+                          sort($pos);
+                       $pos=array_unique($pos);
+                         
+                        $rows=array_unique($rows,SORT_REGULAR);
+                             array_multisort($rows);
+                             $rows[]=array(0,$myband[0]['height']+0,"band");
+                             
+               if($debug==true){
+                   echo "row:";print_r($rows);echo "<hr>";
+                   echo "pos:"; print_r($pos);echo "<hr>";
+             //      die;
+                }
+             
+             $i=0;
+             foreach($pos as $index => $content){
+               $this->rows=array_merge($this->rows, array("r".$content=>($i+1)));                   
+               $i++;
              }
-//             echo "step2:";print_r($this->rows);
-             $this->lastrow=$i+$this->lastrow;
-             return ($i-2);
+             
+             $this->lastrow=$i+$beginrow;
+             
+//             if($changeheight)
+//                 for($l=$beginrow; $l <= $this->lastrow; $l++)
+//                    if($beginrow>=1)
+//                       $this->ws->getRowDimension($l)->setRowHeight(1);
+//
+//                  $lastrow=0;    
+                foreach($rows as $r =>$rowcontent){
+                 $tmpy=$rowcontent[0];  
+                    $rowposincurrentband=$this->rows['r'.$tmpy];
+                    $this->rowswithdata[]=$rowposincurrentband+$beginrow;
+                }
+
+//                    
+//                     //   $rowheight=$this->vunitmultiply*$rowcontent[1]*10;
+//                       // if($changeheight)
+//                         //$this->ws->getRowDimension($this->rows['r'.$rowcontent[0]] + $beginrow)->setRowHeight(-1);                
+//                   
+//                           
+//               }
+//               
+               
+             
+             if($debug==true)die;
+             
+             
+           //   $this->ws->getRowDimension(1)->setRowHeight(30);
+              
+             return ($i);
             
         
     }
-    
     
     
     public function title(){
@@ -319,7 +493,7 @@ class ExportXLS{
 $i=0;
 foreach($this->arraytitle as $out){
    
-            $this->display($out,$this->maxrow,false);
+            $this->display($out,$this->maxrow);
      $i++;
             }
                 $this->maxrow+=$this->titlerowcount;
@@ -328,10 +502,9 @@ foreach($this->arraytitle as $out){
     }
     
     public function pageHeader(){
-              
-
-       $this->headerrowcount= $this->arrangeRows($this->arraypageHeader);
-       $this->maxrow=$this->headerrowcount;
+       $this->headerrowcount= $this->arrangeRows($this->arraypageHeader,false,true);
+       
+      $this->maxrow=$this->headerrowcount;
         foreach($this->arraypageHeader as $out){
             $this->display($out,0);
             
@@ -342,103 +515,123 @@ foreach($this->arraytitle as $out){
     }
     
     public function detail(){
-        $this->detailrowcount=$this->arrangeRows($this->arraydetail);
-        $this->groupheadrowcount=$this->arrangeRows($this->arraygrouphead);
-        $this->groupfootrowcount=$this->arrangeRows($this->arraygroupfoot);
-
+                                $this->group_count[$this->grouplist[0]["name"]]=0;
+                                $this->group_count[$this->grouplist[1]["name"]]=0;
+                                $this->group_count[$this->grouplist[2]["name"]]=0;
+                                $this->group_count[$this->grouplist[3]["name"]]=0;
         $i=0;
-        $this->showGroupHeader();
-        $this->maxrow+=$this->groupheadrowcount;
+         $this->groupnochange=0;
+        $this->showGroupHeader(false);
         $isgroupfooterprinted=false;
+        
         foreach($this->arraysqltable as $row){
-
-            $this->variable_calculation($i, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
+            $this->report_count++;
+           
             
-            if($this->global_pointer>0&&
-                        ($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])){	//check the group's groupExpression existed and same or not
-                   
-		if($isgroupfooterprinted==true)
-                    $gfoot=0;
-                
-                /*
-                 * if($i>0){
-                 
-                $this->showGroupFooter();
-                $this->maxrow+=$this->groupfootrowcount+2;
-                }
-                 * 
-                 */
-                $this->showGroupHeader();
-                $this->maxrow+=$this->groupheadrowcount;
-                $isgroupfooterprinted=false;
-                $this->footershowed=false;
-         	$this->group_count["$this->group_name"]=1;	// We're on the first row of the group.				 
-		
-            }//finish check new group
-            
-        $this->currentband='detail';
-
-        foreach($this->arraydetail as $out){
-          
+            if($this->checkSwitchGroup("header"))	{
+                                 //   echo '<New group header>';
+                                 $this->showGroupHeader(true);
+                                }
+                                $this->group_count[$this->grouplist[0]["name"]]++;
+                                $this->group_count[$this->grouplist[1]["name"]]++;
+                                $this->group_count[$this->grouplist[2]["name"]]++;
+                                $this->group_count[$this->grouplist[3]["name"]]++;
+                                
+                 if(isset($this->arrayVariable))	
+                                $this->variable_calculation($i);
+                $this->currentband='detail';
+$d=0;
+$r=0;
+      foreach($this->arraydetail as $detail){
+         
+        foreach($detail as $out){
+           
           //($this->headerrowcount+($this->detailrowcount*$i)
-            $this->display($out,$this->maxrow);
+            
+         
+          $detailheight= $this->arrangeRows($detail);
+               
+               $this->display($out,$this->maxrow);
+           
+            $d++;
                 
         }
+        $d=0;
+        $r++;
         
-        
-                $this->maxrow+=$this->detailrowcount;
-
-                    if($this->global_pointer>0&&
-                        ($this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer+1][$this->group_pointer])){	//check the group's groupExpression existed and same or not
-                   
-		if($isgroupfooterprinted==true)
-                    $gfoot=0;
-                
-               if($i>0){
-                 
-                $this->showGroupFooter();
-                $this->maxrow+=$this->groupfootrowcount+1;
-                }
-                $isgroupfooterprinted=true;
-                $this->footershowed=true;
-         	$this->group_count["$this->group_name"]=1;	// We're on the first row of the group.				 
-		
-            }//finish check new group
-
-            
-        foreach($this->group_count as &$cntval) {
-					$cntval++;
-				}
-	$this->report_count++;
+          $this->maxrow+= $detailheight;
+         
+      }
+     
+	
         $this->global_pointer++;
            $i++;
        }
-          
-       //$this->showGroupFooter();
-      //         $this->maxrow+=$this->groupfootrowcount+2;
+        
+       $this->showGroupFooter();
+               $this->maxrow+=$this->groupfootrowcount+2;
+             
 
     }
     
-     public function showGroupHeader() {
+     public function showGroupHeader($printgroupfooter=false) {
         $this->currentband='groupHeader';
-        $bandheight=$this->arraygrouphead[0]['height'];
-       //         $this->grouheadrowcount=$this->arrangeRows($this->arraygrouphead);
-        $this->groufootrowcount=$this->arrangeRows($this->arraygroupfoot);
 
-          //$this->arrangeRows($this->arraygroupfoot);
-        foreach ($this->arraygrouphead as $out) {
+        
+        if($printgroupfooter==true)
+            $this->showGroupFooter();
+        else
+            $this->groupnochange=-1;
             
-            $this->display($out,$this->maxrow);
-        }
-
+        
+            for($groupno=$this->groupnochange+1; $groupno  <$this->totalgroup;$groupno++){
+            $groupname=$this->grouplist[$groupno]["name"];
+      
+            foreach($this->arrayVariable as $v=>$a){
+                
+                if($a["resetGroup"]!=""&& $a["resetGroup"]==$groupname){
+                 $this->arrayVariable[$v]["ans"]=0;
+                }
+            }
+            
+              $headercontent=$this->grouplist[$groupno]["headercontent"];
+                $j=0;
+                $currentheaderheight=$this->arrangeRows($headercontent,false,true);
+                foreach ($headercontent as $out){
+                         $this->display($out,$this->maxrow);
+                    $j++;
+                }
+                
+                 $this->maxrow+=$currentheaderheight;
+            }
+            
+           // die;
+            
+            
+              if($printgroupfooter==false)
+         $this->report_count=0;
+      else
+          $this->report_count++;
+     
     }
     public function showGroupFooter() {
         
+        $this->report_count--;
+        $this->offsetposition=-1;
         $this->currentband='groupFooter';
-         $bandheight=$this->arraygroupfoot[0]['height'];
-        foreach ($this->arraygroupfoot as $out) {
+        
+       for($groupno=$this->totalgroup;$groupno  >$this->groupnochange;$groupno--){
+      $footercontent=$this->grouplist[$groupno]["footercontent"];
+      $curfooterheight=$this->arrangeRows($footercontent,false,true);
+      foreach ($footercontent as $out) {
             $this->display($out,$this->maxrow);
         }
+         $this->maxrow+=$curfooterheight;
+     }
+      $this->offsetposition=0;
+      for($i=$this->groupnochange+1;$i<$this->totalgroup; $i++){
+                             $this->group_count[$this->grouplist[$i]["name"]]=1;
+                        }
         $this->currentband='';
 
     }
@@ -449,7 +642,7 @@ foreach($this->arraytitle as $out){
     public function pageFooter(){
         $this->footerrowcount=$this->arrangeRows($this->arraypageFooter);
         foreach($this->arraypageFooter as $out){
-            $this->display($out,$this->maxrow,false);
+            $this->display($out,$this->maxrow);
         }
         $this->maxrow+=$this->footerrowcount;
     }
@@ -458,13 +651,15 @@ foreach($this->arraytitle as $out){
 //print_r($this->arraylastPageFooter);echo "<hr>lastpage footer";
 
 
-       $this->lastfooterrowcount=$this->arrangeRows($this->arraylastPageFooter,true);
-$i=0;
+       $this->lastfooterrowcount=$this->arrangeRows($this->arraylastPageFooter,false);
+
+       $i=0;
 foreach($this->arraylastPageFooter as $out){
-   
-            $this->display($out,$this->maxrow,false);
+    
+            $this->display($out,$this->maxrow);
      $i++;
             }
+            //echo "complete last page footer";
                 $this->maxrow+=$this->lastfooterrowcount;
 
     }
@@ -478,88 +673,71 @@ foreach($this->arraylastPageFooter as $out){
        $this->summaryexit=true;
     }
     
-    public function display($arraydata,$rowpos,$debug){
+    public function display($arraydata,$rowpos){
+     
     
-    if($debug==true){    
-    print_r($arraydata);echo "<hr>";
-    }
+        if($this->relativex=='')
+            $this->relativex=0;
         
         switch($arraydata['type']){
             case "MultiCell":
-  //              echo 'start1';
+                
                 if($this->relativey=="")
                     $this->relativey=0;
-//echo "$this->relativex,
-  //                   ($this->relativey+$rowpos),".
-                //$this->analyse_expression($arraydata['txt'])."<hr>";
-            //    echo "$this->relativex,  
-                //        ($this->relativey+$rowpos), ".
-              //          $this->cols['c'.($this->mergex+$arraydata['width'])].",".  
-                  //      "($this->relativey+$rowpos-1)".$this->analyse_expression($arraydata['txt'])."<hr/>";
-    //                if($debug==true)
-      //                  echo 'start2'.$this->relativex .",".  
-        //                "($this->relativey+$rowpos), ".
-          //              "(".$this->cols['c'.($this->mergex+$arraydata['width'])]."-1),".  
-            //         "   ($this->relativey+$rowpos)"
-                        ;
                 $this->ws->mergeCellsByColumnAndRow(
                         $this->relativex,  
                         ($this->relativey+$rowpos), 
                         ($this->cols['c'.($this->mergex+$arraydata['width'])]-1),  
                         ($this->relativey+$rowpos)
                         );
-              //  echo 'start3';
+                
                $txt=$this->analyse_expression($arraydata['txt']);
                if($arraydata['pattern']!='')
                   $txt= ' '.$this->formatText ($txt, $arraydata['pattern']);
-                //echo 'start4';
                 $this->ws->setCellValueByColumnAndRow($this->relativex,
                        ($this->relativey+$rowpos),$txt);
-                //echo 'start5';
+              
                 if($arraydata['align']=='C')
                     $this->ws->getStyleByColumnAndRow($this->relativex, ($this->relativey+$rowpos))->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
                 elseif($arraydata['align']=='R')
                     $this->ws->getStyleByColumnAndRow($this->relativex, ($this->relativey+$rowpos))->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
                 else
                     $this->ws->getStyleByColumnAndRow($this->relativex, ($this->relativey+$rowpos))->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_LEFT);
-                //echo PHPExcel_Style_Alignment::HORIZONTAL_RIGHT ."<hr>";
-                
-                
 
                 break;
             case "Cell":
-                
-//echo "$this->relativex,".
-  //                     ($this->relativey+$this->rows['r'.$rowpos]).",".
-    //                $this->analyse_expression($arraydata['txt'])."<hr>";
                $this->ws->setCellValueByColumnAndRow($this->relativex,
                        ($this->relativey+$rowpos),$this->analyse_expression($arraydata['txt']));
-
+        
                 break;
             case "SetXY":
-                
-                $this->relativex=$this->cols['c'.intval($arraydata['x'])];
-                $this->relativey=$this->rows['r'.intval($arraydata['y'])];
-                $this->mergex=$arraydata['x'];
-                $this->mergey=$arraydata['y'];
-              //  echo $this->relativey .'-'. $arraydata['y'];
+                $myx=intval($arraydata['x']);
+                $myy=intval($arraydata['y']);
+       //         if($myy%2>0)
+     //               $myy--;
+
+                $this->relativex=$this->cols['c'.$myx];
+                $this->relativey=$this->rows['r'.$myy];
+                $this->mergex=$myx;
+                $this->mergey=$myy;//$arraydata['y'];
+        //        echo $this->relativey .'-'. $arraydata['y'];
                 break;
             
          case "SetFont":
              $f=$this->ws->getStyleByColumnAndRow($this->relativex, ($this->relativey+$rowpos))->getFont();
              $f->setName($arraydata['font'].'');
              $f-> setSize(intVal($arraydata["fontsize"]));
-                if(strpos($arraydata['fontstyle'],'B')>0)
+                if(strpos($arraydata['fontstyle'],'B')!==false)
                         $f->setBold(true);
                 else
                             $f->setBold(false);
 
-                if(strpos($arraydata['fontstyle'],'U')>0)
+                if(strpos($arraydata['fontstyle'],'U')!==false)
                         $f->setUnderline(PHPExcel_Style_Font::UNDERLINE_SINGLE);
                 else
                         $f->setUnderline(PHPExcel_Style_Font::UNDERLINE_NONE);
 
-                if(strpos($arraydata['fontstyle'],'I')>0)
+                if(strpos($arraydata['fontstyle'],'I')!==false)
                         $f->setItalic(true);
                 else
                         $f->setItalic(false);
@@ -577,13 +755,83 @@ foreach($this->arraylastPageFooter as $out){
               }
               break;
           case "SetFillColor":
+              if($arraydata['fill']==true){
               $cl= str_replace('#','',$arraydata['backcolor']);
                if($cl!=''){
                $this->ws->getStyleByColumnAndRow($this->relativex, ($this->relativey+$rowpos))->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
                 $this->ws->getStyleByColumnAndRow($this->relativex, ($this->relativey+$rowpos))->getFill()->getStartColor()->setARGB('FF'.$cl);
                }
+              }
               break;
           case "Line":
+//              if($arraydata["x1"]==$arraydata["x2"]){
+//                       $styleArray = array('borders' => array('left' => array('style' => PHPExcel_Style_Border::BORDER_THIN)));
+//                        $this->ws->getStyleByColumnAndRow('A1:L200')->applyFromArray($styleArray);   
+//                  
+//              }
+//              if($arraydata["y1"]==$arraydata["y2"]){
+//                       $styleArray = array('borders' => array('top' => array('style' => PHPExcel_Style_Border::BORDER_THIN)));
+//                        $this->ws->getStyleByColumnAndRow('A1:L200')->applyFromArray($styleArray);   
+//               
+//              }
+              $x1=$arraydata["x1"];
+              $x2=$arraydata["x2"];
+              $y1=$arraydata["y1"];
+              $y2=$arraydata["y2"];
+               
+              $linewidth=$arraydata["style"]["width"];
+              $linedash=$arraydata["style"]["dash"];
+              $linecolor=  str_replace('#','',$arraydata["forecolor"]);
+             // array('color'=>$drawcolor,'width'=>$linewidth,'dash'=>$dash);
+              $col1=$this->cols['c'.$x1];
+              $col2=$this->cols['c'.$x2];
+              $row1=$this->rows['r'.$y1]+$this->maxrow;
+              $row2=$this->rows['r'.$y2]+$this->maxrow;
+              $col1=PHPExcel_Cell::stringFromColumnIndex($col1);
+              $col2=PHPExcel_Cell::stringFromColumnIndex($col2);
+              
+              
+              if($linewidth==0)
+                  $linewidth=PHPExcel_Style_Border::BORDER_NONE;
+              elseif($linewidth<=0.25)
+                  $linewidth=PHPExcel_Style_Border::BORDER_HAIR;
+              elseif($linewidth<=0.5)
+                  $linewidth=PHPExcel_Style_Border::BORDER_THIN;
+              elseif($linewidth<=0.75)
+                  $linewidth=PHPExcel_Style_Border::medium;
+              elseif($linewidth<=1)
+                  $linewidth=PHPExcel_Style_Border::thick;
+              else
+                $linewidth=PHPExcel_Style_Border::BORDER_HAIR;
+                $linewidth=PHPExcel_Style_Border::BORDER_THIN;
+            //  echo "$col1$row1:$col2$row2<br/>";
+              
+              /*
+               * const BORDER_NONE				= 'none';
+	const BORDER_DASHDOT			= 'dashDot';
+	const BORDER_DASHDOTDOT			= 'dashDotDot';
+	const BORDER_DASHED				= 'dashed';
+	const BORDER_DOTTED				= 'dotted';
+	const BORDER_DOUBLE				= 'double';
+	const BORDER_HAIR				= 'hair';
+	const BORDER_MEDIUM				= 'medium';
+	const BORDER_MEDIUMDASHDOT		= 'mediumDashDot';
+	const BORDER_MEDIUMDASHDOTDOT	= 'mediumDashDotDot';
+	const BORDER_MEDIUMDASHED		= 'mediumDashed';
+	const BORDER_SLANTDASHDOT		= 'slantDashDot';
+	const BORDER_THICK				= 'thick';
+	const BORDER_THIN				= 'thin';
+               * 
+               */
+              if($x1==$x2){
+                    $styleArray = array('borders' => array('left' => array('style' =>$linewidth,'color'=>array('rgb'=>$linecolor))));
+              }elseif($y1==$y2){
+                  $styleArray = array('borders' => array('top' => array('style' => $linewidth,'color'=>array('rgb'=>$linecolor))));
+              }
+                  
+                    $this->ws->getStyle("$col1$row1:$col2$row2")->applyFromArray($styleArray);   
+              //echo "postion = {$arraydata["x1"]},{$arraydata["y1"]},{$arraydata["x2"]},{$arraydata["y2"]}, col1=$col1,col2=$col2,row1=$row1,row2=$row2<br/>";
+              //echo PHPExcel_Cell::stringFromColumnIndex(10);die;
               break;
           case "SetLineWidth":
               break;
@@ -596,6 +844,7 @@ foreach($this->arraylastPageFooter as $out){
           
         }
         
+       
         
     }
     
@@ -640,91 +889,131 @@ foreach($this->arraylastPageFooter as $out){
 
     }
     
-        public function analyse_expression($data) {
-            
-            if($data=='Page $this->PageNo() of' || trim($data)=='{nb}'){
-                $data='';
-            }
-            $arrdata=explode("+",$data);
-
-            
+    public function analyse_expression($data,$isPrintRepeatedValue="true") {
+       //echo $data."<br/>";
+       $tmpplussymbol='/````/';
+        $pointerposition=$this->global_pointer+$this->offsetposition;
         $i=0;
+        $backcurl='___';
+       $fm=str_replace('{',"_",$data);
+       $fm=str_replace('}',$backcurl,$fm);
+       
+        //$fm=str_replace('$V_REPORT_COUNT',$this->report_count,$fm);
+       $isstring=false;
+       
         
-        foreach($arrdata as $num=>$out) {
+//        if($this->report_count>10 && $data=='$F{qty}' || $data=='$V{qty2}')  {
+//               echo "$data =  $fm<br/>";
+//             }
+       foreach($this->arrayVariable as $vv=>$av){
             $i++;
-            $arrdata[$num]=str_replace('"',"",$out);
-            $this->arraysqltable[$this->global_pointer][substr($out,3,-1)];
+            $vv=str_replace('$V{',"",$vv);
+            $vv=str_replace('}',$backcurl,$vv);
+            //echo $vv.' to become '.$this->grouplist[1]["name"]."_COUNT <br/  >";
+//           if($vv==$this->grouplist[0]["name"]."_COUNT" ){
+//               
+//             $fm=str_replace('$V_'.$vv."_COUNT",39992,$fm1);
+//             //echo 39992 . "<br/>";
+//           }
+//           elseif($vv==$this->grouplist[1]["name"]."_COUNT"){
+//             $fm=str_replace('$V_'.$vv."_COUNT",$this->group_count[$this->grouplist[1]["name"]],$fm1);
+//             //echo 39992 . "<br/>";
+//           }
+//           elseif($vv==$this->grouplist[2]["name"]."_COUNT"){
+//               $fm=str_replace('$V_'.$vv."_COUNT",$this->group_count[$this->grouplist[2]["name"]],$fm1);
+//           }
+//           elseif($vv==$this->grouplist[3]["name"]."_COUNT"){
+//               $fm=str_replace('$V_'.$vv."_COUNT",$this->group_count[$this->grouplist[3]["name"]],$fm1);
+//           }
+             if(strpos($fm,'_COUNT')!==false){
+                 $fm=str_replace('$V_'.$this->grouplist[0]["name"].'_COUNT'.$backcurl,($this->group_count[$this->grouplist[0]["name"]]-1),$fm);
+                 $fm=str_replace('$V_'.$this->grouplist[1]["name"].'_COUNT'.$backcurl,($this->group_count[$this->grouplist[1]["name"]]-1),$fm);
+                 $fm=str_replace('$V_'.$this->grouplist[2]["name"].'_COUNT'.$backcurl,($this->group_count[$this->grouplist[2]["name"]]-1),$fm);
+                 $fm=str_replace('$V_'.$this->grouplist[3]["name"].'_COUNT'.$backcurl,($this->group_count[$this->grouplist[3]["name"]]-1),$fm);
+                 $fm=str_replace('$V_REPORT_COUNT'.$backcurl,$this->report_count,$fm);
+                 
+             }
+           else{
+               
+            if($av["ans"]!="" && is_numeric($av["ans"])){
+                 $av["ans"]=str_replace("+",$tmpplussymbol,$av["ans"]);
+                 $fm=str_replace('$V_'.$vv.$backcurl,$av["ans"],$fm);
+            }
+            else{
+                $av["ans"]=str_replace("+",$tmpplussymbol,$av["ans"]);
+                 $fm=str_replace('$V_'.$vv.$backcurl,"'".$av["ans"]."'",$fm);
+            $isstring=true;
+            }
+                
+            
+            
 
-            if($out == 1){ //for report_count
-               $arrdata[$num]=$this->report_count+1;
-            }
-
-            if($out == 'new java.util.Date()'){
-               $arrdata[$num]=date("Y-m-d H:i:s");
-            }
-
-            if(substr($out,0,3)=='$F{') {
-               $arrdata[$num]=$this->arraysqltable[$this->global_pointer][substr($out,3,-1)];     
-            }elseif(substr($out,0,3)=='$V{') {
-//###	A new function to handle iReport's "+-/*" expressions.
-// It works like a cheap calculator, without precedences, so 1+2*3 will be 9, NOT 7.
-			
-				$p1=3;
-				$p2=strpos($out,"}");
-                                
-				if ($p2!==false){ 
-					$total=&$this->arrayVariable[substr($out,$p1,$p2-$p1)]["ans"];
-                                
-					$p1=$p2+1;
-					while ($p1<strlen($out)){
-						if (strpos("+-/*",substr($out,$p1,1))!==false) $opr=substr($out,$p1,1);
-						else $opr="";
-						$p1=strpos($out,'$V{',$p1)+3;
-						$p2=strpos($out,"}",$p1);
-						if ($p2!==false){ $nbr=&$this->arrayVariable[substr($out,$p1,$p2-$p1)]["ans"];
-							switch ($opr){
-								case "+": $total+=$nbr;
-										  break;
-								case "-": $total-=$nbr;
-										  break;
-								case "*": $total*=$nbr;
-										  break;
-								case "/": $total/=$nbr;
-										  break;
-							}
-						}
-                                                
-						$p1=$p2+1;
-					}
-				}
-				$arrdata[$num]=$total;
-//### End of modifications, below is the original line.				
-//                $arrdata[$num]=&$this->arrayVariable[substr($out,3,-1)]["ans"];
-            }
-            elseif(substr($out,0,3)=='$P{') {
-                $arrdata[$num]=$this->arrayParameter[substr($out,3,-1)];
-            }
-          //  echo "<br/>";
+           }
+       }
+      
+       
+     
+       foreach($this->arrayParameter as  $pv => $ap) {
+           $ap=str_replace("+",$tmpplussymbol,$ap);
+           
+           if(is_numeric($ap)&&$ap!=''){
+                  $fm = str_replace('$P_'.$pv.$backcurl, $ap,$fm);
+           }
+           else{
+            $fm = str_replace('$P_'.$pv.$backcurl, "'".$ap."'",$fm);
+               $isstring=true;
+           }
         }
+            
+       //     print_r($this->arrayfield);
+       foreach($this->arrayfield as $af){
+           $tmpfieldvalue=str_replace("+",$tmpplussymbol,$this->arraysqltable[$pointerposition][$af[0].""]);
+           
+           if(is_numeric($tmpfieldvalue) && $tmpfieldvalue!=""){
+            $fm =str_replace('$F_'.$af[0].$backcurl,$tmpfieldvalue,$fm);
+            
+           }
+           else{
+               $fm =str_replace('$F_'.$af[0].$backcurl,"'".$tmpfieldvalue."'",$fm);
+            $isstring=true;
+           }
+           
+       }
+       
+       if($fm=='')
+           return "";
+       else
+       {
+           
+     
+           //echo $fm."<br/>";
+             $fm=str_replace($tmpplussymbol,"+",$fm);
+             
+             
+//              $fm=str_replace('+',".",$fm);
+             // echo $fm."<br/>";
+          if(strpos($fm, '"')!==false)
+            $fm=str_replace('+'," . ",$fm);
+          if(strpos($fm, "'")!==false)
+            $fm=str_replace('+'," . ",$fm);
+     $fm=str_replace('$this->PageNo()',"''",$fm);
 
-        if($this->left($data,3)=='"("' && $this->right($data,3)=='")"') {
-            $total=0;
-
-            foreach($arrdata as $num=>$out) {
-                if($num>0 && $num<$i)
-                    $total+=$out;
-
-            }
-            return $total;
-
-        }
-        else {
-
-            return implode($arrdata);
-        }
-    }
-
+      eval("\$result= ".$fm.";");
+         
+ 
+          
+      
+     //if($this->debughyperlink==true) 
     
+      return $result;
+      
+       }
+      
+      
+      
+    }
+  
+
     function right($value, $count) {
 
         return substr($value, ($count*-1));
@@ -737,17 +1026,23 @@ foreach($this->arraylastPageFooter as $out){
     
 
       public function variable_calculation($rowno) {
-//   $this->variable_calculation($rownum, $this->arraysqltable[$this->global_pointer][$this->group_pointer]);
-     //   print_r($this->arraysqltable);
 
 
         foreach($this->arrayVariable as $k=>$out) {
+
+            if($out["calculation"]!=""){
+                      $out['target']=str_replace(array('$F{','}'),'',$out['target']);//,  (strlen($out['target'])-1) ); 
+
+                
+            }
+                
          //   echo $out['resetType']. "<br/><br/>";
-            
             switch($out["calculation"]) {
                 case "Sum":
 
-                         $value=$this->arrayVariable[$k]["ans"];
+                        $value=$this->arrayVariable[$k]["ans"];
+                    
+                    
                     if($out['resetType']==''){
                             if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
                             //    foreach($this->arraysqltable as $table) {
@@ -761,70 +1056,129 @@ foreach($this->arraylastPageFooter as $out){
                                 $value=$this->sec_to_time($value);
                             }
                             else {
+                                //resetGroup
                                // foreach($this->arraysqltable as $table) {
-                               
+                              
                                          $value+=$this->arraysqltable[$rowno]["$out[target]"];
-
+                                        //echo "k=$k, $value<br/>";
                               //      $table[$out["target"]];
                              //   }
                             }
+                         
                     }// finisish resettype=''
-                    else //reset type='group'
-                    {if( $this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])
-                             $value=0;
+                    elseif($out['resetType']=='Group') //reset type='group'
+                    {
+                  
+                        
+//                       print_r($this->grouplist);
+//                       echo "<br/>";
+//                       echo $out['resetGroup'] ."<br/>";
+//                       //                        if( $this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])
+//                        if( $this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])
+  //                           $value=0;
+  //            
+                       if($this->groupnochange>=0){
+                            
+                            
+                       //     for($g=$this->groupnochange;$g<4;$g++){
+                         //        $value=0;    
+//                                  $this->arrayVariable[$k]["ans"]=0;
+  //                                echo $this->grouplist[$g]["name"].":".$this->groupnochange."<br/>";
+                           // }
+                       }
                       //    echo $this->global_pointer.",".$this->group_pointer.",".$this->arraysqltable[$this->global_pointer][$this->group_pointer].",".$this->arraysqltable[$this->global_pointer-1][$this->group_pointer].",".$this->arraysqltable[$rowno]["$out[target]"];
                                  if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
                                       $value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
                                 //$sum= floor($sum / 3600).":".floor($sum%3600 / 60);
                                 //if($sum=="0:0"){$sum="00:00";}
                                 $value=$this->sec_to_time($value);
-                            }
-                            else {
+                                 }
+                                else {
+                                    
                                       $value+=$this->arraysqltable[$rowno]["$out[target]"];
-                            }
+                                                           
+ 
+                                }
+                                  
                     }
 
-
+                        
                     $this->arrayVariable[$k]["ans"]=$value;
+                    
               //      echo ",$value<br/>";
                     break;
                 case "Average":
+    $value=$this->arrayVariable[$k]["ans"];
+                    
+                    
+                    if($out['resetType']==''){
+                            if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
+                            //    foreach($this->arraysqltable as $table) {
+                                    $value=$this->time_to_sec($value);
 
-                    $sum=0;
-
-                    if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
-                        $m=0;
-                        //$value=$this->arrayVariable[$k]["ans"];
-                        //$value=$this->time_to_sec($value);
-                        //$value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
-
-                        foreach($this->arraysqltable as $table) {
-                            $m++;
-
-                             $sum=$sum+$this->time_to_sec($table["$out[target]"]);
-                           // echo ",".$table["$out[target]"]."<br/>";
-
-                        }
-
-
-                        $sum=$this->sec_to_time($sum/$m);
-                     // echo "Total:".$sum."<br/>";
-                         $this->arrayVariable[$k]["ans"]=$sum;
-
-
+                                    $value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
+                                    //$sum=$sum+substr($table["$out[target]"],0,2)*3600+substr($table["$out[target]"],3,2)*60+substr($table["$out[target]"],6,2);
+                               // }
+                                //$sum= floor($sum / 3600).":".floor($sum%3600 / 60);
+                                //if($sum=="0:0"){$sum="00:00";}
+                                $value=$this->sec_to_time($value);
+                            }
+                            else {
+                                //resetGroup
+                               // foreach($this->arraysqltable as $table) {
+                              
+                                         $value=($value*($this->report_count-1)+$this->arraysqltable[$rowno]["$out[target]"])/$this->report_count;
+                                        //echo "k=$k, $value<br/>";
+                              //      $table[$out["target"]];
+                             //   }
+                            }
+                         
+                    }// finisish resettype=''
+                    elseif($out['resetType']=='Group') //reset type='group'
+                    {
+                  
+                        
+//                       print_r($this->grouplist);
+//                       echo "<br/>";
+//                       echo $out['resetGroup'] ."<br/>";
+//                       //                        if( $this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])
+//                        if( $this->arraysqltable[$this->global_pointer][$this->group_pointer]!=$this->arraysqltable[$this->global_pointer-1][$this->group_pointer])
+  //                           $value=0;
+  //            
+                       if($this->groupnochange>=0){
+                            
+                            
+                       //     for($g=$this->groupnochange;$g<4;$g++){
+                         //        $value=0;    
+//                                  $this->arrayVariable[$k]["ans"]=0;
+  //                                echo $this->grouplist[$g]["name"].":".$this->groupnochange."<br/>";
+                           // }
+                       }
+                      //    echo $this->global_pointer.",".$this->group_pointer.",".$this->arraysqltable[$this->global_pointer][$this->group_pointer].",".$this->arraysqltable[$this->global_pointer-1][$this->group_pointer].",".$this->arraysqltable[$rowno]["$out[target]"];
+                                 if(isset($this->arrayVariable[$k]['class'])&&$this->arrayVariable[$k]['class']=="java.sql.Time") {
+                                      $value+=$this->time_to_sec($this->arraysqltable[$rowno]["$out[target]"]);
+                                //$sum= floor($sum / 3600).":".floor($sum%3600 / 60);
+                                //if($sum=="0:0"){$sum="00:00";}
+                                $value=$this->sec_to_time($value);
+                                 }
+                                else {
+                                    $previousgroupcount=$this->group_count[$out['resetGroup']]-2;
+                                    $newgroupcount=$this->group_count[$out['resetGroup']]-1;
+                                    $previoustotal=$value*$previousgroupcount;
+                                    $newtotal=$previoustotal+$this->arraysqltable[$rowno]["$out[target]"];
+                                    
+                                    //echo "value= ($newtotal)/$newgroupcount <br/>";
+                                    $value=($newtotal)/$newgroupcount;
+                                    //echo "($value + " .($this->arraysqltable[$rowno]["$out[target]"]*($this->group_count[$out['resetGroup']]-2)).") / ".($this->group_count[$out['resetGroup']]-1)."<br/>";
+                                      
+                                                           
+ 
+                                }
+                                  
                     }
-                    else {
-                        $this->arrayVariable[$k]["ans"]=$sum;
-                        $m=0;
-                        foreach($this->arraysqltable as $table) {
-                            $m++;
-                            $sum=$sum+$table["$out[target]"];
-                        }
-                        $this->arrayVariable[$k]["ans"]=$sum/$m;
 
-
-                    }
-
+                        
+                    $this->arrayVariable[$k]["ans"]=$value;
 
                     break;
                 case "DistinctCount":
@@ -856,14 +1210,75 @@ foreach($this->arraylastPageFooter as $out){
                     $this->arrayVariable[$k]["ans"]=$value;
 				break;
 //### End of modification
-                default:
-                    $out["target"]=0;		//other cases needed, temporary leave 0 if not suitable case
+                case "":
+                   // $out["target"]=0;
+                    if(strpos( $out["target"], "_COUNT")==-1)
+                     $this->arrayVariable[$k]["ans"]=$this->analyse_expression( $out['target'], true);
+                    
+//                     $out["target"]= $this->analyse_expression( $out['target'], true);
+                    
+                    //other cases needed, temporary leave 0 if not suitable case
                     break;
 
             }
+              
         }
     }
 
 
+
+private function checkSwitchGroup($type="header"){
+
     
+    /*
+     * 1. loop record
+     * 2. start loop group check (for i)
+     *      if current last group no difference, return false
+     *      if last group have difference, print that last group footer set changegroupno=i
+     *    stop loop group check
+     * 3. print all new group header start from i to totalgroup
+     */
+     $this->groupnochange=-1;
+//       echo sizeof($this->grouplist).",$this->global_pointer,$type<br/>";
+      if(sizeof($this->grouplist)>0 && ($this->global_pointer>0)){
+  
+          $i=-1;
+          
+          foreach($this->grouplist as $g){
+             
+              if($type=="header"){
+                  
+                  //echo ->groupExpression."<br/>";
+                  
+                 if($this->arraysqltable[$this->global_pointer][$g['headercontent'][0]["groupExpression"]] != 
+                    $this->arraysqltable[$this->global_pointer-1][$g['headercontent'][0]["groupExpression"]] ){
+                     
+                    
+                             //   if($this->groupnochange=="")
+                               //     $this->groupnochange=0;
+                               // else
+                    
+                     
+                     
+                                   
+             $this->groupnochange=$i;
+             
+            //  echo  $this->arraysqltable[$this->global_pointer][$g["name"]] ." match ". $this->arraysqltable[$this->global_pointer-1][$g["name"]] .":".$this->groupnochange."<br/>"; 
+                               return true;
+                 
+          }
+          $i++;
+          }
+       }
+       
+       
+      // if($this->groupnochange==-1)
+           return false;
+       //else{
+         //  $this->groupnochange++;
+           //return  true; //return got change group
+       //}
+      }	
+    
+}   
 }
