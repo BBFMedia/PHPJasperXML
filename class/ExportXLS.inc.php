@@ -153,7 +153,7 @@ class ExportXLS{
         //ob_end_clean();
 //ob_end_clean();
 //        header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment;filename="$filename"');
+        header('Content-Disposition: attachment;filename="'.$filename.'"');
     //    header('Cache-Control: max-age=0');
 
         $objWriter = PHPExcel_IOFactory::createWriter($this->wb, $type);
@@ -895,6 +895,9 @@ foreach($this->arraylastPageFooter as $out){
         $pointerposition=$this->global_pointer+$this->offsetposition;
         $i=0;
         $backcurl='___';
+                $singlequote="|_q_|";
+        $doublequote="|_qq_|";
+
        $fm=str_replace('{',"_",$data);
        $fm=str_replace('}',$backcurl,$fm);
        
@@ -909,6 +912,9 @@ foreach($this->arraylastPageFooter as $out){
             $i++;
             $vv=str_replace('$V{',"",$vv);
             $vv=str_replace('}',$backcurl,$vv);
+            $vv=str_replace("'", $singlequote,$vv);
+            $vv=str_replace('"', $doublequote,$vv);
+
             //echo $vv.' to become '.$this->grouplist[1]["name"]."_COUNT <br/  >";
 //           if($vv==$this->grouplist[0]["name"]."_COUNT" ){
 //               
@@ -955,7 +961,9 @@ foreach($this->arraylastPageFooter as $out){
      
        foreach($this->arrayParameter as  $pv => $ap) {
            $ap=str_replace("+",$tmpplussymbol,$ap);
-           
+                             $ap=str_replace("'", $singlequote,$ap);
+                       $ap=str_replace('"', $doublequote,$ap);
+     
            if(is_numeric($ap)&&$ap!=''){
                   $fm = str_replace('$P_'.$pv.$backcurl, $ap,$fm);
            }
@@ -967,14 +975,16 @@ foreach($this->arraylastPageFooter as $out){
             
        //     print_r($this->arrayfield);
        foreach($this->arrayfield as $af){
-           $tmpfieldvalue=str_replace("+",$tmpplussymbol,$this->arraysqltable[$pointerposition][$af[0].""]);
-           
+           $tmpfieldvalue=str_replace("+",$tmpplussymbol,$this->arraysqltable[$pointerposition][$af.""]);
+                                  $tmpfieldvalue=str_replace("'", $singlequote,$tmpfieldvalue);
+                       $tmpfieldvalue=str_replace('"', $doublequote,$tmpfieldvalue);
+
            if(is_numeric($tmpfieldvalue) && $tmpfieldvalue!=""){
-            $fm =str_replace('$F_'.$af[0].$backcurl,$tmpfieldvalue,$fm);
+            $fm =str_replace('$F_'.$af.$backcurl,$tmpfieldvalue,$fm);
             
            }
            else{
-               $fm =str_replace('$F_'.$af[0].$backcurl,"'".$tmpfieldvalue."'",$fm);
+               $fm =str_replace('$F_'.$af.$backcurl,"'".$tmpfieldvalue."'",$fm);
             $isstring=true;
            }
            
@@ -997,6 +1007,11 @@ foreach($this->arraylastPageFooter as $out){
           if(strpos($fm, "'")!==false)
             $fm=str_replace('+'," . ",$fm);
      $fm=str_replace('$this->PageNo()',"''",$fm);
+
+
+
+                       $fm=str_replace($singlequote,"\'" ,$fm);
+                       $fm=str_replace( $doublequote,'"',$fm);
 
       eval("\$result= ".$fm.";");
          

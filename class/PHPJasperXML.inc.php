@@ -4162,10 +4162,12 @@ foreach($this->arrayVariable as $name=>$value){
 //    }
    public function analyse_expression($data,$isPrintRepeatedValue="true") {
        //echo $data."<br/>";
-       $tmpplussymbol='/````/';
+       $tmpplussymbol='|_plus_|';
         $pointerposition=$this->global_pointer+$this->offsetposition;
         $i=0;
         $backcurl='___';
+        $singlequote="|_q_|";
+        $doublequote="|_qq_|";
        $fm=str_replace('{',"_",$data);
        $fm=str_replace('}',$backcurl,$fm);
        
@@ -4180,6 +4182,8 @@ foreach($this->arrayVariable as $name=>$value){
             $i++;
             $vv=str_replace('$V{',"",$vv);
             $vv=str_replace('}',$backcurl,$vv);
+            $vv=str_replace("'", $singlequote,$vv);
+            $vv=str_replace('"', $doublequote,$vv);
            //if(strpos($fm,'REPORT_COUNT')){
              //      echo $fm;die;}
             //echo $vv.' to become '.$this->grouplist[1]["name"]."_COUNT <br/  >";
@@ -4228,7 +4232,8 @@ foreach($this->arrayVariable as $name=>$value){
      $fm=str_replace('$V_REPORT_COUNT'.$backcurl,$this->report_count,$fm);
        foreach($this->arrayParameter as  $pv => $ap) {
            $ap=str_replace("+",$tmpplussymbol,$ap);
-           
+                       $ap=str_replace("'", $singlequote,$ap);
+                       $ap=str_replace('"', $doublequote,$ap);
            if(is_numeric($ap)&&$ap!=''){
                   $fm = str_replace('$P_'.$pv.$backcurl, $ap,$fm);
            }
@@ -4240,14 +4245,15 @@ foreach($this->arrayVariable as $name=>$value){
             
        //     print_r($this->arrayfield);
        foreach($this->arrayfield as $af){
-           $tmpfieldvalue=str_replace("+",$tmpplussymbol,$this->arraysqltable[$pointerposition][$af[0].""]);
-           
+           $tmpfieldvalue=str_replace("+",$tmpplussymbol,$this->arraysqltable[$pointerposition][$af]);
+                       $tmpfieldvalue=str_replace("'", $singlequote,$tmpfieldvalue);
+                       $tmpfieldvalue=str_replace('"', $doublequote,$tmpfieldvalue);
            if(is_numeric($tmpfieldvalue) && $tmpfieldvalue!=""){
-            $fm =str_replace('$F_'.$af[0].$backcurl,$tmpfieldvalue,$fm);
+            $fm =str_replace('$F_'.$af.$backcurl,$tmpfieldvalue,$fm);
             
            }
            else{
-               $fm =str_replace('$F_'.$af[0].$backcurl,"'".$tmpfieldvalue."'",$fm);
+               $fm =str_replace('$F_'.$af.$backcurl,"'".$tmpfieldvalue."'",$fm);
             $isstring=true;
            }
            
@@ -4260,7 +4266,6 @@ foreach($this->arrayVariable as $name=>$value){
            
      
            //echo $fm."<br/>";
-             $fm=str_replace($tmpplussymbol,"+",$fm);
              
              
 //              $fm=str_replace('+',".",$fm);
@@ -4269,7 +4274,16 @@ foreach($this->arrayVariable as $name=>$value){
             $fm=str_replace('+'," . ",$fm);
           if(strpos($fm, "'")!==false)
             $fm=str_replace('+'," . ",$fm);
+          
+          
+                       $fm=str_replace($tmpplussymbol,"+",$fm);
+
+                       
      $fm=str_replace('$this->PageNo()',"''",$fm);
+
+
+                       $fm=str_replace($singlequote,"\'" ,$fm);
+                       $fm=str_replace( $doublequote,'"',$fm);
 
       eval("\$result= ".$fm.";");
          
@@ -4294,11 +4308,11 @@ foreach($this->arrayVariable as $name=>$value){
             return number_format($txt,0,".",",");
         elseif($pattern=="###0.0")
             return number_format($txt,1,".","");
-        elseif($pattern=="#,##0.0")
+        elseif($pattern=="#,##0.0" || $pattern=="#,##0.0;-#,##0.0")
             return number_format($txt,1,".",",");
-        elseif($pattern=="###0.00")
+        elseif($pattern=="###0.00" || $pattern=="###0.00;-###0.00")
             return number_format($txt,2,".","");
-        elseif($pattern=="#,##0.00")
+        elseif($pattern=="#,##0.00" || $pattern=="#,##0.00;-#,##0.00")
             return number_format($txt,2,".",",");
         elseif($pattern=="###0.000")
             return number_format($txt,3,".","");
