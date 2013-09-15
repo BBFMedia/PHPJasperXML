@@ -422,7 +422,10 @@ class PHPJasperXML {
                 case "componentElement":
                     $this->element_componentElement($out);
                     break;
+                case "crosstab":
+                    $this->element_crossTab($out);
                 default:
+                    
                     break;
             }
         };		
@@ -739,7 +742,258 @@ $data->hyperlinkReferenceExpression=trim(str_replace(array(" ",'"'),"",$data->hy
                 $this->pointer[]=array("type"=>"break","hidden_type"=>"break");//,"path"=>$imagepath,"x"=>$data->reportElement["x"]+0,"y"=>$data->reportElement["y"]+0,"width"=>$data->reportElement["width"]+0,"height"=>$data->reportElement["height"]+0,"imgtype"=>$imagetype,"link"=>substr($data->hyperlinkReferenceExpression,1,-1),"hidden_type"=>"image");
     }
 
-    
+    public function element_crossTab($data){
+        //var_dump($data);die;
+        $x=$data->reportElement['x']+0;
+        $y=$data->reportElement['w']+0;
+        $ctwidth=$data->reportElement['width']+0;
+        $height=$data->reportElement['height']+0;
+        $dataset=$data->crosstabDataset->dataset->datasetRun['subDataset']."";
+        
+        $rowgroup=array();
+        
+        /*
+         * 	<crosstab>
+				<reportElement uuid="6a55f366-b4f8-41a1-b89b-3c826c9e282f" x="0" y="0" width="555" height="60"/>
+                                * <crosstabDataset>
+					<dataset>
+						<datasetRun subDataset="ds2" uuid="7e3eef20-67ea-4d56-b5bc-15df22a79303">
+							<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+						</datasetRun>
+					</dataset>
+				</crosstabDataset>
+				<rowGroup name="itemtype_name" width="70" totalPosition="End">
+					<bucket class="java.lang.String">
+						<bucketExpression><![CDATA[$F{itemtype_name}]]></bucketExpression>
+					</bucket>
+					<crosstabRowHeader>
+						<cellContents backcolor="#F0F8FF" mode="Opaque">
+							<box>
+								<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+							</box>
+							<textField>
+								<reportElement uuid="049d6b20-f72a-467e-9fa3-9dffb8c6cb74" style="Crosstab Data Text" x="0" y="0" width="70" height="25"/>
+								<textElement/>
+								<textFieldExpression><![CDATA[$V{itemtype_name}]]></textFieldExpression>
+							</textField>
+						</cellContents>
+					</crosstabRowHeader>
+					<crosstabTotalRowHeader>
+						<cellContents backcolor="#BFE1FF" mode="Opaque">
+							<box>
+								<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+							</box>
+							<staticText>
+								<reportElement uuid="4590d088-819b-4a6b-a073-8a1e7a75dbd3" x="0" y="0" width="70" height="25"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<text><![CDATA[Total itemtype_name]]></text>
+							</staticText>
+						</cellContents>
+					</crosstabTotalRowHeader>
+				</rowGroup>
+				<columnGroup name="category_name" height="30" totalPosition="End">
+					<bucket class="java.lang.String">
+						<bucketExpression><![CDATA[$F{category_name}]]></bucketExpression>
+					</bucket>
+					<crosstabColumnHeader>
+						<cellContents backcolor="#F0F8FF" mode="Opaque">
+							<box>
+								<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+							</box>
+							<textField>
+								<reportElement uuid="9bb33545-6749-494c-91c6-8b258d697187" style="Crosstab Data Text" x="0" y="0" width="92" height="30"/>
+								<textElement/>
+								<textFieldExpression><![CDATA[$V{category_name}]]></textFieldExpression>
+							</textField>
+						</cellContents>
+					</crosstabColumnHeader>
+					<crosstabTotalColumnHeader>
+						<cellContents backcolor="#BFE1FF" mode="Opaque">
+							<box>
+								<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+							</box>
+							<staticText>
+								<reportElement uuid="04da0212-3020-4200-8996-885b38a7a7a3" x="0" y="0" width="50" height="30"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<text><![CDATA[Total category_name]]></text>
+							</staticText>
+						</cellContents>
+					</crosstabTotalColumnHeader>
+				</columnGroup>
+				<measure name="item_idMeasure" class="java.lang.Integer" calculation="Count">
+					<measureExpression><![CDATA[$F{item_id}]]></measureExpression>
+				</measure>
+
+				<crosstabCell width="93" height="25">
+					<cellContents>
+						<box>
+							<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+						</box>
+						<textField>
+							<reportElement uuid="04c4b685-118a-4f2b-a458-c1da42e3d78e" style="Crosstab Data Text" x="0" y="0" width="92" height="25"/>
+							<textElement/>
+							<textFieldExpression><![CDATA[$V{item_idMeasure}]]></textFieldExpression>
+						</textField>
+					</cellContents>
+				</crosstabCell>
+				<crosstabCell width="93" height="25" rowTotalGroup="itemtype_name">
+					<cellContents backcolor="#BFE1FF" mode="Opaque">
+						<box>
+							<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+						</box>
+						<textField>
+							<reportElement uuid="74e517a1-2f81-4f74-8c7c-5991b0d9a7f6" style="Crosstab Data Text" x="0" y="0" width="92" height="25"/>
+							<textElement/>
+							<textFieldExpression><![CDATA[$V{item_idMeasure}]]></textFieldExpression>
+						</textField>
+					</cellContents>
+				</crosstabCell>
+				<crosstabCell width="50" columnTotalGroup="category_name">
+					<cellContents backcolor="#BFE1FF" mode="Opaque">
+						<box>
+							<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+						</box>
+						<textField>
+							<reportElement uuid="cb2c3525-76bc-4309-afa2-7c6e855eec56" style="Crosstab Data Text" x="0" y="0" width="50" height="25"/>
+							<textElement/>
+							<textFieldExpression><![CDATA[$V{item_idMeasure}]]></textFieldExpression>
+						</textField>
+					</cellContents>
+				</crosstabCell>
+				<crosstabCell rowTotalGroup="itemtype_name" columnTotalGroup="category_name">
+					<cellContents backcolor="#BFE1FF" mode="Opaque">
+						<box>
+							<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+						</box>
+						<textField>
+							<reportElement uuid="f23635a8-257c-4d64-a116-8fcc3a9b1e2a" style="Crosstab Data Text" x="0" y="0" width="50" height="25"/>
+							<textElement/>
+							<textFieldExpression><![CDATA[$V{item_idMeasure}]]></textFieldExpression>
+						</textField>
+					</cellContents>
+				</crosstabCell>
+			</crosstab>
+         */
+        
+        foreach($data->rowGroup as $r =>$rd){
+       
+             /* $bucketexpression=$d->bucket->bucketExpression;
+            
+            $rowheadertxtheight=$d->crosstabRowHeader->cellContents->textField->reportElement[''];
+            $rowheadertxtwidth=$d->crosstabRowHeader->cellContents->textField->reportElement[''];
+            $d->crosstabRowHeader->cellContents->textField->textFieldExpression;
+            
+             * 
+             */
+          //   echo "--".print_r($rd,true)."--<br/>";
+            
+            //textAlignment="Center" verticalAlignment="Middle"
+            $rowheaderalign=$rd->crosstabRowHeader->cellContents->textField->textElement['textAlignment']."";
+            if($rowheaderalign=="")
+                    $rowheaderalign="center";
+            
+            $rowheadervalign=$rd->crosstabRowHeader->cellContents->textField->textElement['verticalAlignment']."";
+           
+            if($rd->crosstabRowHeader->cellContents['mode'].""=="Opaque")
+            $rowheaderbgcolor=$rd->crosstabRowHeader->cellContents['backcolor']."";
+             $rowheaderisbold=$rd->cellContents->textField->textElement->font['isBold']."";
+            $rowexpression=$rd->bucket->bucketExpression;
+            $rowgroupfield=$rd->crosstabRowHeader->cellContents->textField->textFieldExpression;
+            $style=array("width"=>$rd["width"]+0,
+                    'rowheaderbgcolor'=>$rowheaderbgcolor,"rowheaderalign"=>$rowheaderalign,"rowheadervalign"=>$rowheadervalign,
+                    "rowheaderisbold"=>$rowheaderisbold);
+            $rowgroup[]=array("name"=>$rd['name']."","field"=>$rowgroupfield."","style"=>$style);
+            
+        }
+        /*
+        <columnGroup name="category_name" height="30" totalPosition="End">
+					<bucket class="java.lang.String">
+						<bucketExpression><![CDATA[$F{category_name}]]></bucketExpression>
+					</bucket>
+					<crosstabColumnHeader>
+						<cellContents backcolor="#F0F8FF" mode="Opaque">
+							<box>
+								<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+							</box>
+							<textField>
+								<reportElement uuid="9bb33545-6749-494c-91c6-8b258d697187" style="Crosstab Data Text" x="0" y="0" width="92" height="30"/>
+								<textElement/>
+								<textFieldExpression><![CDATA[$V{category_name}]]></textFieldExpression>
+							</textField>
+						</cellContents>
+					</crosstabColumnHeader>
+					<crosstabTotalColumnHeader>
+						<cellContents backcolor="#BFE1FF" mode="Opaque">
+							<box>
+								<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+							</box>
+							<staticText>
+								<reportElement uuid="04da0212-3020-4200-8996-885b38a7a7a3" x="0" y="0" width="50" height="30"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<text><![CDATA[Total category_name]]></text>
+							</staticText>
+						</cellContents>
+					</crosstabTotalColumnHeader>
+				</columnGroup>
+        */
+        foreach($data->columnGroup as $c =>$cd){
+            $colheaderalign=$cd->crosstabColumnHeader->cellContents->textField->textElement['textAlignment']."";
+            if($colheaderalign=="")$colheaderalign="center";
+            $colheadervalign=$cd->crosstabColumnHeader->cellContents->textField->textElement['verticalAlignment']."";
+            if($cd->crosstabColumnHeader->cellContents['mode'].""=="Opaque")
+            $colheaderbgcolor=$cd->crosstabColumnHeader->cellContents['backcolor']."";
+             $colheaderisbold=$cd->crosstabColumnHeader->cellContents->textField->textElement->font['isBold']."";
+             $height=$cd['height']+0;
+             
+          $colgroupfield=$cd->crosstabColumnHeader->cellContents->textField->textFieldExpression;
+          $style=array("colheaderalign"=>$colheaderalign,"colheadervalign"=>$colheadervalign,"colheaderbgcolor"=>$colheaderbgcolor,
+                "colheaderisbold"=>$colheaderisbold,"height"=>$height);
+        //   $colexpression=$d->bucket->bucketExpression;
+          //  $colgroup[]=array("name"=>$c['name'],"width"=>$c['width'],"totalPosition"=>$r['totalPosition']);
+            $colgroup[]=array("name"=>$cd['name']."","field"=>$colgroupfield."","style"=>$style);
+            
+        }
+        $measuremethod=$data->measure['calculation']."";
+        $measurefield=$data->measure->measureExpression."";
+        
+        
+        /*<crosstabCell width="50" columnTotalGroup="category_name">
+					<cellContents backcolor="#BFE1FF" mode="Opaque">
+						<box>
+							<pen lineWidth="0.5" lineStyle="Solid" lineColor="#000000"/>
+						</box>
+						<textField>
+							<reportElement uuid="cb2c3525-76bc-4309-afa2-7c6e855eec56" style="Crosstab Data Text" x="0" y="0" width="50" height="25"/>
+							<textElement/>
+							<textFieldExpression><![CDATA[$V{item_idMeasure}]]></textFieldExpression>
+						</textField>
+					</cellContents>
+				</crosstabCell>*/
+        $crosstabcell=array();
+        $i=0;
+         foreach($data->crosstabCell as $ce =>$cecontent){
+            // print_r($cecontent);echo "<br/>";
+            $ceheaderalign=$cecontent->cellContents->textField->textElement['textAlignment']."";
+            $ceheadervalign=$cecontent->cellContents->textField->textElement['verticalAlignment']."";
+            if($cecontent->cellContents['mode'].""=="Opaque")
+             $ceheaderbgcolor=$cecontent->cellContents['backcolor']."";
+             $ceheaderisbold=$cecontent->cellContents->textField->textElement->font['isBold']."";
+             $width=$cecontent['width']+0;
+             $style=array("ceheaderalign"=>$ceheaderalign,"ceheadervalign"=>$ceheadervalign,"ceheaderbgcolor"=>$ceheaderbgcolor,
+                 "ceheaderisbold"=>$ceheaderisbold,"width"=>$width);
+        //   $colexpression=$d->bucket->bucketExpression;
+          //  $colgroup[]=array("name"=>$c['name'],"width"=>$c['width'],"totalPosition"=>$r['totalPosition']);
+            $crosstabcell[]=array("no"=>$i,"style"=>$style);
+            $i++;
+            
+        }
+        
+           $this->pointer[]=array("type"=>"CrossTab","x"=>$x,"y"=>$y,"width"=>$ctwidth,"height"=>$height,"dataset"=>$dataset,
+               'rowgroup'=>$rowgroup,'colgroup'=>$colgroup,'measuremethod'=>$measuremethod,'measurefield'=>$measurefield,'crosstabcell'=>$crosstabcell);
+
+
+        
+    }
     
     public function element_line($data) {	//default line width=0.567(no detect line width)
         $drawcolor=array("r"=>0,"g"=>0,"b"=>0);
@@ -3710,9 +3964,190 @@ foreach($this->arrayVariable as $name=>$value){
             
             $this->showBarcode($arraydata, $y_axis);
         }
-
+         elseif($arraydata["type"]=="CrossTab"){
+            
+            $this->showCrossTab($arraydata, $y_axis);
+        }
     }
 
+    
+    
+    public function showCrossTab($a, $y_axis){
+        /*
+         * 
+        "type"=>"CrossTab","x"=>$x,"y"=>$y,"width"=>$width,"height"=>$height,"dataset"=>$dataset
+               'rowgroup'=>$rowgroup,'colgroup'=>$colgroup,'measuremethod'=>$measuremethod,'measurefield'=>$measurefield
+         * crosstabcell
+         * 
+         */
+        $x =$a['x'];
+        $y =$a['y'];
+        $width =$a['width'];
+        $height =$a['height'];
+        $dataset =$a['dataset'];
+        $rowgroup =$a['rowgroup'][0];
+        
+        $colgroup =$a['colgroup'][0];
+        $measuremethod =$a['measuremethod'];
+        $measurefield =$a['measurefield'];
+        $ce=$a['crosstabcell'];
+       $this->pdf->SetXY($x+$this->arrayPageSetting["leftMargin"],$y+$y_axis);
+       
+       
+       foreach($ce as $no =>$v){
+          // echo $no.$v["style"]["ceheaderalign"];
+           if($no==0){  
+//               echo $no."<br/>";
+  //             echo $no.$v["style"]["ceheaderalign"];
+                $cellbgcolor=$v["style"]["ceheaderbgcolor"];
+                $cellvalign=$v["style"]["ceheadervalign"];
+                $cellalign=$v["style"]["ceheaderalign"];
+             if($cellalign=="")
+                    $cellalign="Center";
+                $cellisbold=$v["style"]["ceheaderisbold"];
+               /*array("ceheaderalign"=>$ceheaderalign,"ceheadervalign"=>$ceheadervalign,"ceheaderbgcolor"=>$ceheaderbgcolor,
+                 "ceheaderisbold"=>$ceheaderisbold,"width"=>$width);*/
+           }
+           if($no==1){    
+         //      echo $no.$v["style"]["ceheaderalign"];
+                $coltotalbgcolor=$v["style"]["ceheaderbgcolor"];
+                $coltotalvalign=$v["style"]["ceheadervalign"];
+                $coltotalalign=$v["style"]["ceheaderalign"];
+                $coltotalisbold=$v["style"]["ceheaderisbold"];
+             if($coltotalalign=="")
+                    $coltotalalign="Center";
+               /*array("ceheaderalign"=>$ceheaderalign,"ceheadervalign"=>$ceheadervalign,"ceheaderbgcolor"=>$ceheaderbgcolor,
+                 "ceheaderisbold"=>$ceheaderisbold,"width"=>$width);*/
+           }
+           if($no==2){    
+                $rowtotalbgcolor=$v["style"]["ceheaderbgcolor"];
+                $rowtotalvalign=$v["style"]["ceheadervalign"];
+                $rowtotalalign=$v["style"]["ceheaderalign"];
+                $rowtotalisbold=$v["style"]["ceheaderisbold"];
+             if($rowtotalalign=="")
+                    $rowtotalalign="Center";
+        //       echo $no.$v["style"]["ceheaderalign"];
+               /*array("ceheaderalign"=>$ceheaderalign,"ceheadervalign"=>$ceheadervalign,"ceheaderbgcolor"=>$ceheaderbgcolor,
+                 "ceheaderisbold"=>$ceheaderisbold,"width"=>$width);*/
+           }
+           if($no==3){    
+            //   echo $no.$v["style"]["ceheaderalign"];
+                $alltotalbgcolor=$v["style"]["ceheaderbgcolor"];
+                $alltotalvalign=$v["style"]["ceheadervalign"];
+                $alltotalalign=$v["style"]["ceheaderalign"];
+                $alltotalisbold=$v["style"]["ceheaderisbold"];
+             if($alltotalalign=="")
+                    $alltotalalign="Center";
+               /*array("ceheaderalign"=>$ceheaderalign,"ceheadervalign"=>$ceheadervalign,"ceheaderbgcolor"=>$ceheaderbgcolor,
+                 "ceheaderisbold"=>$ceheaderisbold,"width"=>$width);*/
+           }
+           
+           
+       }
+/*       $rowheight="";
+       $colwidth="";
+       $colheadbackcolor       
+       $rowheadbackcolor
+       $cellbackcolor
+       $coltotalbackcolor
+       $rowtotalbackcolor*/
+       
+        $rowtitle=  $rowgroup['name'];
+        $coltitle=  $colgroup['name'];
+        
+
+     /*  if($dataset!=""){
+           $sql=$this->subdataset[$dataset];
+        $param=$data['param'];
+        foreach($param as $p)
+            foreach($p as $tag =>$value)
+                $sql=str_replace('$P{'.$tag.'}',$value, $sql);
+            $sql=$this->changeSubDataSetSql($sql);
+
+        }
+    else*/
+        
+        $sql=$this->sql;
+
+    $q = $this->query($sql); //query from db
+    $arrdata=array();
+    $colarr=array();
+    while($row=$this->fetchArray( $q)){
+        $rowname=$row[$rowtitle];
+        $colname=$row[$coltitle];
+        array_push($colarr,$colname);
+        if($arrdata[$rowname][$colname]=="")
+              $arrdata[$rowname][$colname]=0;
+        
+       $arrdata[$rowname][$colname]+=1;
+        
+        
+        //$this->pdf->Cell(10,10,print_r($row,true));
+        //$this->pdf->Ln();
+    }
+    $colarr=array_unique($colarr);
+    
+    $table='<table border="1" cellspacing="0" cellpadding="2" width="'.$width.'px"><tr><td style="background-color:'.$colgroup['style']['colheaderbgcolor'].'"></td>';
+    $rowtotal=0;
+    $coltotal=0;
+    $grantotal=0;
+    foreach($colarr as $cv)
+          $table.='<td style="background-color:'.$colgroup['style']['colheaderbgcolor'].';
+              text-align:'.$colgroup['style']['colheaderalign'].'">'. $cv.'</td>';  
+          
+    $table.='<td style="background-color:'.$rowtotalbgcolor.'">Total</td></tr>';
+    
+    
+    foreach($arrdata as $r =>$v){
+        //$rowgroup $rowheaderbgcolor
+        
+        
+    $table.='<tr><td style="background-color:'.$rowgroup['style']['rowheaderbgcolor'].';
+                        text-align:'.$rowgroup['style']['rowheaderalign'].';'.
+            '">'.$r.'</td>';
+        foreach($colarr as $cv){
+            if($arrdata[$r][$cv]==""){
+                $arrdata[$r][$cv]=0;
+            }
+            
+            
+            $table.='<td style="text-align:'.$cellalign.';background-color:'.$cellbgcolor.'">'. $arrdata[$r][$cv].'</td>'; 
+           $rowtotal+= $arrdata[$r][$cv];
+           
+           if( $coltotalarr[$cv]=="") 
+                $coltotalarr[$cv]=0;
+           $coltotalarr[$cv]+= $arrdata[$r][$cv];
+           $grantotal+=$arrdata[$r][$cv];
+           
+        }
+        
+            
+    
+    $table.='<td style="background-color:'.$rowtotalbgcolor.'; text-align:'.$rowtotalalign.'">'.$rowtotal.'</td></tr>';
+    $rowtotal=0;
+    }
+    
+    $table.='<tr><td style="background-color:'.$rowtotalbgcolor.'; text-align:'.$rowgroup['style']['rowheaderbgcolor'].'">Total</td>';
+    foreach($colarr as $cv)
+          $table.='<td style="background-color:'.$coltotalbgcolor.';text-align:'.$coltotalalign.'">'. $coltotalarr[$cv]."</td>";  
+    
+    
+      $table.='<td style="text-align:'.$coltotalalign.';background-color:'.$rowtotalbgcolor.'">'.$grantotal.'</td></tr></table>';
+   $this->pdf->writeHTML($table);
+    
+    
+         
+    }
+    
+    public function query($sql){
+        
+        return @mysql_query($sql);
+    }
+    
+    public function fetchArray($result){
+        
+       return mysql_fetch_array($result, MYSQL_ASSOC);
+    }
     
     public function showBarcode($data,$y){
         
@@ -4245,7 +4680,7 @@ foreach($this->arrayVariable as $name=>$value){
             
        //     print_r($this->arrayfield);
        foreach($this->arrayfield as $af){
-           $tmpfieldvalue=str_replace("+",$tmpplussymbol,$this->arraysqltable[$pointerposition][$af]);
+           $tmpfieldvalue=str_replace("+",$tmpplussymbol,$this->arraysqltable[$pointerposition][$af.""]);
                        $tmpfieldvalue=str_replace("'", $singlequote,$tmpfieldvalue);
                        $tmpfieldvalue=str_replace('"', $doublequote,$tmpfieldvalue);
            if(is_numeric($tmpfieldvalue) && $tmpfieldvalue!=""){

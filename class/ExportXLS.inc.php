@@ -129,17 +129,21 @@ class ExportXLS{
          
          
          
- 
+         
+ $filename=trim($filename);
 
 
-
-         if($filename=='')
-             if($type=='XLS' || $type=='xls')
+         if($filename==''){
+             if($type=='XLS' || $type=='xls'){
                     $filename="report.xls";
-             if($type=='XLST'|| $type=='XLSX' || $type=='xlsx')
+                    $contenttype="application/application/vnd.ms-excel";
+                    }
+             elseif($type=='XLST'|| $type=='XLSX' || $type=='xlsx'){
                 $filename="report.xlsx";
+                $contenttype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                }
          
-         
+         }
        if($out_method=='F' || $out_method=='f'){
           
        
@@ -149,21 +153,27 @@ class ExportXLS{
        
        }
        else{
-
         //ob_end_clean();
 //ob_end_clean();
-//        header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment;filename="'.$filename.'"');
-    //    header('Cache-Control: max-age=0');
+          set_time_limit(0);
+         header('HTTP/1.0 200 OK', true, 200);
 
+        header('Content-Type:'.$contenttype);
+        header('Content-Disposition: attachment;filename="'.$filename.'"');
+        header('Cache-Control: max-age=0');
+        
         $objWriter = PHPExcel_IOFactory::createWriter($this->wb, $type);
-                //$this->wb->disconnectWorksheets();
-$objWriter->save('php://output');
+        
+        
+        //if(PHP_OS=='WINNT')
+         $objWriter->save('php://output');
+        
+        
 //ob_end_clean();
         
        }
           // die;
-
+       
     }
 
     
