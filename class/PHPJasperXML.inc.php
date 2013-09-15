@@ -3989,7 +3989,7 @@ foreach($this->arrayVariable as $name=>$value){
         
         $colgroup =$a['colgroup'][0];
         $measuremethod =$a['measuremethod'];
-        $measurefield =$a['measurefield'];
+        $measurefield =str_replace(array('$F{','}'),"",$a['measurefield']);
         $ce=$a['crosstabcell'];
        $this->pdf->SetXY($x+$this->arrayPageSetting["leftMargin"],$y+$y_axis);
        
@@ -4079,8 +4079,10 @@ foreach($this->arrayVariable as $name=>$value){
         if($arrdata[$rowname][$colname]=="")
               $arrdata[$rowname][$colname]=0;
         
+      if($measuremethod=='Count')
        $arrdata[$rowname][$colname]+=1;
-        
+      elseif($measuremethod=='Sum')
+          $arrdata[$rowname][$colname]+=$row[$measurefield];
         
         //$this->pdf->Cell(10,10,print_r($row,true));
         //$this->pdf->Ln();
@@ -4132,7 +4134,7 @@ foreach($this->arrayVariable as $name=>$value){
           $table.='<td style="background-color:'.$coltotalbgcolor.';text-align:'.$coltotalalign.'">'. $coltotalarr[$cv]."</td>";  
     
     
-      $table.='<td style="text-align:'.$coltotalalign.';background-color:'.$rowtotalbgcolor.'">'.$grantotal.'</td></tr></table>';
+    $table.='<td style="text-align:'.$coltotalalign.';background-color:'.$rowtotalbgcolor.'">'.$grantotal.'</td></tr></table>';
    $this->pdf->writeHTML($table);
     
     
