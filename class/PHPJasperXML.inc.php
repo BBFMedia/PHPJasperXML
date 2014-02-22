@@ -3853,12 +3853,12 @@ foreach($this->arrayVariable as $name=>$value){
             $path=$this->analyse_expression($arraydata["path"]);
             $imgtype=substr($path,-3);
             $arraydata["link"]=$arraydata["link"]."";
-            if($imgtype=='jpg' || right($path,3)=='jpg' || right($path,4)=='jpeg')
+            if($imgtype=='jpg' || $this->right($path,3)=='jpg' || $this->right($path,4)=='jpeg')
 		$imgtype="JPEG";
             elseif($imgtype=='png'|| $imgtype=='PNG')
                   $imgtype="PNG";
           //echo $path;
-        if(file_exists($path) || left($path,4)=='http' ){  
+        if(file_exists($path) || $this->left($path,4)=='http' ){
             //$path="/Applications/XAMPP/xamppfiles/simbiz/modules/simantz/images/modulepic.jpg";
                   //  $path="/simbiz/images/pendingno.png";
 
